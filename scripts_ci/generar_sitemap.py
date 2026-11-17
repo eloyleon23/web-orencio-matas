@@ -56,7 +56,12 @@ CONFIG_PAGINAS = {
     'historia.html': ('monthly', '0.7'),
     'actualidad.html': ('weekly', '0.6'),
     'profesionales.html': ('monthly', '0.8'),
-    'buscador.html': ('weekly', '0.8'),
+    # Reestructuración (feature/web-reestructuracion): el buscador pasa a
+    # ser index.html (ver su entrada arriba, prioridad 1.0 ya correcta
+    # como home) y el antiguo contenido de index.html se reubica en
+    # quienes-somos.html — se mueve aquí su entrada con la misma
+    # prioridad que empresa.html, contenido relacionado.
+    'quienes-somos.html': ('monthly', '0.8'),
     'centro-soluciones.html': ('weekly', '0.9'),
     'catalogo_drogueria.html': ('monthly', '0.7'),
     'catalogo_perfumeria.html': ('monthly', '0.7'),

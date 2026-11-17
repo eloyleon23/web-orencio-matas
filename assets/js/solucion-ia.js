@@ -129,12 +129,18 @@
   // CS_ALTERNATIVE_PRODUCT_SELECTED con los refs originales.
   function renderTarjetaProducto(p, contexto) {
     // Perfil profesional: precio al por mayor siempre, en vez del PVP —
-    // mismo criterio que buscador.html/solucion-detalle.js.
+    // mismo criterio que index.html/solucion-detalle.js.
     const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
     const tieneMayor = esProfesional && p.precio_mayor_con;
     const precioReal = tieneMayor || (p.mostrar_precio && p.precio_con);
     const precio = precioReal ? `${tieneMayor ? p.precio_mayor_con : p.precio_con} €` : 'Consultar precio y disponibilidad';
-    const precioClass = precioReal ? 'cs-producto-card__precio' : 'cs-producto-card__precio cs-producto-card__precio--consultar';
+    // A petición de Eloy: el precio se ve en negro salvo que el producto
+    // tenga oferta activa, en cuyo caso se mantiene en rojo (ver
+    // .precio-con-oferta en soluciones.css) — mismo criterio que
+    // index.html/solucion-detalle.js.
+    const precioClass = precioReal
+      ? ('cs-producto-card__precio' + (p.oferta ? ' precio-con-oferta' : ''))
+      : 'cs-producto-card__precio cs-producto-card__precio--consultar';
     const etiquetaMayorHtml = tieneMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : '';
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     const ctx = contexto || {};
@@ -142,7 +148,7 @@
     // los productos principales... sobre todo pintura, herramientas
     // como Werku o cualquier producto delicado". Nunca se inventa una
     // URL — se reutilizan las fichas YA VERIFICADAS a mano (Werku por
-    // código, mismo mecanismo que buscador.html) o, para el resto de
+    // código, mismo mecanismo que index.html) o, para el resto de
     // pinturas, un enlace de búsqueda de Google ya construido con los
     // términos del producto. Ver obtenerFichaTecnicaProducto en
     // soluciones-data.js para el porqué completo.
@@ -155,7 +161,7 @@
     // navegue también al buscador).
     return `
       <div class="cs-producto-card-wrap" data-ref="${escaparHtml(p.ref)}">
-        <a class="cs-producto-card" href="../buscador.html?ref=${encodeURIComponent(p.ref)}"
+        <a class="cs-producto-card" href="../index.html?ref=${encodeURIComponent(p.ref)}"
            data-cs-ref="${encodeURIComponent(p.ref)}" data-cs-nombre="${encodeURIComponent(p.nombre || '')}"
            data-cs-interaction-id="${ctx.interactionId || ''}" data-cs-recommendation-type="${ctx.recommendationType || ''}"
            data-cs-original-refs="${ctx.originalRefs ? encodeURIComponent(JSON.stringify(ctx.originalRefs)) : ''}">
@@ -177,7 +183,7 @@
   }
 
   // ── Espera con mensajes progresivos — mismo patrón que el modal del
-  // Centro de Soluciones y de buscador.html, adaptado a página completa
+  // Centro de Soluciones y de index.html, adaptado a página completa
   // (sin overlay, ya que aquí no hay contenido "detrás" que tapar). El
   // botón "Cancelar" en este contexto vuelve al Centro de Soluciones,
   // ya que esta página no tiene nada más que mostrar sin un resultado.
@@ -246,7 +252,7 @@
     cont.innerHTML = `
       <div class="container" style="padding:60px 20px;text-align:center;max-width:600px;margin:0 auto;">
         <h1 style="font-family:var(--font-heading);font-size:1.8rem;margin-bottom:12px;">No hemos encontrado una solución</h1>
-        <p style="color:var(--text-gray);margin-bottom:20px;">Ni nuestras guías ni la IA han encontrado algo específico para "<strong>${escaparHtml(consulta)}</strong>". Prueba a contárnoslo con otras palabras, consulta el <a href="../buscador.html">buscador completo</a>, o <a href="../index.html#contacto">contacta con nosotros</a> y te ayudamos directamente.</p>
+        <p style="color:var(--text-gray);margin-bottom:20px;">Ni nuestras guías ni la IA han encontrado algo específico para "<strong>${escaparHtml(consulta)}</strong>". Prueba a contárnoslo con otras palabras, consulta el <a href="../index.html">buscador completo</a>, o <a href="../quienes-somos.html#contacto">contacta con nosotros</a> y te ayudamos directamente.</p>
         <a class="btn-primary" href="../centro-soluciones.html">← Volver al Centro de Soluciones</a>
       </div>
     `;
@@ -523,7 +529,7 @@
     // Se guarda el estado (términos ya probados, referencias ya
     // mostradas/descartadas) en este cierre — a petición de Eloy: "que
     // pueda hacer una nueva búsqueda sobre los productos para traer
-    // algo más adecuado" — mismo mecanismo ya usado en buscador.html
+    // algo más adecuado" — mismo mecanismo ya usado en index.html
     // para "No es lo que buscaba, prueba otra vez".
     let terminosProductosUsados = (datos.terminos && datos.terminos.length) ? datos.terminos.slice() : [];
     let refsProductosExcluidos = [];
@@ -572,8 +578,8 @@
           grid.innerHTML = `
             <div class="cs-hero__buscador-aviso" style="grid-column:1/-1;">
               No hemos podido encontrar productos concretos para esta solución en nuestro catálogo —
-              <a href="../buscador.html?q=${encodeURIComponent(consulta)}">consulta el buscador completo</a>
-              o <a href="../index.html#contacto">contacta con nuestro equipo</a> y te asesoramos directamente.
+              <a href="../index.html?q=${encodeURIComponent(consulta)}">consulta el buscador completo</a>
+              o <a href="../quienes-somos.html#contacto">contacta con nuestro equipo</a> y te asesoramos directamente.
             </div>
           `;
           $('#cs-ia-exportar-bar').style.display = '';
@@ -602,7 +608,7 @@
     }
 
     // Aviso "Sugerido por IA" + botón "otra vez" — mismo formato ya
-    // usado en buscador.html (icono de la marca + texto + botón), en
+    // usado en index.html (icono de la marca + texto + botón), en
     // vez de un botón suelto. A petición de Eloy: colocado ENCIMA de
     // los resultados (como en el buscador), no debajo.
     function renderAvisoOtraVez() {

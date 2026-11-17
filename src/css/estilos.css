@@ -376,20 +376,24 @@ ol {
   padding: 0 22px;
   border-radius: var(--radius-small);
   color: var(--primary-white);
-  background: var(--primary-red);
+  /* El rojo de alarma no es el tono adecuado para un botón de acción
+     normal (contactar, enviar, entrar, solicitar...) — se usa el azul
+     de marca en su lugar, reservando el rojo para lo que sí necesite
+     transmitir urgencia o advertencia. */
+  background: var(--primary-blue);
   border-bottom: 4px solid var(--primary-yellow);
   font-size: 0.84rem;
   font-weight: 800;
   letter-spacing: 0.02em;
-  box-shadow: 0 14px 30px rgba(217, 27, 27, 0.28);
+  box-shadow: 0 14px 30px rgba(0, 109, 174, 0.28);
   transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-primary:hover,
 .btn-primary:focus-visible {
-  background: color-mix(in srgb, var(--primary-red) 86%, #000000);
+  background: color-mix(in srgb, var(--primary-blue) 86%, #000000);
   transform: translateY(-2px);
-  box-shadow: 0 18px 38px rgba(217, 27, 27, 0.34);
+  box-shadow: 0 18px 38px rgba(0, 109, 174, 0.34);
 }
 
 .btn-secondary {
@@ -1318,7 +1322,13 @@ textarea.form-input {
 
 .site-footer__grid {
   display: grid;
-  grid-template-columns: 1.28fr 0.8fr 0.95fr 1fr;
+  /* A petición de Eloy: el footer pasa de 4 a 3 columnas (se quitan
+     "Navegación" y "Servicios"; el horario se separa del bloque de
+     contacto en su propia columna, en vez de apilarse debajo dentro de
+     la misma, para aprovechar el ancho y no dejar tanto hueco vacío en
+     el centro). Las media queries de abajo (tablet: 2 columnas,
+     móvil: 1 columna) ya encajaban igual, sin necesitar cambios. */
+  grid-template-columns: 1.4fr 1fr 1fr;
   gap: 44px;
   padding: 78px 20px 56px;
 }
@@ -1381,10 +1391,12 @@ textarea.form-input {
 }
 
 .site-footer__column a,
-.site-footer__contact span {
+.site-footer__column span,
+.site-footer__column p {
   color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.55;
+  margin: 0;
 }
 
 .site-footer__column a {
@@ -1429,6 +1441,19 @@ textarea.form-input {
 
 .navbar__cta {
   flex: 0 0 auto;
+  /* El rojo de alarma de .btn-primary no es el tono adecuado para un
+     botón de "Contactar" (invita, no advierte) — se sustituye aquí por
+     el azul de marca, reservando el rojo para los CTAs que sí necesitan
+     urgencia. */
+  background: var(--primary-blue);
+  border-bottom-color: var(--primary-yellow);
+  box-shadow: 0 14px 30px rgba(0, 109, 174, 0.28);
+}
+
+.navbar__cta:hover,
+.navbar__cta:focus-visible {
+  background: color-mix(in srgb, var(--primary-blue) 86%, #000000);
+  box-shadow: 0 18px 38px rgba(0, 109, 174, 0.34);
 }
 
 .navbar__toggle {
@@ -1724,7 +1749,8 @@ textarea.form-input {
   }
 
   .site-footer__column a,
-  .site-footer__contact span {
+  .site-footer__column span,
+  .site-footer__column p {
     font-size: 0.875rem;
     line-height: 1.6;
   }

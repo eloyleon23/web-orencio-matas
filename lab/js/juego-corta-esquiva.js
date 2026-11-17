@@ -538,7 +538,7 @@
         barajadas.slice(0, 6).forEach((clave) => {
             const a = document.createElement('a');
             a.className = 'premium-provider-card';
-            a.href = '../buscador.html';
+            a.href = '../index.html';
             const img = document.createElement('img');
             img.src = rutaLogo(clave);
             img.alt = clave.replace(/_/g, ' ');

@@ -45,8 +45,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
-    <link rel="stylesheet" href="./src/css/estilos.css?v=20261107" />
-    <link rel="stylesheet" href="./assets/css/soluciones.css?v=20260923a" />
+    <link rel="stylesheet" href="./src/css/estilos.css?v=20261117b" />
+    <link rel="stylesheet" href="./assets/css/soluciones.css?v=20261117a" />
     <!-- Google tag (gtag.js) -->
     <script>
   // Ver nota en el bloque de Google Tag Manager: solo en el dominio
@@ -83,34 +83,32 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
           </button>
           <nav class="navbar__nav" id="main-navigation" aria-label="Navegación principal" data-mobile-menu>
             <ul class="navbar__menu">
-              <li><a href="index.html">Inicio</a></li>
-              <li><a href="empresa.html">Empresa</a></li>
-              <li><a href="historia.html">Historia</a></li>
-              <li class="navbar__item--dropdown">
-                <a href="productos.html">Productos <span class="navbar__caret">&#9662;</span></a>
-                <ul class="navbar__submenu">
-            <li><a href="buscador.html">Buscador</a></li>
-            <li class="navbar__item--dropdown">
-              <a href="productos.html">Ver catálogos <span class="navbar__caret">&#9662;</span></a>
-              <ul class="navbar__submenu">
-                <li><a href="catalogo_drogueria.html">Droguería</a></li>
-                <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
-                <li><a href="catalogo_pinturas.html">Pinturas</a></li>
-                <li><a href="catalogo_talleres.html">Talleres</a></li>
-              </ul>
-            </li>
+        <li><a href="index.html">Productos</a></li>
+        <li class="navbar__item--dropdown">
+          <a href="productos.html">Catálogos <span class="navbar__caret">&#9662;</span></a>
+          <ul class="navbar__submenu">
+            <li><a href="catalogo_drogueria.html">Droguería</a></li>
+            <li><a href="catalogo_perfumeria.html">Perfumería</a></li>
+            <li><a href="catalogo_pinturas.html">Pinturas</a></li>
+            <li><a href="catalogo_talleres.html">Talleres</a></li>
           </ul>
-              </li>
-              <li><a href="escaparate-campanas.html">Exposición</a></li>
-              <li><a href="servicios.html">Servicios</a></li>
-            <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
-            <li><a href="anuncios.html">Anuncios/Recursos</a></li>
-              <li><a href="profesionales.html">Profesionales</a></li>
-              <li data-oculto-perfil-profesional><a href="lab/index.html">Espacio Creativo</a></li>
-          <li><a href="actualidad.html">Actualidad</a></li>
-              <li><a href="index.html#contacto">Contacto</a></li>
-            </ul>
-            <a class="btn-primary navbar__cta" href="index.html#contacto">CONTACTAR</a>
+        </li>
+        <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
+        <li><a href="escaparate-campanas.html">Exposición</a></li>
+        <li><a href="profesionales.html">Profesionales</a></li>
+        <li data-oculto-perfil-profesional><a href="lab/index.html">Espacio Creativo</a></li>
+        <li class="navbar__item--dropdown">
+          <a href="empresa.html">Empresa <span class="navbar__caret">&#9662;</span></a>
+          <ul class="navbar__submenu">
+            <li><a href="quienes-somos.html">Quiénes somos</a></li>
+            <li><a href="servicios.html">Servicios</a></li>
+            <li><a href="historia.html">Historia</a></li>
+          </ul>
+        </li>
+        <li><a href="anuncios.html">Anuncios/Recursos</a></li>
+        <li><a href="actualidad.html">Actualidad</a></li>
+      </ul>
+      <a class="btn-primary navbar__cta" href="quienes-somos.html#contacto">CONTACTAR</a>
           </nav>
         </div>
       </div>
@@ -159,7 +157,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div class="cs-hero__ctas">
               <button type="button" class="btn-primary" data-open-wizard>Encontrar una solución</button>
               <a class="btn-secondary" href="#cs-problema">Tengo un problema</a>
-              <a class="btn-secondary" href="buscador.html">Sé lo que quiero buscar</a>
+              <a class="btn-secondary" href="index.html">Sé lo que quiero buscar</a>
             </div>
             <div class="cs-hero__quick-links" style="margin-top:18px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
               <a class="cs-hero__quick-link" href="#cs-populares" style="font-weight:700;text-decoration:underline;opacity:.9;">Soluciones populares</a>
@@ -246,7 +244,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <p class="section-heading__eyebrow">¿Prefieres el buscador?</p>
             <h2>También puedes buscar directamente por producto</h2>
           </div>
-          <a class="btn-secondary" href="buscador.html">Ir al buscador de productos</a>
+          <a class="btn-secondary" href="index.html">Ir al buscador de productos</a>
         </div>
       </section>
     </main>
@@ -278,48 +276,27 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <a href="https://www.instagram.com/orenciomatas/" aria-label="Instagram">◎</a>
           </div>
         </div>
-        <nav class="site-footer__column" aria-label="Navegación del footer">
-          <h2>Navegación</h2>
-          <ul>
-            <li><a href="index.html">Inicio</a></li>
-            <li><a href="empresa.html">Empresa</a></li>
-            <li><a href="historia.html">Historia</a></li>
-            <li><a href="productos.html">Productos</a></li>
-            <li><a href="escaparate-campanas.html">Exposición</a></li>
-            <li><a href="centro-soluciones.html">Centro de Soluciones</a></li>
-            <li><a href="anuncios.html">Anuncios/Recursos</a></li>
-              <li><a href="profesionales.html">Profesionales</a></li>
-            <li><a href="servicios.html">Servicios</a></li>
-            <li><a href="actualidad.html">Actualidad</a></li>
-            <li><a href="index.html#contacto">Contacto</a></li>
-          </ul>
-        </nav>
-        <nav class="site-footer__column" aria-label="Servicios del footer">
-          <h2>Servicios</h2>
-          <ul>
-            <li><a href="productos.html">Droguería profesional</a></li>
-            <li><a href="productos.html">Pinturas carrocería</a></li>
-            <li><a href="productos.html">Perfumería</a></li>
-            <li><a href="productos.html">Suministros taller</a></li>
-            <li><a href="servicios.html">Distribución</a></li>
-          </ul>
-        </nav>
+
         <div class="site-footer__column site-footer__contact">
           <h2>Contacto rápido</h2>
           <address>
-            <span>Av. Alfred Nobel, 2<br />13005 Ciudad Real</span>
-            <a href="tel:+34926221217">926 221 217</a>
-            <a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a>
+            <p>Av. Alfred Nobel, 2<br />13005 Ciudad Real<br /><a href="tel:+34926221217">926 221 217</a><br /><a href="mailto:correo@orenciomatas.es">correo@orenciomatas.es</a></p>
           </address>
         </div>
+
+        <div class="site-footer__column site-footer__schedule">
+          <h2>Horario</h2>
+          <p>Lunes a Viernes<br />9:00 – 14:00 y 16:30 – 19:30<br />Sábados: 9:00 – 14:00<br />Domingos: Cerrado</p>
+        </div>
       </div>
+
       <div class="site-footer__bottom">
         <div class="container site-footer__bottom-inner">
           <p>© <span class="current-year">2026</span> Orencio Matas y Hnos, S.L. Todos los derechos reservados.</p>
           <nav aria-label="Enlaces legales">
-            <a href="politica-privacidad.html">Política de Privacidad</a>
-            <a href="aviso-legal.html">Aviso Legal</a>
-            <a href="politica-cookies.html">Cookies</a>
+            <a href="./politica-privacidad.html">Política de Privacidad</a>
+            <a href="./aviso-legal.html">Aviso Legal</a>
+            <a href="./politica-cookies.html">Cookies</a>
           </nav>
         </div>
       </div>
