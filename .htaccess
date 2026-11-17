@@ -18,6 +18,21 @@ DirectoryIndex index.html
     RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 </IfModule>
 
+# Reestructuración (feature/web-reestructuracion): el buscador pasa a
+# ser la página de inicio (antes index.html, ahora el contenido de lo
+# que era buscador.html) — se redirige la URL antigua a la raíz en vez
+# de dejarla como página duplicada, para consolidar en "/" el
+# posicionamiento que ya tenía /buscador.html. Sin "?" en el destino,
+# mod_rewrite añade automáticamente el query string original (p.ej.
+# ?ref=... de los enlaces para compartir producto, ya generados en
+# producción) — no hace falta la bandera QSA. Los fragmentos "#..."
+# nunca llegan al servidor, los conserva el propio navegador al
+# seguir la redirección.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^buscador\.html$ / [R=301,L]
+</IfModule>
+
 # Redirigir /defaultsite (y subpáginas antiguas indexadas) a la raíz
 RedirectMatch 301 ^/defaultsite(/?.*)$ /$1
 

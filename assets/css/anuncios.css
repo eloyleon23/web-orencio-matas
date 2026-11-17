@@ -172,7 +172,9 @@
 }
 .an-pin-error { color: var(--primary-red); font-size: .82rem; min-height: 18px; }
 .an-btn { border: none; border-radius: 8px; padding: 9px 18px; font-size: .88rem; font-weight: 700; cursor: pointer; }
-.an-btn--primario { background: var(--primary-red); color: #fff; }
+/* Azul, no rojo: son acciones normales (Entrar, Guardar), no de
+   advertencia — el rojo se reserva para .an-btn--peligro (Eliminar). */
+.an-btn--primario { background: var(--primary-blue); color: #fff; }
 .an-btn--secundario { background: #f1f1f1; color: #555; }
 .an-btn--peligro { background: #fde8e8; color: #b91c1c; }
 .an-btn[disabled] { opacity: .55; cursor: not-allowed; }

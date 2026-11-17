@@ -894,7 +894,9 @@
   margin: 0 0 16px 0;
 }
 .modal-producto-precio { margin-bottom: 20px; }
-.modal-producto-precio-con { font-size: 1.8rem; font-weight: 700; color: var(--primary-red); }
+/* A petición de Eloy: negro por defecto, rojo solo con oferta/descuento
+   (ver .precio-con-oferta más abajo) — antes era siempre rojo. */
+.modal-producto-precio-con { font-size: 1.8rem; font-weight: 700; color: var(--text-dark); }
 .modal-producto-precio-sin { font-size: 0.9rem; color: var(--text-muted); margin-top: 4px; }
 .modal-producto-detalles p { margin: 8px 0; color: var(--text-gray); font-size: 0.95rem; }
 .modal-producto-detalles strong { color: var(--text-dark); }
@@ -942,12 +944,12 @@
   height: 48px;
   border: none;
   border-radius: 50%;
-  background: var(--primary-red);
+  background: var(--primary-blue);
   color: #ffffff;
   font-size: 1.3rem;
   font-weight: 900;
   cursor: pointer;
-  box-shadow: 0 10px 26px rgba(217, 27, 27, 0.35);
+  box-shadow: 0 10px 26px rgba(0, 109, 174, 0.35);
   opacity: 0;
   transform: translateY(12px);
   pointer-events: none;
@@ -959,7 +961,7 @@
   transform: translateY(0);
   pointer-events: auto;
 }
-.cs-btn-subir:hover { background: color-mix(in srgb, var(--primary-red) 86%, #000000); }
+.cs-btn-subir:hover { background: color-mix(in srgb, var(--primary-blue) 86%, #000000); }
 @media (max-width: 640px) {
   .cs-btn-subir { right: 14px; bottom: 14px; width: 44px; height: 44px; font-size: 1.15rem; }
 }
@@ -1209,12 +1211,14 @@
   display: flex; align-items: center; justify-content: center;
   width: 38px; height: 38px;
   border-radius: 50%;
-  background: var(--primary-red);
+  /* Azul, no rojo — a petición de Eloy, mismo criterio ya aplicado al
+     resto de botones/acentos de acción del sitio. */
+  background: var(--primary-blue);
   color: var(--primary-white);
   font-family: var(--font-heading);
   font-weight: 900;
   font-size: 0.95rem;
-  box-shadow: 0 6px 14px rgba(217, 27, 27, 0.24);
+  box-shadow: 0 6px 14px rgba(0, 109, 174, 0.24);
 }
 .cs-timeline__titulo { margin-bottom: 4px; font-size: 1.05rem; font-weight: 800; color: var(--text-dark); }
 .cs-timeline__texto { margin-bottom: 8px; color: var(--text-gray); line-height: 1.45; font-size: 0.94rem; }
@@ -1353,7 +1357,9 @@
 .cs-producto-card__nombre { margin-bottom: 6px; font-weight: 800; color: var(--text-dark); line-height: 1.3; overflow-wrap: break-word; }
 .cs-producto-card__formato { margin-bottom: 6px; color: var(--text-muted); font-size: 0.82rem; }
 .cs-producto-card__ref { margin-bottom: 10px; color: var(--text-muted); font-size: 0.76rem; font-family: monospace; overflow-wrap: break-word; }
-.cs-producto-card__precio { color: var(--primary-red); font-weight: 900; font-size: 1.15rem; }
+/* A petición de Eloy: negro por defecto, rojo solo con oferta/descuento
+   (ver .precio-con-oferta) — antes era siempre rojo. */
+.cs-producto-card__precio { color: var(--text-dark); font-weight: 900; font-size: 1.15rem; }
 .cs-producto-card__precio--consultar,
 .producto-sin-precio {
   font-size: 0.78rem;
@@ -1361,6 +1367,10 @@
   font-style: italic;
   font-weight: 500;
 }
+/* !important: se reutiliza en dos clases base distintas
+   (.cs-producto-card__precio y .modal-producto-precio-con) — sin esto,
+   el orden de aparición en la hoja decidiría cuál gana. */
+.precio-con-oferta { color: var(--primary-red) !important; }
 /* Etiqueta "Precio al por mayor" — mismo criterio que en buscador.html/
    escaparate.html (ver renderTarjetaProductoCatalogo/solucion-detalle.js):
    la duda principal de los profesionales es si el precio que ven es el
@@ -1655,7 +1665,7 @@
 .cs-recurso-descargable__descargar {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 8px 16px; border-radius: 99px;
-  background: var(--primary-red); color: #fff;
+  background: var(--primary-blue); color: #fff;
   font-size: 0.85rem; font-weight: 700; text-decoration: none;
 }
 .cs-recurso-descargable__descargar:hover { filter: brightness(1.08); }
@@ -1684,7 +1694,7 @@
 .cs-lightbox-descargar-btn {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 10px 22px; border-radius: 99px;
-  background: var(--primary-red); color: #fff;
+  background: var(--primary-blue); color: #fff;
   font-size: 0.9rem; font-weight: 700; text-decoration: none;
 }
 .cs-lightbox-descargar-btn:hover { filter: brightness(1.08); }
@@ -1778,10 +1788,10 @@
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
-.cs-calc-cloro-modo-btn:hover { border-color: var(--primary-red); }
+.cs-calc-cloro-modo-btn:hover { border-color: var(--primary-blue); }
 .cs-calc-cloro-modo-btn.is-active {
-  background: var(--primary-red);
-  border-color: var(--primary-red);
+  background: var(--primary-blue);
+  border-color: var(--primary-blue);
   color: var(--primary-white);
 }
 .cs-calc-cloro-campos-medidas { grid-template-columns: repeat(3, 1fr); }
@@ -1930,7 +1940,9 @@
   font-family: inherit; font-size: 13.5px; font-weight: 600; padding: 10px 18px;
   border-radius: 99px; border: 1px solid transparent; cursor: pointer;
 }
-.cs-gestion-btn--primario { background: #d91b1b; color: #fff; }
+/* Azul, no rojo: son acciones normales (Entrar, Guardar guía), no de
+   advertencia — el rojo se reserva para .cs-gestion-btn--peligro. */
+.cs-gestion-btn--primario { background: var(--primary-blue); color: #fff; }
 .cs-gestion-btn--primario:disabled { opacity: .5; cursor: not-allowed; }
 .cs-gestion-btn--peligro { background: none; border-color: #c81e1e; color: #c81e1e; }
 .cs-gestion-btn--peligro:disabled { opacity: .4; cursor: not-allowed; }

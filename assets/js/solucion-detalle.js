@@ -172,7 +172,7 @@
     if (metaDesc) metaDesc.setAttribute('content', seoDescription);
 
     // Canonical y Open Graph por guía — mismo criterio que ya usa el
-    // resto del sitio (buscador.html, escaparate.html, etc.): cada URL
+    // resto del sitio (index.html, escaparate.html, etc.): cada URL
     // real e indexable (aquí, cada ?slug=) declara su propio canonical
     // apuntando siempre al dominio de producción, para que Google trate
     // cada solución como una página distinta con su propio contenido,
@@ -1130,6 +1130,7 @@
         precioCon: null,
         precioSin: null,
         mostrarPrecio: false,
+        oferta: false,
         fichaTecnica: mock.fichaTecnica || null,
       };
     }
@@ -1139,7 +1140,7 @@
     // de celda tipado como NÚMERO en el Sheet se convierte con
     // Number.toString(), que siempre usa punto, sin importar el
     // idioma). Se deja esta normalización aquí también como red de
-    // seguridad, igual que ya hace buscador.html en todos los sitios
+    // seguridad, igual que ya hace index.html en todos los sitios
     // donde muestra un precio.
     const formatearPrecio_ = (valor) => {
       if (!valor) return valor;
@@ -1147,7 +1148,7 @@
       return isNaN(num) ? valor : num.toFixed(2).replace('.', ',');
     };
     // Perfil profesional: precio al por mayor siempre, en vez del PVP —
-    // mismo criterio que buscador.html (precioAMostrar_). No depende de
+    // mismo criterio que index.html (precioAMostrar_). No depende de
     // mostrar_precio (ese flag solo gobierna el PVP público).
     const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
     const tieneMayor = esProfesional && real.precio_mayor_con;
@@ -1174,6 +1175,11 @@
       precioCon: mostrarPrecioFinal ? precioConFormateado : null,
       precioSin: mostrarPrecioFinal ? precioSinFormateado : null,
       mostrarPrecio: mostrarPrecioFinal,
+      // A petición de Eloy: el precio se ve en negro salvo que el
+      // producto tenga oferta activa, en cuyo caso se mantiene en rojo
+      // (ver .precio-con-oferta en soluciones.css) — mismo criterio que
+      // index.html (construirContenidoTarjeta_).
+      oferta: !!real.oferta,
       // Perfil profesional, con precio al por mayor realmente aplicado
       // (no solo "hay sesión profesional" — si el producto no tiene
       // precio mayor configurado, cae al PVP y esto debe quedar en
@@ -1184,7 +1190,7 @@
       // propio enlace a ficha técnica editado (campo ficha_url, ver
       // procesarActualizarFichaUrl en Apps Script), ese enlace manda
       // siempre sobre el de los datos de ejemplo de la guía (mock) —
-      // mismo criterio que ya aplica buscador.html.
+      // mismo criterio que ya aplica index.html.
       fichaTecnica: real.ficha_url || mock.fichaTecnica || null,
     };
   }
@@ -1207,7 +1213,7 @@
           <div class="cs-producto-card__nombre">${p.nombre}</div>
           ${p.formato ? `<div class="cs-producto-card__formato">Formato: ${p.formato}</div>` : ''}
           ${p.ref ? `<div class="cs-producto-card__ref">Ref: ${p.ref}</div>` : ''}
-          <div class="cs-producto-card__precio${p.mostrarPrecio ? '' : ' cs-producto-card__precio--consultar'}">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
+          <div class="cs-producto-card__precio${p.mostrarPrecio ? '' : ' cs-producto-card__precio--consultar'}${p.mostrarPrecio && p.oferta ? ' precio-con-oferta' : ''}">${p.mostrarPrecio ? p.precio : 'Consultar precio y disponibilidad'}</div>
           ${p.esMayor ? `<span class="precio-mayor-etiqueta">Precio al por mayor</span>` : ''}
         </button>
       `;
@@ -1262,7 +1268,7 @@
     let precioHtml = '';
     if (p.esReal) {
       if (p.mostrarPrecio && p.precioCon) {
-        precioHtml = `<div class="modal-producto-precio-con">${p.precioCon} €</div>`;
+        precioHtml = `<div class="modal-producto-precio-con${p.oferta ? ' precio-con-oferta' : ''}">${p.precioCon} €</div>`;
         if (p.precioSin) precioHtml += `<div class="modal-producto-precio-sin">${p.precioSin} € sin IVA</div>`;
         if (p.esMayor) precioHtml += `<div class="precio-mayor-etiqueta">Precio al por mayor</div>`;
       } else {
@@ -1278,7 +1284,7 @@
 
     const btnBuscador = $('#modal-producto-verbuscador');
     if (p.ref) {
-      btnBuscador.href = `../buscador.html?ref=${encodeURIComponent(p.ref)}`;
+      btnBuscador.href = `../index.html?ref=${encodeURIComponent(p.ref)}`;
       btnBuscador.style.display = '';
     } else {
       btnBuscador.style.display = 'none';

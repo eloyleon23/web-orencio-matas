@@ -157,7 +157,7 @@
         wireBotonPedirIA(texto);
         // Se registra solo cuando la búsqueda ya se considera "asentada"
         // (pausa larga o confirmación explícita) — igual que el 600ms de
-        // buscador.html, para no generar un evento por cada tecla
+        // index.html, para no generar un evento por cada tecla
         // mientras la persona todavía está escribiendo.
         Analitica.trackSolutionSearch(texto, 'hero', encontradas.length + (fichaDirecta ? 1 : 0));
       }
@@ -172,7 +172,7 @@
     // única disponible). Nunca se dispara sola por un simple debounce.
     // ── Espera con mensajes progresivos para las llamadas a la IA ──
     // A petición de Eloy (mismo patrón ya aplicado y aprobado en
-    // buscador.html): cortar a los 15s se quedaba corto en pruebas
+    // index.html): cortar a los 15s se quedaba corto en pruebas
     // reales — en vez de un corte automático "normal", se informa por
     // fases cada 15s de que se sigue trabajando, y es el propio usuario
     // quien decide si cancelar o seguir esperando. Queda un límite de
@@ -553,7 +553,7 @@
     function cerrarModalIA() {
       const overlay = $('#cs-ia-modal-overlay');
       if (overlay) overlay.style.display = 'none';
-      // A petición de Eloy (mismo patrón de buscador.html): cerrar el
+      // A petición de Eloy (mismo patrón de index.html): cerrar el
       // modal por cualquier vía (X, click fuera, Escape, "atrás" del
       // navegador) cancela también la petición en curso, si la hay —
       // nunca se deja una llamada a la IA viva en segundo plano sin que
@@ -869,7 +869,7 @@
       resultado.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
       D.buscarProductosEnCatalogo(textoOriginal).then((productos) => {
-        const urlBuscador = `buscador.html?q=${encodeURIComponent(textoOriginal)}`;
+        const urlBuscador = `index.html?q=${encodeURIComponent(textoOriginal)}`;
         if (!productos.length) {
           resultado.innerHTML = `
             <p class="cs-diagnostico-resultado__titulo">🔍 Sin guía específica todavía</p>
@@ -906,7 +906,7 @@
   // listener distinto en cada punto donde se pinta una tarjeta.
   function renderTarjetaProductoCatalogo(p, contexto) {
     // Perfil profesional: precio al por mayor siempre, en vez del PVP —
-    // mismo criterio que buscador.html/solucion-detalle.js.
+    // mismo criterio que index.html/solucion-detalle.js.
     const esProfesional = window.PerfilProfesional && window.PerfilProfesional.sesionActiva();
     const tieneMayor = esProfesional && p.precio_mayor_con;
     const precioReal = tieneMayor || (p.mostrar_precio && p.precio_con);
@@ -916,7 +916,7 @@
     const areaLabel = NOMBRES_AREA[p.area] || p.area || '';
     const ctx = contexto || {};
     return `
-      <a class="cs-producto-card" href="buscador.html?ref=${encodeURIComponent(p.ref)}"
+      <a class="cs-producto-card" href="index.html?ref=${encodeURIComponent(p.ref)}"
          data-cs-ref="${encodeURIComponent(p.ref)}" data-cs-nombre="${encodeURIComponent(p.nombre || '')}"
          data-cs-interaction-id="${ctx.interactionId || ''}" data-cs-recommendation-type="${ctx.recommendationType || ''}">
         <div class="cs-producto-card__imagen-wrap">
@@ -1163,7 +1163,7 @@
     let q = BUSQUEDAS_SUGERIDAS[titulo] || fallbackArea[areaId] || titulo;
     // Algunos productos (p. ej. acetona) están en otra área distinta a la lógica del desplegable.
     if (titulo === 'Quitar silicona') area = 'pinturas';
-    return area ? `buscador.html?q=${encodeURIComponent(q)}&area=${area}` : `buscador.html?q=${encodeURIComponent(q)}`;
+    return area ? `index.html?q=${encodeURIComponent(q)}&area=${area}` : `index.html?q=${encodeURIComponent(q)}`;
   }
 
   function renderAreas(filtro) {

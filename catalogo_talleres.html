@@ -171,7 +171,8 @@
             align-items: center;
             gap: 8px;
             padding: 12px 24px;
-            background: var(--red);
+            /* Azul, no rojo — a petición de Eloy, mismo criterio ya aplicado al resto de botones de acción del sitio (y ya usado en .btn-download de esta misma página). */
+            background: var(--blue);
             color: var(--white);
             text-decoration: none;
             border-radius: 8px;
@@ -181,9 +182,9 @@
         }
 
         .btn-mobile-pdf:hover {
-            background: #c62828;
+            background: #1565c0;
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(211, 47, 47, 0.3);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
         }
 
         .catalog-actions {
@@ -238,7 +239,7 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="./src/css/navbar.css?v=20261104" />
+    <link rel="stylesheet" href="./src/css/navbar.css?v=20261117b" />
 <!-- Google tag (gtag.js) -->
 <script>
   // Ver nota en el bloque de Google Tag Manager: solo en el dominio
@@ -262,7 +263,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <header class="main-header">
     <a href="productos.html" class="btn-back-home">
-        <i class="fa-solid fa-arrow-left"></i> Volver a Productos
+        <i class="fa-solid fa-arrow-left"></i> Volver a Catálogos
     </a>
 </header>
 
@@ -291,7 +292,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             <div id="no-catalogo-interno" style="text-align:center;padding:40px 20px;background:white;border-radius:12px;border:1px solid #e2e8f0;display:none">
                 <i class="fa-solid fa-clock" style="font-size:2rem;color:#64748b;margin-bottom:12px;display:block"></i>
                 <p style="color:#64748b;">El catálogo interno está siendo preparado.<br>
-                <a href="index.html#contacto" style="color:#d91b1b;font-weight:600;">Solicitar información</a></p>
+                <a href="quienes-somos.html#contacto" style="color:#d91b1b;font-weight:600;">Solicitar información</a></p>
             </div>
 
             <div id="preview-interno" style="display:none">
@@ -326,7 +327,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <p style="font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin:0 0 14px;">Una muestra de lo que encontrarás</p>
                     <div id="catalogo-preview-grid-interno" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;text-align:left;margin-bottom:20px;"></div>
 
-                    <a id="btn-ver-buscador" href="./buscador.html?area=talleres" class="btn-download"
+                    <a id="btn-ver-buscador" href="./index.html?area=talleres" class="btn-download"
                        style="display:inline-flex;align-items:center;gap:10px;font-size:0.95rem;padding:12px 24px;background:transparent;color:var(--blue, #1976d2);border:2px solid var(--blue, #1976d2);">
                         <i class="fa-solid fa-magnifying-glass"></i> Ver en el buscador de productos
                     </a>
@@ -394,7 +395,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 
 
-<link rel="stylesheet" href="./src/css/navbar.css?v=20261104" />
+<link rel="stylesheet" href="./src/css/navbar.css?v=20261117b" />
 <script src="./src/js/navbar-secondary.js"></script>
 <script>
 (function() {
