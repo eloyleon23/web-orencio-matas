@@ -1005,7 +1005,8 @@
          cambia con el color de cada campaña, y con un primario
          personalizado claro este botón (usa para "Guardar productos",
          entre otros) podía volverse igual de ilegible. */
-      .btn.primary{ background:var(--primary-red, #d91b1b); color:#fff; }
+      /* Azul, no rojo — a petición de Eloy, mismo criterio ya aplicado al resto de botones de acción del sitio. */
+      .btn.primary{ background:var(--primary-blue, #006dae); color:#fff; }
       .btn.primary:disabled{ opacity:.45; cursor:not-allowed; }
       .btn.ghost{ background:none; border-color:var(--line-strong); color:var(--ink-soft); }
       .btn.danger-ghost{ background:none; border:1px solid #C81E1E; color:#C81E1E; }
@@ -1042,14 +1043,16 @@
       .btn-volver-arriba{
         position:fixed; left:20px; bottom:20px; z-index:10000;
         width:48px; height:48px; border:none; border-radius:50%;
-        background:var(--primary-red, #d91b1b); color:#fff;
+        /* Azul, no rojo — a petición de Eloy, mismo criterio ya aplicado
+           al resto de botones de acción del sitio. */
+        background:var(--primary-blue, #006dae); color:#fff;
         font-size:1.3rem; font-weight:900; cursor:pointer;
-        box-shadow:0 10px 26px rgba(217,27,27,.35);
+        box-shadow:0 10px 26px rgba(0,109,174,.35);
         opacity:0; transform:translateY(12px); pointer-events:none;
         transition:opacity .25s ease, transform .25s ease, background .2s ease, bottom .2s ease;
       }
       .btn-volver-arriba.is-visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
-      .btn-volver-arriba:hover{ background:color-mix(in srgb, var(--primary-red, #d91b1b) 86%, #000); }
+      .btn-volver-arriba:hover{ background:color-mix(in srgb, var(--primary-blue, #006dae) 86%, #000); }
       @media (max-width:640px){
         .btn-volver-arriba{ left:14px; bottom:14px; width:44px; height:44px; font-size:1.15rem; }
       }
