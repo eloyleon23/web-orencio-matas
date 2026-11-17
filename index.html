@@ -15726,6 +15726,45 @@ if (window.OM_PREPRODUCCION) {
             familias.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
     }
 
+    // Mismos criterios de "diccionario" (abreviaturas/sinónimos, ver
+    // ABREVIATURAS_CATALOGO/SINONIMOS_CATALOGO) y la misma cobertura de
+    // campos que ya usa el buscador general (ver aplicarFiltros): no
+    // solo nombre/referencia, también familia/subfamilia, el reparto
+    // entre campos para búsquedas de varias palabras, y el mismo
+    // fallback de coincidencias aproximadas cuando la búsqueda estricta
+    // no encuentra nada — a petición explícita de Eloy, para que
+    // buscar un producto aquí dentro (al añadir/excluir de una
+    // temporada) encuentre lo mismo que ya encuentra el buscador
+    // principal de la página.
+    function temporadaBuscarEnCatalogo_(texto, area, familia) {
+        const pasaFiltrosNoTexto_ = (p) => {
+            if (!estaActivoEnCatalogo_(p)) return false;
+            if (area && p.area !== area) return false;
+            if (familia && p.familia !== familia) return false;
+            return true;
+        };
+        let resultados = TODOS.filter(pasaFiltrosNoTexto_);
+        if (texto) {
+            resultados = esBusquedaNumerica(texto)
+                ? resultados.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
+                : resultados.filter(p => {
+                    let coincideTexto = coincide(p.nombre, texto) || coincide(p.ref, texto) ||
+                        coincide(p.familia, texto) || coincide(p.subfamilia, texto);
+                    // Fallback para búsquedas de varias palabras repartidas
+                    // entre nombre y familia/subfamilia — mismo motivo que
+                    // en aplicarFiltros (ver su comentario).
+                    if (!coincideTexto && texto.trim().includes(' ')) {
+                        coincideTexto = coincide(`${p.nombre || ''} ${p.familia || ''} ${p.subfamilia || ''}`, texto);
+                    }
+                    return coincideTexto;
+                });
+            if (!resultados.length) {
+                resultados = buscarCoincidenciasAproximadas_(texto, pasaFiltrosNoTexto_);
+            }
+        }
+        return resultados;
+    }
+
     function temporadaBuscarExcluirYRenderizar_() {
         const texto = ($('temporadas-excluir-buscar-texto').value || '').trim();
         const area = $('temporadas-excluir-buscar-area').value;
@@ -15741,14 +15780,7 @@ if (window.OM_PREPRODUCCION) {
         }
         const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
         const refsYaExcluidas = new Set(t ? (t.excluidas || []) : []);
-        let resultadosCompletos = TODOS.filter(p => estaActivoEnCatalogo_(p));
-        if (area) resultadosCompletos = resultadosCompletos.filter(p => p.area === area);
-        if (familia) resultadosCompletos = resultadosCompletos.filter(p => p.familia === familia);
-        if (texto) {
-            resultadosCompletos = esBusquedaNumerica(texto)
-                ? resultadosCompletos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
-                : resultadosCompletos.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
-        }
+        let resultadosCompletos = temporadaBuscarEnCatalogo_(texto, area, familia);
         temporadaExcluirPendientesCompletos_ = resultadosCompletos.filter(p => !refsYaExcluidas.has(p.ref));
         const resultados = resultadosCompletos.slice(0, 40);
         if (!resultados.length) {
@@ -15872,14 +15904,7 @@ if (window.OM_PREPRODUCCION) {
         }
         const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
         const refsYaIncluidas = new Set(t ? (t.referencias || []) : []);
-        let resultadosCompletos = TODOS.filter(p => estaActivoEnCatalogo_(p));
-        if (area) resultadosCompletos = resultadosCompletos.filter(p => p.area === area);
-        if (familia) resultadosCompletos = resultadosCompletos.filter(p => p.familia === familia);
-        if (texto) {
-            resultadosCompletos = esBusquedaNumerica(texto)
-                ? resultadosCompletos.filter(p => coincideReferencia(p.ref, texto) || coincide(p.nombre, texto))
-                : resultadosCompletos.filter(p => coincide(p.nombre, texto) || coincide(p.ref, texto));
-        }
+        let resultadosCompletos = temporadaBuscarEnCatalogo_(texto, area, familia);
         // Todo lo que coincide con el filtro y aún no está incluido — no
         // solo lo pintado abajo (limitado a 40 filas por rendimiento) —
         // para que "Añadir todos los resultados" añada de verdad TODO lo
