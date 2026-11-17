@@ -495,10 +495,12 @@
 }
 
 .site-footer__column a,
-.site-footer__contact span {
+.site-footer__contact span,
+.site-footer__contact p {
   color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.55;
+  margin: 0;
 }
 
 .site-footer__column a {
