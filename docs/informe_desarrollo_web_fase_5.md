@@ -149,18 +149,18 @@ Continuación del registro, búsqueda y validación de imágenes de producto, co
 
 Epica / Tarea                                                     | Horas
 -------------------------------------------------------------------|------
-Espacio Creativo: suite de minijuegos, hub y estadísticas de uso    | 34 h
-Buscador: diccionario de sinónimos, productos de temporada y rendimiento | 12 h
-Gestión de temporadas de producto (modal, folleto PDF y rendimiento) | 11 h
-Perfil profesional: acceso ágil, distintivo y precio al por mayor   | 9 h
-Sincronización con el CRM: corrección de fallos críticos y refuerzo | 9 h
+Espacio Creativo: suite de minijuegos, hub y estadísticas de uso    | 9 h
+Buscador: diccionario de sinónimos, productos de temporada y rendimiento | 2 h
+Gestión de temporadas de producto (modal, folleto PDF y rendimiento) | 5 h
+Perfil profesional: acceso ágil, distintivo y precio al por mayor   | 11 h
+Sincronización con el CRM: corrección de fallos críticos y refuerzo | 2 h
 Reestructuración del sitio y unificación visual                      | 7 h
-Etiquetas de precio físicas con código QR (nueva funcionalidad)      | 8 h
-Carrito / Lista de la compra: formatos, estadísticas y folleto       | 8 h
-Gestión de imágenes de producto (perfumería, especial atención a colonias) | 4 h
-Otras mejoras (SEO, anuncios/recursos, ficha de producto, panel)     | 4 h
+Etiquetas de precio físicas con código QR (nueva funcionalidad)      | 4 h
+Carrito / Lista de la compra: formatos, estadísticas y folleto       | 4 h
+Gestión de imágenes de producto (perfumería, especial atención a colonias) | 3 h
+Otras mejoras (SEO, anuncios/recursos, ficha de producto, panel)     | 2 h
 -------------------------------------------------------------------|------
-TOTAL                                                                 | 106 h
+TOTAL                                                                 | 49 h
 
 12. OBSERVACIONES Y ESTADO ACTUAL
 
