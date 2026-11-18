@@ -13852,25 +13852,32 @@ if (window.OM_PREPRODUCCION) {
             const idx = lista.findIndex(x => x.id === id);
             const destino = direccion === 'arriba' ? idx - 1 : idx + 1;
             if (idx === -1 || destino < 0 || destino >= lista.length) return;
-            const tmp = lista[idx];
-            lista[idx] = lista[destino];
-            lista[destino] = tmp;
+            const a = lista[idx];
+            const b = lista[destino];
 
-            for (let i = 0; i < lista.length; i++) {
-                const t = lista[i];
-                // Mismo motivo que el comentario de temporadaGuardarMeta_
-                // sobre "orden": guardar_temporada no hace un merge
-                // parcial, así que cualquier campo que no se mande aquí
-                // se pierde para TODAS las temporadas en cada reordenado,
-                // no solo la movida. Faltaba "emoji" — se perdía al
-                // reordenar, aunque la propia temporada no se hubiera
-                // tocado desde el editor.
-                await temporadaFetchPost_({
-                    accion: 'guardar_temporada', pin: temporadaPin_, id: t.id,
-                    nombre: t.nombre, emoji: t.emoji, permanente: t.permanente, fechaInicio: t.fechaInicio, fechaFin: t.fechaFin,
-                    activa: t.activa, orden: i,
-                });
-            }
+            // Antes se reenviaban las N temporadas completas, una petición
+            // POST tras otra esperando cada una (await dentro de un
+            // bucle), solo para intercambiar DOS posiciones — con varias
+            // temporadas, un solo reordenado tardaba minutos. Bug real de
+            // rendimiento reportado por Eloy: "debería ser casi
+            // instantáneo". Ahora solo se tocan las DOS temporadas que de
+            // verdad cambian, en paralelo (Promise.all, no una tras otra),
+            // usando su posición en la lista ordenada (idx/destino) como
+            // nuevo "orden" — igual que habría asignado el bucle anterior
+            // a esas dos posiciones concretas, sin depender de que el
+            // "orden" ya guardado de cada una fuera único de antemano.
+            await Promise.all([
+                temporadaFetchPost_({
+                    accion: 'guardar_temporada', pin: temporadaPin_, id: a.id,
+                    nombre: a.nombre, emoji: a.emoji, permanente: a.permanente, fechaInicio: a.fechaInicio, fechaFin: a.fechaFin,
+                    activa: a.activa, orden: destino,
+                }),
+                temporadaFetchPost_({
+                    accion: 'guardar_temporada', pin: temporadaPin_, id: b.id,
+                    nombre: b.nombre, emoji: b.emoji, permanente: b.permanente, fechaInicio: b.fechaInicio, fechaFin: b.fechaFin,
+                    activa: b.activa, orden: idx,
+                }),
+            ]);
             await temporadaRecargarListadoAdmin_();
         } finally {
             temporadaMoviendoId_ = null;
