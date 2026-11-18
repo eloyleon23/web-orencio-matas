@@ -11,7 +11,7 @@
 // Viaja en la respuesta de obtener_productos (ver version_backend) para
 // que buscador.html pueda avisar si lo que ve en vivo no es lo último
 // que se desplegó — ver comprobarVersionBackend_ en buscador.html.
-const VERSION_BACKEND = '2026-11-12-onedit-sincroniza-cache';
+const VERSION_BACKEND = '2026-11-18-crm-fecha-alta-contador-actualizados';
 
 // ── Configuración ──────────────────────────────────────────────────────────
 const GITHUB_TOKEN        = 'TU_GITHUB_TOKEN_AQUI';
@@ -449,7 +449,7 @@ function sincronizarRegistroProductos(opciones) {
   if (lastRow < 2) { avisar_('Aviso', 'RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return { error: 'RegistroProductos sin datos' }; }
 
   const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
-  let nuevos = 0, actualizados = 0, saltados = 0, errores = 0, reactivados = 0;
+  let nuevos = 0, actualizados = 0, saltados = 0, errores = 0, reactivados = 0, sinCambios = 0;
   const productosNuevos = [];
   const productosReactivados = [];
   const productosConError = [];
@@ -513,7 +513,21 @@ function sincronizarRegistroProductos(opciones) {
     const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
     const precioMayorConIva = Math.round(precioMayorSinIva * (1 + iva / 100) * 100) / 100;
     const familia      = fila[COL['Familia']] ? fila[COL['Familia']].toString().trim() : '';
-    const fechaAlta     = COL['FechaAlta'] !== undefined ? fila[COL['FechaAlta']] : '';
+    // Bug real detectado (18/11/2026): FechaAlta llega del Excel como un
+    // objeto Date de verdad (no texto) — sin formatear, la comparación de
+    // más abajo (prodRow[...].toString() != val.toString()) comparaba el
+    // texto ya guardado en la hoja (p.ej. "10/11/2025") contra el
+    // resultado de Date.prototype.toString() (algo como "Thu Oct 24 2024
+    // 00:00:00 GMT+0000..."), que NUNCA puede coincidir con un texto corto
+    // aunque la fecha fuera exactamente la misma — forzaba "cambios=true"
+    // en casi todas las filas (confirmado: 7113 de 7194 productos
+    // recibían fecha_registro de hoy en una sincronización real), e
+    // inflaba igualmente el contador de "Actualizados" de más abajo.
+    const fechaAlta = (COL['FechaAlta'] !== undefined && fila[COL['FechaAlta']])
+      ? (fila[COL['FechaAlta']] instanceof Date
+          ? Utilities.formatDate(fila[COL['FechaAlta']], SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy')
+          : fila[COL['FechaAlta']].toString().trim())
+      : '';
 
     if (!ean) {
       regProcesado[i] = 'no';
@@ -587,7 +601,19 @@ function sincronizarRegistroProductos(opciones) {
 
         if (cambios && PROD['fecha_registro'] !== undefined) prodRow[PROD['fecha_registro']] = hoy;
 
-        actualizados++;
+        // Bug real detectado (18/11/2026): "actualizados" se incrementaba
+        // para CUALQUIER producto que coincidiera por EAN, hubiera
+        // cambiado algo de verdad o no — con el bug de fecha_alta de
+        // arriba (ya corregido) casi todas las filas forzaban
+        // "cambios=true" aunque no hubiera ningún cambio real, así que el
+        // correo de resumen decía "7194 actualizados" cuando en realidad
+        // casi ninguno tenía un cambio de verdad. Ahora solo cuenta como
+        // "actualizado" lo que de verdad se ha escrito.
+        if (cambios) {
+          actualizados++;
+        } else {
+          sinCambios++;
+        }
         regProcesado[i] = 'si';
         regErrorCol[i]  = '';
 
@@ -637,11 +663,11 @@ function sincronizarRegistroProductos(opciones) {
   // dejando a salvo lo procesado hasta ahora; esta es la última tanda) ──
   guardarProgresoEnLote_();
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Reactivados: ${reactivados} | Saltados: ${saltados} | Errores: ${errores}`,
+    `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Sin cambios: ${sinCambios} | Reactivados: ${reactivados} | Saltados: ${saltados} | Errores: ${errores}`,
     '📥 Sincronización completada', 8
   );
 
-  const resultadoSync = { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError };
+  const resultadoSync = { nuevos, actualizados, reactivados, saltados, sinCambios, errores, productosNuevos, productosReactivados, productosConError };
 
   if (enviarResumenPorCorreo) {
     // Única sincronización de este intento (no viene del correo del CRM):
@@ -10588,6 +10614,56 @@ function configurarTriggerRevisionCorreoProductos() {
 // cero (ver el comentario junto a continuarSiMismoHilo, más abajo).
 const CLAVE_CRM_SYNC_HILO_EN_CURSO_ = 'crm_sync_hilo_en_curso';
 
+// Bug real detectado (18/11/2026): si una ejecución se corta en seco por
+// timeout de Apps Script, ocurre ANTES de llegar a limpiarHiloEnCurso_()
+// (el tiempo máximo mata la ejecución sin pasar por ningún catch — ver el
+// comentario de revisarCorreoListadoProductos), así que la marca se queda
+// grabada PARA SIEMPRE. El CRM reutiliza el mismo asunto en cada envío,
+// así que Gmail agrupa los sucesivos correos en el MISMO hilo de
+// conversación — el correo de un día cualquiera, mucho después, puede
+// coincidir con esa marca antigua y el script cree (equivocado) que es
+// una continuación del intento atascado: se salta por completo limpiar
+// RegistroProductos y volcar el Excel nuevo, y se limita a repetir la
+// sincronización contra lo que ya hubiera — con todo ya marcado
+// "procesado", el resultado es "0 nuevos, 0 actualizados, todo saltado"
+// aunque el Excel de ese día sí traiga altas y cambios de precio reales
+// (confirmado comparando un Excel real contra el catálogo publicado:
+// faltaban 104 altas y al menos un cambio de precio real sin aplicar).
+//
+// Arreglo: la marca ahora lleva también la hora a la que se grabó
+// ("idHilo|timestampMs") y caduca sola pasado este margen — el disparador
+// de revisarCorreoListadoProductos corre cada 2h (ver
+// configurarTriggerRevisionCorreoProductos), así que una continuación
+// legítima de un corte real sigue funcionando en la siguiente pasada,
+// pero la marca ya no puede quedarse viva para siempre.
+const CRM_SYNC_HILO_EN_CURSO_TTL_MS_ = 3 * 60 * 60 * 1000; // 3 horas
+
+// Guarda el id del hilo junto con el instante actual, en el formato que
+// espera leerHiloEnCursoVigente_().
+function escribirHiloEnCurso_(idHilo) {
+  escribirConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, idHilo + '|' + Date.now(),
+    'Id del hilo de Gmail que se está sincronizando ahora mismo (CRM), junto con la hora a la que se grabó (epoch ms) — si una ejecución se corta a medias por tiempo máximo, la siguiente pasada (cada 2h) continúa en vez de volver a empezar de cero, pero la marca caduca sola pasadas ' + (CRM_SYNC_HILO_EN_CURSO_TTL_MS_ / 3600000) + 'h para que un corte antiguo nunca pueda bloquear un envío posterior que resulte agrupado en el mismo hilo de Gmail. Se vacía al terminar con éxito o con un error ya notificado.');
+}
+
+// Lee la marca de "hilo en curso" y la devuelve SOLO si sigue vigente
+// (coincide con el hilo pedido Y no ha caducado) — null en cualquier otro
+// caso (vacía, de otro hilo, o caducada), que es siempre el valor seguro:
+// fuerza a procesarListadoProductosExcel_ a volcar el Excel de cero.
+function leerHiloEnCursoVigente_(idHiloActual) {
+  const valor = (leerConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, '') || '').toString();
+  if (!valor) return false;
+  const separador = valor.lastIndexOf('|');
+  // Compatibilidad con una marca antigua sin el "|timestamp" (formato
+  // previo a este arreglo) — sin forma de saber su antigüedad real, se
+  // trata como caducada, nunca como vigente.
+  if (separador === -1) return false;
+  const idGuardado = valor.slice(0, separador);
+  const timestamp = parseInt(valor.slice(separador + 1), 10);
+  if (idGuardado !== idHiloActual) return false;
+  if (!timestamp || (Date.now() - timestamp) > CRM_SYNC_HILO_EN_CURSO_TTL_MS_) return false;
+  return true;
+}
+
 // Función que ejecuta el disparador periódico. Busca correos del CRM sin
 // procesar todavía (etiqueta CORREO_CRM_ETIQUETA), procesa el más reciente
 // (los correos más antiguos sin procesar quedan superados) y manda el
@@ -10675,9 +10751,8 @@ function revisarCorreoListadoProductos() {
     // continuar, en vez de depender de que esta llegue a terminar para
     // registrarlo.
     const idHiloActual = hiloMasReciente.getId();
-    const continuarSiMismoHilo = leerConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, '') === idHiloActual;
-    escribirConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, idHiloActual,
-      'Id del hilo de Gmail que se está sincronizando ahora mismo (CRM) — si una ejecución se corta a medias por tiempo máximo, la siguiente pasada (cada 2h) continúa en vez de volver a empezar de cero. Se vacía al terminar con éxito o con un error ya notificado.');
+    const continuarSiMismoHilo = leerHiloEnCursoVigente_(idHiloActual);
+    escribirHiloEnCurso_(idHiloActual);
 
     const mensajes = hiloMasReciente.getMessages();
     const ultimoMensaje = mensajes[mensajes.length - 1];
@@ -11049,12 +11124,13 @@ function enviarResumenSincronizacionCRM_(resultado) {
     return;
   }
 
-  const { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError, totalRegistrados } = resultado;
+  const { nuevos, actualizados, reactivados, saltados, sinCambios, errores, productosNuevos, productosReactivados, productosConError, totalRegistrados } = resultado;
 
   let cuerpo = `Resumen de la sincronización automática de productos (${fecha})\n\n`;
   cuerpo += `Productos leídos del Excel: ${totalRegistrados}\n`;
   cuerpo += `Nuevos: ${nuevos}\n`;
   cuerpo += `Actualizados: ${actualizados}\n`;
+  cuerpo += `Sin cambios (ya estaban al día): ${sinCambios || 0}\n`;
   cuerpo += `Reactivados (estaban de baja y han vuelto a aparecer en el listado): ${reactivados || 0}\n`;
   cuerpo += `Saltados (ya procesados o con error previo): ${saltados}\n`;
   cuerpo += `Errores: ${errores}\n\n`;
