@@ -3773,7 +3773,23 @@
             color: var(--muted);
             font-size: 0.9rem;
             margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
+        .modal-producto-ref-copiar {
+            border: none;
+            background: none;
+            color: var(--muted);
+            cursor: pointer;
+            padding: 3px 5px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .modal-producto-ref-copiar:hover { background: var(--light); color: var(--dark); }
+        .modal-producto-ref-copiar.copiado { color: var(--green); }
         .modal-producto-descripcion {
             background: var(--light);
             border-left: 3px solid var(--dark);
@@ -6574,7 +6590,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
             <div class="modal-producto-info">
                 <h3 id="modal-producto-nombre"></h3>
-                <p class="modal-producto-ref" id="modal-producto-ref"></p>
+                <p class="modal-producto-ref">
+                    <span id="modal-producto-ref"></span>
+                    <!-- A petición de Eloy: poder copiar la referencia con
+                         un clic para pegarla donde haga falta, sin tener
+                         que seleccionar el texto a mano. Mismo patrón que
+                         ya usa el botón de "Compartir" (navigator.clipboard,
+                         con window.prompt como último recurso si el
+                         navegador no lo soporta — ver configurarBotonCompartir). -->
+                    <button type="button" id="modal-producto-ref-copiar" class="modal-producto-ref-copiar" title="Copiar referencia" aria-label="Copiar referencia">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                </p>
                 <div id="modal-producto-baja-banner" class="modal-producto-baja-banner" style="display:none;">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                     <span>Este producto está dado de baja desde el <strong id="modal-producto-baja-fecha"></strong>. No es visible para los usuarios del buscador.</span>
@@ -22220,6 +22247,22 @@ if (window.OM_PREPRODUCCION) {
 
         $('modal-producto-nombre').textContent = p.nombre;
         $('modal-producto-ref').textContent = `Ref: ${p.ref}`;
+        const btnCopiarRef_ = $('modal-producto-ref-copiar');
+        btnCopiarRef_.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(p.ref);
+                btnCopiarRef_.classList.add('copiado');
+                btnCopiarRef_.innerHTML = '<i class="fa-solid fa-check"></i>';
+                setTimeout(() => {
+                    btnCopiarRef_.classList.remove('copiado');
+                    btnCopiarRef_.innerHTML = '<i class="fa-solid fa-copy"></i>';
+                }, 1800);
+            } catch (e) {
+                // Último recurso: mostrar la referencia para copiarla a mano
+                // (mismo patrón que configurarBotonCompartir).
+                window.prompt('Copia esta referencia:', p.ref);
+            }
+        };
 
         // Banner de estado: si el producto está dado de baja, se indica
         // claramente con la fecha en la que se dio de baja.
