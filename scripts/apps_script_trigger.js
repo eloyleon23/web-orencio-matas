@@ -11,7 +11,7 @@
 // Viaja en la respuesta de obtener_productos (ver version_backend) para
 // que buscador.html pueda avisar si lo que ve en vivo no es lo último
 // que se desplegó — ver comprobarVersionBackend_ en buscador.html.
-const VERSION_BACKEND = '2026-11-18-ttl-hilo-en-curso-crm';
+const VERSION_BACKEND = '2026-11-18-crm-fecha-alta-contador-actualizados';
 
 // ── Configuración ──────────────────────────────────────────────────────────
 const GITHUB_TOKEN        = 'TU_GITHUB_TOKEN_AQUI';
@@ -449,7 +449,7 @@ function sincronizarRegistroProductos(opciones) {
   if (lastRow < 2) { avisar_('Aviso', 'RegistroProductos no tiene datos. Pega primero el contenido del Excel.'); return { error: 'RegistroProductos sin datos' }; }
 
   const regData = sheetReg.getRange(2, 1, lastRow - 1, regHeaderRow.length).getValues();
-  let nuevos = 0, actualizados = 0, saltados = 0, errores = 0, reactivados = 0;
+  let nuevos = 0, actualizados = 0, saltados = 0, errores = 0, reactivados = 0, sinCambios = 0;
   const productosNuevos = [];
   const productosReactivados = [];
   const productosConError = [];
@@ -513,7 +513,21 @@ function sincronizarRegistroProductos(opciones) {
     const precioConIva = Math.round(precioSinIva * (1 + iva / 100) * 100) / 100;
     const precioMayorConIva = Math.round(precioMayorSinIva * (1 + iva / 100) * 100) / 100;
     const familia      = fila[COL['Familia']] ? fila[COL['Familia']].toString().trim() : '';
-    const fechaAlta     = COL['FechaAlta'] !== undefined ? fila[COL['FechaAlta']] : '';
+    // Bug real detectado (18/11/2026): FechaAlta llega del Excel como un
+    // objeto Date de verdad (no texto) — sin formatear, la comparación de
+    // más abajo (prodRow[...].toString() != val.toString()) comparaba el
+    // texto ya guardado en la hoja (p.ej. "10/11/2025") contra el
+    // resultado de Date.prototype.toString() (algo como "Thu Oct 24 2024
+    // 00:00:00 GMT+0000..."), que NUNCA puede coincidir con un texto corto
+    // aunque la fecha fuera exactamente la misma — forzaba "cambios=true"
+    // en casi todas las filas (confirmado: 7113 de 7194 productos
+    // recibían fecha_registro de hoy en una sincronización real), e
+    // inflaba igualmente el contador de "Actualizados" de más abajo.
+    const fechaAlta = (COL['FechaAlta'] !== undefined && fila[COL['FechaAlta']])
+      ? (fila[COL['FechaAlta']] instanceof Date
+          ? Utilities.formatDate(fila[COL['FechaAlta']], SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone(), 'dd/MM/yyyy')
+          : fila[COL['FechaAlta']].toString().trim())
+      : '';
 
     if (!ean) {
       regProcesado[i] = 'no';
@@ -587,7 +601,19 @@ function sincronizarRegistroProductos(opciones) {
 
         if (cambios && PROD['fecha_registro'] !== undefined) prodRow[PROD['fecha_registro']] = hoy;
 
-        actualizados++;
+        // Bug real detectado (18/11/2026): "actualizados" se incrementaba
+        // para CUALQUIER producto que coincidiera por EAN, hubiera
+        // cambiado algo de verdad o no — con el bug de fecha_alta de
+        // arriba (ya corregido) casi todas las filas forzaban
+        // "cambios=true" aunque no hubiera ningún cambio real, así que el
+        // correo de resumen decía "7194 actualizados" cuando en realidad
+        // casi ninguno tenía un cambio de verdad. Ahora solo cuenta como
+        // "actualizado" lo que de verdad se ha escrito.
+        if (cambios) {
+          actualizados++;
+        } else {
+          sinCambios++;
+        }
         regProcesado[i] = 'si';
         regErrorCol[i]  = '';
 
@@ -637,11 +663,11 @@ function sincronizarRegistroProductos(opciones) {
   // dejando a salvo lo procesado hasta ahora; esta es la última tanda) ──
   guardarProgresoEnLote_();
   SpreadsheetApp.getActiveSpreadsheet().toast(
-    `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Reactivados: ${reactivados} | Saltados: ${saltados} | Errores: ${errores}`,
+    `✓ Nuevos: ${nuevos} | Actualizados: ${actualizados} | Sin cambios: ${sinCambios} | Reactivados: ${reactivados} | Saltados: ${saltados} | Errores: ${errores}`,
     '📥 Sincronización completada', 8
   );
 
-  const resultadoSync = { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError };
+  const resultadoSync = { nuevos, actualizados, reactivados, saltados, sinCambios, errores, productosNuevos, productosReactivados, productosConError };
 
   if (enviarResumenPorCorreo) {
     // Única sincronización de este intento (no viene del correo del CRM):
@@ -11098,12 +11124,13 @@ function enviarResumenSincronizacionCRM_(resultado) {
     return;
   }
 
-  const { nuevos, actualizados, reactivados, saltados, errores, productosNuevos, productosReactivados, productosConError, totalRegistrados } = resultado;
+  const { nuevos, actualizados, reactivados, saltados, sinCambios, errores, productosNuevos, productosReactivados, productosConError, totalRegistrados } = resultado;
 
   let cuerpo = `Resumen de la sincronización automática de productos (${fecha})\n\n`;
   cuerpo += `Productos leídos del Excel: ${totalRegistrados}\n`;
   cuerpo += `Nuevos: ${nuevos}\n`;
   cuerpo += `Actualizados: ${actualizados}\n`;
+  cuerpo += `Sin cambios (ya estaban al día): ${sinCambios || 0}\n`;
   cuerpo += `Reactivados (estaban de baja y han vuelto a aparecer en el listado): ${reactivados || 0}\n`;
   cuerpo += `Saltados (ya procesados o con error previo): ${saltados}\n`;
   cuerpo += `Errores: ${errores}\n\n`;
