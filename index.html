@@ -13755,6 +13755,12 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
+    // Id/dirección de la temporada cuyo botón de mover está en curso
+    // (ver temporadaMoverOrden_) — temporadaRenderizarListado_ los lee
+    // para mostrar un spinner en el botón que disparó la acción.
+    let temporadaMoviendoId_ = null;
+    let temporadaMoviendoDir_ = null;
+
     function temporadaRenderizarListado_() {
         const cont = $('temporadas-listado-lista');
         $('temporadas-listado-total').textContent = temporadasDatos_.length;
@@ -13769,15 +13775,27 @@ if (window.OM_PREPRODUCCION) {
             const fila = document.createElement('div');
             fila.className = 'destacados-item' + (t.activa ? '' : ' destacados-item--inactivo');
             const rango = t.permanente ? 'Permanente' : ((t.fechaInicio && t.fechaFin) ? `${t.fechaInicio} → ${t.fechaFin}` : 'Sin fechas');
+            // Mientras un reordenado está en curso (ver temporadaMoverOrden_
+            // y temporadaMoviendoId_/temporadaMoviendoDir_), el botón que
+            // lo disparó muestra un spinner en vez de la flecha — antes no
+            // había ningún indicador visible durante la petición y el
+            // click "parecía no hacer nada" (bug real reportado por
+            // Eloy). El resto de botones de mover se deshabilita igual
+            // que antes, para no disparar dos reordenados a la vez.
+            const moviendoEsta = temporadaMoviendoId_ === t.id;
+            const iconoArriba = (moviendoEsta && temporadaMoviendoDir_ === 'arriba')
+                ? '<i class="fa-solid fa-spinner fa-spin"></i>' : '<i class="fa-solid fa-arrow-up"></i>';
+            const iconoAbajo = (moviendoEsta && temporadaMoviendoDir_ === 'abajo')
+                ? '<i class="fa-solid fa-spinner fa-spin"></i>' : '<i class="fa-solid fa-arrow-down"></i>';
             fila.innerHTML = `
                 <div class="destacados-item-info">
                     <div class="nombre">${t.emoji ? escapeHtml(t.emoji) + ' ' : ''}${escapeHtml(t.nombre)}${vigente ? ' <span style="color:var(--green);font-weight:700;">● vigente ahora</span>' : ''}</div>
                     <div class="detalle">${escapeHtml(rango)} · ${(t.familias || []).length} familia(s) · ${(t.referencias || []).length} producto(s)${(t.excluidas || []).length ? ` · ${t.excluidas.length} excluido(s)` : ''}</div>
                 </div>
                 <div class="destacados-item-acciones">
-                    <button type="button" class="temporada-mover-btn" data-dir="arriba" title="Subir" ${i === 0 ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
-                    <button type="button" class="temporada-mover-btn" data-dir="abajo" title="Bajar" ${i === ordenadas.length - 1 ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
-                    <button type="button" class="temporada-editar-btn" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    <button type="button" class="temporada-mover-btn" data-dir="arriba" title="Subir" ${(i === 0 || temporadaMoviendoId_) ? 'disabled' : ''}>${iconoArriba}</button>
+                    <button type="button" class="temporada-mover-btn" data-dir="abajo" title="Bajar" ${(i === ordenadas.length - 1 || temporadaMoviendoId_) ? 'disabled' : ''}>${iconoAbajo}</button>
+                    <button type="button" class="temporada-editar-btn" title="Editar" ${temporadaMoviendoId_ ? 'disabled' : ''}><i class="fa-solid fa-pen"></i></button>
                 </div>
             `;
             fila.querySelectorAll('.temporada-mover-btn').forEach(btn => {
@@ -13798,20 +13816,22 @@ if (window.OM_PREPRODUCCION) {
     // por defecto, y con varias en empate el resultado de ordenar por
     // "orden" no sería predecible).
     async function temporadaMoverOrden_(id, direccion) {
-        document.querySelectorAll('.temporada-mover-btn').forEach(b => b.disabled = true);
+        // Feedback inmediato (spinner en el botón pulsado, ver
+        // temporadaRenderizarListado_) — antes no había ningún indicador
+        // visible durante toda la operación y el click "parecía no hacer
+        // nada" (bug real reportado por Eloy).
+        temporadaMoviendoId_ = id;
+        temporadaMoviendoDir_ = direccion;
+        temporadaRenderizarListado_();
         try {
             // Se refresca contra el backend justo antes de reordenar — este
             // flujo reescribe el "orden" de TODAS las temporadas de golpe,
             // así que si la modal llevaba un rato abierta y alguien cambió
             // algo directamente en la hoja mientras tanto (p. ej. el propio
             // orden, a mano), reordenar con los datos ya desactualizados
-            // del navegador deshacía ese cambio sin querer. Esto reemplaza
-            // los botones del DOM (ver temporadaRenderizarListado_), así
-            // que a partir de aquí no se reutiliza ninguna referencia
-            // capturada antes de esta llamada.
+            // del navegador deshacía ese cambio sin querer.
             await cargarTemporadas_();
             temporadaRenderizarListado_();
-            document.querySelectorAll('.temporada-mover-btn').forEach(b => b.disabled = true);
             const lista = temporadasDatos_.slice().sort((a, b) => (a.orden || 0) - (b.orden || 0));
             const idx = lista.findIndex(x => x.id === id);
             const destino = direccion === 'arriba' ? idx - 1 : idx + 1;
@@ -13837,7 +13857,9 @@ if (window.OM_PREPRODUCCION) {
             }
             await temporadaRecargarListadoAdmin_();
         } finally {
-            document.querySelectorAll('.temporada-mover-btn').forEach(b => b.disabled = false);
+            temporadaMoviendoId_ = null;
+            temporadaMoviendoDir_ = null;
+            temporadaRenderizarListado_();
         }
     }
 
@@ -15510,7 +15532,27 @@ if (window.OM_PREPRODUCCION) {
                 ${escapeHtml(p ? p.nombre : ('Ref: ' + ref))}
                 <button type="button" title="Quitar"><i class="fa-solid fa-xmark"></i></button>
             `;
-            chip.querySelector('button').addEventListener('click', () => temporadaQuitarReferencia_(ref));
+            // Feedback inmediato al pulsar "quitar" — antes el chip se
+            // quedaba exactamente igual hasta que la petición terminaba
+            // (sin ningún indicador), y el click "parecía no haber hecho
+            // nada" (bug real reportado por Eloy). Si la petición falla,
+            // se restaura el icono de aspa para poder reintentar — se
+            // comprueba que el botón siga en el DOM porque, si salió
+            // bien, temporadaRenderizarReferenciasChips_ ya reconstruyó
+            // todos los chips (este ya no existe).
+            const btnQuitar = chip.querySelector('button');
+            btnQuitar.addEventListener('click', async () => {
+                btnQuitar.disabled = true;
+                btnQuitar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                try {
+                    await temporadaQuitarReferencia_(ref);
+                } finally {
+                    if (document.body.contains(btnQuitar)) {
+                        btnQuitar.disabled = false;
+                        btnQuitar.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    }
+                }
+            });
             cont.appendChild(chip);
         });
     }
@@ -15540,8 +15582,8 @@ if (window.OM_PREPRODUCCION) {
 
     function temporadaQuitarReferencia_(ref) {
         const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
-        if (!t) return;
-        temporadaGuardarReferencias_((t.referencias || []).filter(r => r !== ref));
+        if (!t) return Promise.resolve();
+        return temporadaGuardarReferencias_((t.referencias || []).filter(r => r !== ref));
     }
 
     function temporadaAnadirReferencia_(ref) {
@@ -15622,7 +15664,22 @@ if (window.OM_PREPRODUCCION) {
                 ${escapeHtml(p ? p.nombre : ('Ref: ' + ref))}
                 <button type="button" title="Quitar"><i class="fa-solid fa-xmark"></i></button>
             `;
-            chip.querySelector('button').addEventListener('click', () => temporadaQuitarExcluida_(ref));
+            // Mismo motivo que temporadaRenderizarReferenciasChips_ (ver
+            // su comentario): spinner inmediato al pulsar "quitar", y se
+            // restaura el icono si la petición falla.
+            const btnQuitar = chip.querySelector('button');
+            btnQuitar.addEventListener('click', async () => {
+                btnQuitar.disabled = true;
+                btnQuitar.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                try {
+                    await temporadaQuitarExcluida_(ref);
+                } finally {
+                    if (document.body.contains(btnQuitar)) {
+                        btnQuitar.disabled = false;
+                        btnQuitar.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    }
+                }
+            });
             cont.appendChild(chip);
         });
     }
@@ -15648,8 +15705,8 @@ if (window.OM_PREPRODUCCION) {
 
     function temporadaQuitarExcluida_(ref) {
         const t = temporadasDatos_.find(x => x.id === temporadaEditandoId_);
-        if (!t) return;
-        temporadaGuardarExcluidas_((t.excluidas || []).filter(r => r !== ref));
+        if (!t) return Promise.resolve();
+        return temporadaGuardarExcluidas_((t.excluidas || []).filter(r => r !== ref));
     }
 
     function temporadaAnadirExcluida_(ref) {
