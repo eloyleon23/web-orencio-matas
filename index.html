@@ -158,7 +158,16 @@
         .btn-acceso-profesional { background: #1a1a1a; color: #fff; }
         .btn-salir-profesional { background: #fef2f2; color: #b91c1c; border-color: #fca5a5; }
 
-        .modal-acceso-profesional-box { max-width: 440px; padding: 26px; }
+        /* Doble clase a propósito (igual que .modal-producto-box.modal-
+           temporada-ver-todos-box, ver su comentario): con una sola
+           clase, esta regla y la de .modal-producto-box (definida más
+           abajo en esta misma hoja) tienen la misma especificidad, y
+           gana la que aparezca después en el archivo — que es
+           .modal-producto-box, con max-width:900px y width:90%. Bug
+           real reportado por Eloy: en escritorio, la modal de acceso
+           profesional ocupaba casi toda la pantalla en vez del ancho
+           pensado para un formulario de PIN. */
+        .modal-producto-box.modal-acceso-profesional-box { max-width: 460px; padding: 26px; }
         .modal-acceso-profesional-box h3 {
             margin: 0 0 6px;
             font-size: 1.15rem;
@@ -5503,6 +5512,13 @@
             .modal-producto-box {
                 width: 95%;
                 max-height: 90vh;
+            }
+            /* El ancho reducido de arriba (460px) es pensado para
+               escritorio — en móvil, con pantallas ya estrechas de por
+               sí, se mantiene el ancho habitual de esta familia de
+               modales (width:95% ya la limita de sobra en la práctica). */
+            .modal-producto-box.modal-acceso-profesional-box {
+                max-width: 460px;
             }
             .modal-producto-content {
                 grid-template-columns: 1fr;
