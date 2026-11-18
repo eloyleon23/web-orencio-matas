@@ -10588,6 +10588,56 @@ function configurarTriggerRevisionCorreoProductos() {
 // cero (ver el comentario junto a continuarSiMismoHilo, más abajo).
 const CLAVE_CRM_SYNC_HILO_EN_CURSO_ = 'crm_sync_hilo_en_curso';
 
+// Bug real detectado (18/11/2026): si una ejecución se corta en seco por
+// timeout de Apps Script, ocurre ANTES de llegar a limpiarHiloEnCurso_()
+// (el tiempo máximo mata la ejecución sin pasar por ningún catch — ver el
+// comentario de revisarCorreoListadoProductos), así que la marca se queda
+// grabada PARA SIEMPRE. El CRM reutiliza el mismo asunto en cada envío,
+// así que Gmail agrupa los sucesivos correos en el MISMO hilo de
+// conversación — el correo de un día cualquiera, mucho después, puede
+// coincidir con esa marca antigua y el script cree (equivocado) que es
+// una continuación del intento atascado: se salta por completo limpiar
+// RegistroProductos y volcar el Excel nuevo, y se limita a repetir la
+// sincronización contra lo que ya hubiera — con todo ya marcado
+// "procesado", el resultado es "0 nuevos, 0 actualizados, todo saltado"
+// aunque el Excel de ese día sí traiga altas y cambios de precio reales
+// (confirmado comparando un Excel real contra el catálogo publicado:
+// faltaban 104 altas y al menos un cambio de precio real sin aplicar).
+//
+// Arreglo: la marca ahora lleva también la hora a la que se grabó
+// ("idHilo|timestampMs") y caduca sola pasado este margen — el disparador
+// de revisarCorreoListadoProductos corre cada 2h (ver
+// configurarTriggerRevisionCorreoProductos), así que una continuación
+// legítima de un corte real sigue funcionando en la siguiente pasada,
+// pero la marca ya no puede quedarse viva para siempre.
+const CRM_SYNC_HILO_EN_CURSO_TTL_MS_ = 3 * 60 * 60 * 1000; // 3 horas
+
+// Guarda el id del hilo junto con el instante actual, en el formato que
+// espera leerHiloEnCursoVigente_().
+function escribirHiloEnCurso_(idHilo) {
+  escribirConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, idHilo + '|' + Date.now(),
+    'Id del hilo de Gmail que se está sincronizando ahora mismo (CRM), junto con la hora a la que se grabó (epoch ms) — si una ejecución se corta a medias por tiempo máximo, la siguiente pasada (cada 2h) continúa en vez de volver a empezar de cero, pero la marca caduca sola pasadas ' + (CRM_SYNC_HILO_EN_CURSO_TTL_MS_ / 3600000) + 'h para que un corte antiguo nunca pueda bloquear un envío posterior que resulte agrupado en el mismo hilo de Gmail. Se vacía al terminar con éxito o con un error ya notificado.');
+}
+
+// Lee la marca de "hilo en curso" y la devuelve SOLO si sigue vigente
+// (coincide con el hilo pedido Y no ha caducado) — null en cualquier otro
+// caso (vacía, de otro hilo, o caducada), que es siempre el valor seguro:
+// fuerza a procesarListadoProductosExcel_ a volcar el Excel de cero.
+function leerHiloEnCursoVigente_(idHiloActual) {
+  const valor = (leerConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, '') || '').toString();
+  if (!valor) return false;
+  const separador = valor.lastIndexOf('|');
+  // Compatibilidad con una marca antigua sin el "|timestamp" (formato
+  // previo a este arreglo) — sin forma de saber su antigüedad real, se
+  // trata como caducada, nunca como vigente.
+  if (separador === -1) return false;
+  const idGuardado = valor.slice(0, separador);
+  const timestamp = parseInt(valor.slice(separador + 1), 10);
+  if (idGuardado !== idHiloActual) return false;
+  if (!timestamp || (Date.now() - timestamp) > CRM_SYNC_HILO_EN_CURSO_TTL_MS_) return false;
+  return true;
+}
+
 // Función que ejecuta el disparador periódico. Busca correos del CRM sin
 // procesar todavía (etiqueta CORREO_CRM_ETIQUETA), procesa el más reciente
 // (los correos más antiguos sin procesar quedan superados) y manda el
@@ -10675,9 +10725,8 @@ function revisarCorreoListadoProductos() {
     // continuar, en vez de depender de que esta llegue a terminar para
     // registrarlo.
     const idHiloActual = hiloMasReciente.getId();
-    const continuarSiMismoHilo = leerConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, '') === idHiloActual;
-    escribirConfiguracion_(CLAVE_CRM_SYNC_HILO_EN_CURSO_, idHiloActual,
-      'Id del hilo de Gmail que se está sincronizando ahora mismo (CRM) — si una ejecución se corta a medias por tiempo máximo, la siguiente pasada (cada 2h) continúa en vez de volver a empezar de cero. Se vacía al terminar con éxito o con un error ya notificado.');
+    const continuarSiMismoHilo = leerHiloEnCursoVigente_(idHiloActual);
+    escribirHiloEnCurso_(idHiloActual);
 
     const mensajes = hiloMasReciente.getMessages();
     const ultimoMensaje = mensajes[mensajes.length - 1];
