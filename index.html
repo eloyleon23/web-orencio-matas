@@ -9164,7 +9164,7 @@ if (window.OM_PREPRODUCCION) {
     // profesional nunca llegó a validarse de verdad en el Web App en
     // vivo, sin ningún error visible: el precio de mayor simplemente no
     // aparecía, como si el profesional no tuviera sesión.
-    const VERSION_BACKEND_ESPERADA_ = '2026-11-18-crm-fecha-alta-contador-actualizados';
+    const VERSION_BACKEND_ESPERADA_ = '2026-11-19-aviso-interno-por-correo';
 
     // Se llama una sola vez, justo tras la primera respuesta EN VIVO de
     // Apps Script (ver cargarProductosPrincipales) — comprueba dos cosas
@@ -9180,6 +9180,32 @@ if (window.OM_PREPRODUCCION) {
     //      equivocada). Nunca se muestra a público general: el aviso solo
     //      tiene sentido para quien pueda hacer algo al respecto, así que
     //      se limita a cuando hay sesión profesional activa.
+    // Informa al administrador de un problema puramente interno/técnico
+    // (no uno que el usuario de la web pueda resolver) SIN mostrar ningún
+    // aviso en pantalla — a petición explícita de Eloy, tras preocuparse
+    // por un aviso en rojo sobre el backend desactualizado que él no podía
+    // solucionar desde el navegador. Queda en la consola (para depurar
+    // desde el propio navegador si hace falta) y dispara, como mucho una
+    // vez por pestaña, un correo al administrador desde el backend —
+    // fire-and-forget: si la petición falla, no debe afectar en nada a
+    // la navegación del usuario. El propio backend aplica además su
+    // propio límite de frecuencia por tipo de aviso (ver
+    // procesarReportarErrorInterno_ en apps_script_trigger.js) para que
+    // esto nunca pueda convertirse en un correo por cada visita.
+    const avisosInternosYaEnviados_ = new Set();
+    function avisarErrorInternoAlAdmin_(tipo, detalle) {
+        console.warn('[aviso interno — ' + tipo + '] ' + detalle);
+        if (avisosInternosYaEnviados_.has(tipo)) return;
+        avisosInternosYaEnviados_.add(tipo);
+        try {
+            fetch(window.GOOGLE_APPS_SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ accion: 'reportar_error_interno', tipo: tipo, detalle: detalle, url: location.href }),
+            }).catch(() => {});
+        } catch (e) { /* diagnóstico interno: nunca debe romper nada de cara al usuario */ }
+    }
+
     function comprobarValidezBackendProfesional_(texto) {
         if (!window.OM_SESION_PROFESIONAL_ACTIVA) return;
         let datos;
@@ -9189,8 +9215,10 @@ if (window.OM_PREPRODUCCION) {
             return; // si el PIN no es válido, un aviso de versión aparte no aporta nada más
         }
         if (datos.version_backend && datos.version_backend !== VERSION_BACKEND_ESPERADA_) {
-            console.warn('Backend de Apps Script desactualizado: esperaba la versión "' + VERSION_BACKEND_ESPERADA_ + '", el servidor en vivo responde "' + datos.version_backend + '". Puede que el precio de mayor u otras validaciones recientes no estén activas todavía en producción.');
-            mostrarToast('Aviso interno: el servidor en vivo no parece tener la última versión desplegada (revisa las implementaciones de Apps Script).', 'error');
+            avisarErrorInternoAlAdmin_(
+                'version_backend_desactualizada',
+                'Backend de Apps Script desactualizado: esperaba la versión "' + VERSION_BACKEND_ESPERADA_ + '", el servidor en vivo responde "' + datos.version_backend + '". Puede que el precio de mayor u otras validaciones recientes no estén activas todavía en producción.'
+            );
         }
     }
 

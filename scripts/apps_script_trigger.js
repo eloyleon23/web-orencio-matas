@@ -11,7 +11,7 @@
 // Viaja en la respuesta de obtener_productos (ver version_backend) para
 // que buscador.html pueda avisar si lo que ve en vivo no es lo último
 // que se desplegó — ver comprobarVersionBackend_ en buscador.html.
-const VERSION_BACKEND = '2026-11-18-crm-fecha-alta-contador-actualizados';
+const VERSION_BACKEND = '2026-11-19-aviso-interno-por-correo';
 
 // ── Configuración ──────────────────────────────────────────────────────────
 const GITHUB_TOKEN        = 'TU_GITHUB_TOKEN_AQUI';
@@ -4510,6 +4510,15 @@ function doPost(e) {
     // bloques y marcas pulsadas)
     if (accion === 'registrar_evento') {
       return procesarRegistrarEvento(data);
+    }
+
+    // Aviso interno desde el navegador (p.ej. backend desactualizado
+    // detectado en perfil profesional) — ver avisarErrorInternoAlAdmin_
+    // en index.html. A petición de Eloy: estos problemas ya NO deben
+    // mostrarse como aviso en pantalla al usuario, solo quedar en la
+    // consola del navegador y avisar por correo al administrador.
+    if (accion === 'reportar_error_interno') {
+      return procesarReportarErrorInterno_(data);
     }
 
     if (accion === 'obtener_resumen_analitica') {
@@ -10559,6 +10568,55 @@ function notificarErrorCriticoCRM_(asunto, detalle) {
     // los registros de ejecución de Apps Script.
     console.error('No se pudo enviar la alerta crítica de CRM a ' + CORREO_ALERTA_CRITICA_CRM + ':', err);
   }
+}
+
+// Avisos internos/técnicos reportados por el propio navegador (ver
+// avisarErrorInternoAlAdmin_ en index.html) — pensados para problemas que
+// el usuario de la web no puede ni debe tener que resolver (p.ej. una
+// implementación de Apps Script desactualizada). A petición explícita de
+// Eloy (19/11/2026): nada de esto debe mostrarse como aviso en pantalla,
+// solo quedar en la consola del navegador y avisar por correo, siempre al
+// mismo buzón que ya usa la alerta crítica del CRM.
+const CORREO_ALERTA_ERROR_INTERNO_WEB = CORREO_ALERTA_CRITICA_CRM;
+// Límite de frecuencia por tipo de aviso: el mismo problema puede
+// detectarlo cada visitante profesional que entre mientras no se
+// solucione, así que sin esto un backend desactualizado durante una
+// tarde entera podría mandar decenas de correos idénticos. Se guarda en
+// la hoja Configuracion (mismo patrón clave/valor que ya usa, p.ej., la
+// caducidad del hilo en curso del CRM) la fecha del último correo
+// enviado PARA ESE TIPO, y no se repite hasta pasado este margen.
+const ALERTA_ERROR_INTERNO_WEB_TTL_MS_ = 60 * 60 * 1000; // 1 hora
+
+function procesarReportarErrorInterno_(data) {
+  try {
+    const tipo    = (data.tipo    || 'sin_tipo').toString().trim().slice(0, 100);
+    const detalle = (data.detalle || '').toString().trim().slice(0, 1500);
+    const url     = (data.url     || '').toString().trim().slice(0, 300);
+
+    const claveTtl = 'alerta_error_interno_' + tipo;
+    const ultimoEnvio = parseInt(leerConfiguracion_(claveTtl, '0'), 10) || 0;
+    if (Date.now() - ultimoEnvio < ALERTA_ERROR_INTERNO_WEB_TTL_MS_) {
+      // Ya se avisó de este mismo tipo hace poco: se registra en los
+      // logs de ejecución (por si hace falta revisar el histórico) pero
+      // no se manda otro correo.
+      console.log('[aviso interno] (silenciado por repetido, <1h) ' + tipo + ': ' + detalle);
+      return ContentService.createTextOutput(JSON.stringify({ success: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    escribirConfiguracion_(claveTtl, String(Date.now()), 'Último envío de la alerta interna "' + tipo + '" (ver procesarReportarErrorInterno_)');
+    MailApp.sendEmail({
+      to: CORREO_ALERTA_ERROR_INTERNO_WEB,
+      subject: '⚠️ Web — aviso interno: ' + tipo,
+      body: detalle + '\n\nURL: ' + url + '\nFecha: ' + new Date().toString(),
+    });
+  } catch (err) {
+    console.error('No se pudo procesar/enviar el aviso interno de la web:', err);
+  }
+  // Siempre success:true — es un aviso best-effort, nunca debe hacer que
+  // el navegador del usuario vea un error por esto.
+  return ContentService.createTextOutput(JSON.stringify({ success: true }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 // Envío bajo demanda del Excel de productos sin imagen (menú de la
 // Sheet) — acción manual y separada del resumen automático de arriba.
