@@ -12097,7 +12097,11 @@ if (window.OM_PREPRODUCCION) {
             actualizarVisibilidadModulosDescubrimiento_();
             return;
         }
-        visibles.forEach(({ producto, destacado }) => cont.appendChild(crearTarjetaDestacado_(producto, destacado)));
+        // Solo la primera tarjeta como prioritaria: es la candidata real a
+        // LCP (lo primero que se ve, ver construirContenidoTarjeta_) — el
+        // resto sigue en loading="lazy" normal, no tiene sentido pedir
+        // prioridad alta para varias imágenes a la vez.
+        visibles.forEach(({ producto, destacado }, i) => cont.appendChild(crearTarjetaDestacado_(producto, destacado, { prioridad: i === 0 })));
         modulosDescubrimientoConContenido_.destacados = 'con-contenido';
         actualizarVisibilidadModulosDescubrimiento_();
     }
@@ -19116,8 +19120,25 @@ if (window.OM_PREPRODUCCION) {
         opciones = opciones || {};
         const d = opciones.destacado || null;
         const urlImg = urlImagenProducto(p, 300);
+        // Informe real de PageSpeed Insights (20/11/2026): LCP de 3,9 s en
+        // móvil. Las primeras tarjetas de Destacados son justo lo primero
+        // que se ve (el propio informe las captura en la miniatura inicial)
+        // y por tanto la candidata más probable a "mayor elemento con
+        // contenido" — pero TODAS las tarjetas llevaban loading="lazy" por
+        // igual, incluidas esas, lo que le resta prioridad de carga al
+        // navegador precisamente para la imagen que más interesa pintar
+        // cuanto antes. opciones.prioridad (pasado solo por las primeras
+        // tarjetas visibles, ver crearTarjetaDestacado_) quita el lazy y
+        // pide prioridad alta explícita en su lugar. decoding="async" en
+        // todos los casos: evita que decodificar la imagen (trabajo de
+        // CPU, no de red) bloquee el hilo principal justo cuando más
+        // compite con el propio JavaScript de la página (ver "Minimiza el
+        // trabajo del hilo principal" / TBT en el mismo informe).
+        const imgCargaAttrs = opciones.prioridad
+            ? 'fetchpriority="high" decoding="async"'
+            : 'loading="lazy" decoding="async"';
         const imgHtml = urlImg
-            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
+            ? `<img src="${urlImg}" alt="${escapeHtml(p.nombre)}" ${imgCargaAttrs} onerror="manejarErrorImagenProducto(this, '${escapeHtml(p.ref)}')">`
             : sinImagenFabricanteHtml(p);
 
         // El badge pequeño de fabricante se muestra siempre que haya
@@ -19427,14 +19448,15 @@ if (window.OM_PREPRODUCCION) {
     // Misma tarjeta base que crearTarjeta(), con la decoración de
     // promoción (chip, precio rebajado, texto de promoción) — ver
     // construirContenidoTarjeta_(p, { destacado }).
-    function crearTarjetaDestacado_(p, d) {
+    function crearTarjetaDestacado_(p, d, opciones) {
+        opciones = opciones || {};
         const card = document.createElement('div');
         card.className = 'producto-card producto-card--destacado';
         card.style.cursor = 'pointer';
         card.style.position = 'relative';
         card.dataset.ref = p.ref;
         card.addEventListener('click', () => abrirModalProducto(p, { pushHistorial: true }));
-        card.innerHTML = construirContenidoTarjeta_(p, { destacado: d });
+        card.innerHTML = construirContenidoTarjeta_(p, { destacado: d, prioridad: opciones.prioridad });
         anadirBotonListaCompraATarjeta_(card, p);
         return card;
     }
