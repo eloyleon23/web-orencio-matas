@@ -10068,6 +10068,23 @@ if (window.OM_PREPRODUCCION) {
             const actual = porRef.get(productoActual.ref);
             if (actual) Object.assign(productoActual, actual);
         }
+
+        // Bug real reportado (20/11/2026): si la ficha de detalle pública
+        // se abre para una referencia justo ANTES de que esta
+        // reconciliación le asigne su imagen definitiva (p.ej. recién
+        // actualizada desde el asistente de imágenes), el Object.assign de
+        // más arriba SÍ actualiza el objeto en memoria (productoModalActual_
+        // apunta al mismo objeto que TODOS, no a una copia) — pero nada
+        // volvía a pintar el <img> ya puesto en el DOM con la URL de
+        // entonces. La tarjeta del grid se repinta sola en el siguiente
+        // aplicarFiltros()/render y por eso ahí sí se veía bien; la ficha ya
+        // abierta se quedaba congelada con los datos de cuando se abrió.
+        // Mismo patrón que repintarPendientesPrecioMayor_ (ver más abajo),
+        // pero disparado por CUALQUIER reconciliación que de verdad incluya
+        // este producto, no solo por la confirmación del precio de mayor.
+        if ($('modal-producto-overlay').classList.contains('activo') && productoModalActual_ && porRef.has(productoModalActual_.ref)) {
+            abrirModalProducto(productoModalActual_, { soloRefrescoPrecio: true });
+        }
     }
 
     async function mostrarResultadosPorPrimeraVez() {
