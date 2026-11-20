@@ -41,8 +41,23 @@
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Informe real de PageSpeed Insights (20/11/2026): "Solicitudes que
+         bloquean el renderizado" (830 ms de ahorro estimado). La fuente de
+         Google y el CSS de Font Awesome son recursos de terceros que no
+         hace falta tener listos para el primer pintado (el texto usa la
+         fuente del sistema hasta que llega la de Google — ya con
+         "display=swap" — y los iconos pueden aparecer un instante después
+         sin afectar al layout): se cargan con el patrón estándar
+         preload+onload ("cargar en segundo plano, aplicar en cuanto
+         llegue") en vez de como <link rel="stylesheet"> normal, que
+         bloquea el renderizado hasta descargarlos. <noscript> cubre el
+         caso (raro) de JavaScript desactivado. navbar.css NO se toca
+         aquí: es CSS propio crítico para el primer pintado (la cabecera
+         ya visible), diferirlo causaría un parpadeo real de layout. -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap"></noscript>
+    <link rel="preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"></noscript>
     <link rel="stylesheet" href="./src/css/navbar.css?v=20261117b" />
     <style>
         :root {
