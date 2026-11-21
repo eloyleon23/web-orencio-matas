@@ -57,24 +57,6 @@ RedirectMatch 301 ^/defaultsite(/?.*)$ /$1
     </FilesMatch>
 </IfModule>
 
-# Cache de larga duración para estáticos que SÍ pueden cachearse sin
-# riesgo — detectado con el informe real de PageSpeed Insights
-# (20/11/2026, "Usar tiempos de vida de caché eficientes"): a
-# diferencia de HTML/JSON (arriba, con no-cache a propósito, porque
-# cambian en cada despliegue), CSS/JS/imágenes/fuentes propias del
-# sitio (assets/, lab/) ya se versionan a mano con "?v=AAAAMMDD..."
-# en la URL cuando hace falta forzar su recarga (ver, p.ej.,
-# perfil-profesional.js?v=... en index.html) — así que cachearlos
-# un año entero es seguro: cualquier cambio real llega con una URL
-# distinta, nunca sirviendo contenido desactualizado bajo la misma
-# URL. Las fotos de producto (Google Drive/googleusercontent) no
-# pasan por aquí — las sirve y cachea el propio CDN de Google.
-<IfModule mod_headers.c>
-    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|otf)$">
-        Header set Cache-Control "public, max-age=31536000, immutable"
-    </FilesMatch>
-</IfModule>
-
 # Comprimir las respuestas de texto (HTML/CSS/JS/JSON/SVG/fuentes de
 # texto) con gzip — bug real detectado con pruebas de carga del
 # buscador: IONOS no comprimía NADA (ni siquiera el CSS), a
