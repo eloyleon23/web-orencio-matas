@@ -6407,7 +6407,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
-        <div class="filtro-grupo" style="display: none;">
+        <!-- Bug real reportado por Eloy (22/11/2026): "se activa el
+             filtro de Solo en oferta pero es un filtro que no está" —
+             este grupo llevaba un display:none fijo, sin ningún control
+             visible para activarlo o desactivarlo a mano (solo podía
+             quedar marcado por restauración de sesión o por un enlace
+             con ?oferta=true en la URL). Visible de nuevo, y resuelto
+             ahora contra la sección Destacados en vez del campo "oferta"
+             de la hoja (manual, casi nunca se usa en la práctica) — ver
+             destacadoEfectivoPara_ en aplicarFiltros(). -->
+        <div class="filtro-grupo">
             <label class="check-oferta">
                 <input type="checkbox" id="f-oferta">
                 <span><i class="fa-solid fa-star"></i> Solo productos en oferta</span>
@@ -12385,6 +12394,15 @@ if (window.OM_PREPRODUCCION) {
             if ($('destacados-vista-principal') && $('destacados-vista-principal').style.display !== 'none') {
                 destacadosRenderizarListadoGestion_();
             }
+            // El filtro "Solo productos en oferta" depende de estos datos
+            // (ver destacadoEfectivoPara_) — si ya estaba activo al cargar
+            // la página (restaurado de una sesión anterior o por URL) y
+            // esta petición todavía estaba en vuelo cuando se aplicaron
+            // los filtros por primera vez, el grid se habría quedado
+            // filtrando contra una lista de Destacados todavía vacía. Se
+            // reaplica aquí, una vez ya hay datos reales, igual que ya
+            // hace cargarCampanasEscaparate_ para el mismo filtro.
+            if ($('f-oferta') && $('f-oferta').checked && typeof aplicarFiltros === 'function' && TODOS.length) aplicarFiltros();
         })().finally(() => { cargarDestacadosEnVuelo_ = null; });
         return cargarDestacadosEnVuelo_;
     }
@@ -18578,7 +18596,15 @@ if (window.OM_PREPRODUCCION) {
             if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
             if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
             if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
-            if (soloOferta && !p.oferta) return false;
+            // Bug real reportado por Eloy (22/11/2026): este filtro
+            // comprobaba el campo "oferta" de la hoja Productos, un campo
+            // manual que en la práctica casi nunca se rellena (el
+            // mecanismo que SÍ se usa de verdad para marcar ofertas es la
+            // sección "Destacados", con su propia gestión). Ahora "Solo
+            // productos en oferta" se resuelve igual que el resto del
+            // buscador (tarjetas, ficha de detalle): vigente en Destacados
+            // o en una campaña de escaparate activa — ver destacadoEfectivoPara_.
+            if (soloOferta && !destacadoEfectivoPara_(p.ref)) return false;
             if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
             if (soloTieneImagen && !tieneImagenAsociada(p)) return false;
             if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
@@ -18675,7 +18701,15 @@ if (window.OM_PREPRODUCCION) {
                 if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
                 if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
                 if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
-                if (soloOferta && !p.oferta) return false;
+                // Bug real reportado por Eloy (22/11/2026): este filtro
+            // comprobaba el campo "oferta" de la hoja Productos, un campo
+            // manual que en la práctica casi nunca se rellena (el
+            // mecanismo que SÍ se usa de verdad para marcar ofertas es la
+            // sección "Destacados", con su propia gestión). Ahora "Solo
+            // productos en oferta" se resuelve igual que el resto del
+            // buscador (tarjetas, ficha de detalle): vigente en Destacados
+            // o en una campaña de escaparate activa — ver destacadoEfectivoPara_.
+            if (soloOferta && !destacadoEfectivoPara_(p.ref)) return false;
                 if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
                 if (soloTieneImagen && !tieneImagenAsociada(p)) return false;
                 if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
