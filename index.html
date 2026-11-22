@@ -6019,6 +6019,7 @@
         <div class="ayuda-seccion">
             <h4><i class="fa-solid fa-user-tie"></i> Acceso profesional</h4>
             <ul>
+                <li>Lo encontrarás dentro del propio bloque de filtros, en la parte de arriba.</li>
                 <li>Pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor.</li>
                 <li>Marca "Recordar PIN en este dispositivo" para no tener que volver a introducirlo cada vez.</li>
                 <li>"Salir del modo profesional" cierra la sesión cuando quieras.</li>
@@ -10379,14 +10380,16 @@ if (window.OM_PREPRODUCCION) {
             texto: 'Escribe aquí el nombre, la referencia o el código de barras (EAN) del producto que buscas.',
         },
         {
-            selectores: ['#btn-abrir-filtros-movil', '.filtros'],
-            titulo: 'Filtros',
-            texto: 'Filtra por área, familia, precio, fecha de alta o solo ofertas. En el móvil, ábrelos con este icono.',
+            selectores: ['#filtros-extra', '.filtros'],
+            titulo: 'Cómo filtrar',
+            texto: 'Este es el bloque de filtros: elige un área, marca una o varias familias, ajusta el rango de precio, acota por fecha de alta o activa "Solo productos en oferta". Los resultados se actualizan al momento, sin tener que pulsar nada más.',
+            prepararMovil: true,
         },
         {
             selectores: ['#btn-acceso-profesional'],
             titulo: 'Acceso profesional',
-            texto: 'Pulsa aquí e introduce tu PIN para ver precios y catálogos al por mayor.',
+            texto: 'Dentro de este mismo bloque de filtros, arriba del todo: pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor.',
+            prepararMovil: true,
         },
         {
             selectores: ['.temporada-anadir-seleccion-btn'],
@@ -10445,6 +10448,29 @@ if (window.OM_PREPRODUCCION) {
 
     let tourAyudaPasoActual_ = 0;
 
+    // El bloque de filtros/acceso profesional es un panel deslizante que
+    // en móvil empieza CERRADO (ver abrirFiltrosMovil/cerrarFiltrosMovil)
+    // — a petición de Eloy, los pasos "Cómo filtrar" y "Acceso
+    // profesional" (paso.prepararMovil) deben verse de verdad, no solo
+    // señalar el icono que los abre, así que la demo lo abre ella misma
+    // en móvil mientras dura esa pareja de pasos, y lo vuelve a cerrar en
+    // cuanto se avanza a otro paso o se sale de la demo — nunca lo deja
+    // abierto sin que el usuario lo pidiera.
+    let tourAyudaFiltrosMovilAbiertoPorTour_ = false;
+    function tourAyudaPrepararPanelFiltrosMovil_(necesario) {
+        const toggle = document.getElementById('btn-abrir-filtros-movil');
+        const enMovil = !!(toggle && toggle.offsetParent !== null);
+        const panel = document.getElementById('filtros-extra');
+        const panelAbierto = panel && panel.classList.contains('abierto');
+        if (necesario && enMovil && !panelAbierto) {
+            abrirFiltrosMovil();
+            tourAyudaFiltrosMovilAbiertoPorTour_ = true;
+        } else if (!necesario && tourAyudaFiltrosMovilAbiertoPorTour_) {
+            cerrarFiltrosMovil();
+            tourAyudaFiltrosMovilAbiertoPorTour_ = false;
+        }
+    }
+
     function arrancarTourAyuda_() {
         tourAyudaPasoActual_ = 0;
         $('tour-ayuda-overlay').classList.add('activo');
@@ -10459,6 +10485,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        tourAyudaPrepararPanelFiltrosMovil_(false);
     }
 
     // Pinta el paso "indice": busca su elemento real visible, lo centra
@@ -10471,6 +10498,7 @@ if (window.OM_PREPRODUCCION) {
         direccion = direccion || 1;
         if (indice < 0 || indice >= TOUR_AYUDA_PASOS_.length) { cerrarTourAyuda_(); return; }
         const paso = TOUR_AYUDA_PASOS_[indice];
+        tourAyudaPrepararPanelFiltrosMovil_(!!paso.prepararMovil);
         const el = elementoVisibleParaPasoAyuda_(paso);
         if (!el) { mostrarPasoTourAyuda_(indice + direccion, direccion); return; }
 
