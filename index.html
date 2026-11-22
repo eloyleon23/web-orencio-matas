@@ -5815,6 +5815,77 @@
         .ayuda-seccion h4 i { color: var(--blue); width: 20px; text-align: center; }
         .ayuda-seccion ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
         .ayuda-seccion ul li { margin-bottom: 4px; }
+        .btn-ayuda-ver-demo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 11px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+        .btn-ayuda-ver-demo:hover { filter: brightness(1.08); }
+        .btn-ayuda-ver-demo i { font-size: 1.05rem; }
+
+        /* Demo interactiva — "foco" (spotlight) sobre el elemento real de
+           la página de cada paso, mediante el truco de box-shadow con
+           difusión gigante: el propio recuadro (del tamaño exacto del
+           elemento señalado) queda transparente, y ese box-shadow oscurece
+           todo lo demás alrededor. #tour-ayuda-overlay cubre TODO el
+           viewport y con pointer-events normal (no "none") bloquea
+           cualquier clic sobre la página real mientras dura la demo — es
+           puramente instructiva, nunca interactúa con datos reales. */
+        #tour-ayuda-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9500;
+        }
+        #tour-ayuda-overlay.activo { display: block; }
+        #tour-ayuda-spotlight {
+            position: fixed;
+            border-radius: 10px;
+            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.75);
+            outline: 2px solid var(--blue);
+            transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease;
+            pointer-events: none;
+        }
+        #tour-ayuda-tooltip {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            width: 340px;
+            max-width: calc(100vw - 32px);
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        #tour-ayuda-tooltip .tour-ayuda-paso { margin: 0 0 4px; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+        #tour-ayuda-tooltip h5 { margin: 0 0 6px; font-size: 0.98rem; }
+        #tour-ayuda-tooltip p#tour-ayuda-texto { margin: 0 0 14px; font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+        .tour-ayuda-acciones { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .tour-ayuda-acciones button {
+            border: none;
+            background: var(--blue);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 7px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .tour-ayuda-saltar { background: transparent !important; color: var(--muted) !important; font-weight: 500 !important; text-decoration: underline; padding: 0 !important; }
+        .tour-ayuda-anterior { background: var(--light) !important; color: var(--muted) !important; }
+        .tour-ayuda-anterior:disabled { opacity: 0.45; cursor: default; }
 
     </style>
 <!-- Google tag (gtag.js) -->
@@ -5923,6 +5994,9 @@
         </button>
         <h3><i class="fa-solid fa-circle-question"></i> Guía rápida del buscador</h3>
         <p class="ayuda-modal-subtitulo">Un resumen de lo más útil para sacarle partido a la web.</p>
+        <button type="button" id="btn-ayuda-ver-demo" class="btn-ayuda-ver-demo">
+            <i class="fa-solid fa-circle-play"></i> Ver demo interactiva
+        </button>
 
         <div class="ayuda-seccion">
             <h4><i class="fa-solid fa-magnifying-glass"></i> Buscar productos</h4>
@@ -5967,6 +6041,29 @@
                 <li>Imprime etiquetas de precio de varios productos de la lista a la vez.</li>
                 <li>Recibirás un aviso si lleva tiempo creada, para que no se quede desactualizada.</li>
             </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Demo interactiva de la Ayuda — recorrido guiado sobre los elementos
+     REALES de esta misma página (no capturas ni maquetas), con un
+     "foco" que ilumina cada uno y una tarjeta con el texto del paso.
+     Ver inicializarAyuda_/arrancarTourAyuda_ más abajo. No interactúa
+     con los datos del usuario en ningún momento (puramente
+     ilustrativo): no añade productos reales a la lista de la compra ni
+     abre sesión profesional de verdad. -->
+<div id="tour-ayuda-overlay">
+    <div id="tour-ayuda-spotlight"></div>
+    <div id="tour-ayuda-tooltip">
+        <p class="tour-ayuda-paso" id="tour-ayuda-paso-contador"></p>
+        <h5 id="tour-ayuda-titulo"></h5>
+        <p id="tour-ayuda-texto"></p>
+        <div class="tour-ayuda-acciones">
+            <button type="button" id="tour-ayuda-saltar" class="tour-ayuda-saltar">Saltar demo</button>
+            <div style="display:flex; gap:8px;">
+                <button type="button" id="tour-ayuda-anterior" class="tour-ayuda-anterior">Atrás</button>
+                <button type="button" id="tour-ayuda-siguiente">Siguiente</button>
+            </div>
         </div>
     </div>
 </div>
@@ -8977,10 +9074,36 @@ if (window.OM_PREPRODUCCION) {
         // flotante real de la Lista de la compra (ver #btn-lista-compra-flotante)
         // — este recuadro, al ser solo temporal/diagnóstico, no debe
         // competir con él ni taparlo.
-        panel.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
+        // Oculto por defecto (display:none) — a petición de Eloy: "no
+        // molesta de primeras". Se recoge igualmente en segundo plano
+        // (fetch/longtask) desde la carga de la página, para que ya haya
+        // datos reales en cuanto se abra; solo la VISIBILIDAD del
+        // recuadro es bajo demanda, mediante el pequeño icono añadido
+        // junto a "Estadísticas" más abajo en este mismo bloque.
+        panel.style.cssText = 'display:none;position:fixed;top:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
         panel.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;"><strong>⏱ Diagnóstico (preprod)</strong><span id="om-diag-cerrar" style="cursor:pointer;opacity:0.7;">✕</span></div><div id="om-diag-cuerpo">Iniciando…</div>';
         document.body.appendChild(panel);
-        panel.querySelector('#om-diag-cerrar').addEventListener('click', () => panel.remove());
+        // Solo oculta (no elimina el nodo): así el icono de abajo puede
+        // volver a mostrarlo sin tener que reconstruirlo entero.
+        panel.querySelector('#om-diag-cerrar').addEventListener('click', () => { panel.style.display = 'none'; });
+
+        // Icono discreto junto a "Estadísticas" para abrir el recuadro de
+        // diagnóstico bajo demanda — antes aparecía solo y siempre en
+        // preprod, lo cual "molesta de primeras" según Eloy.
+        const cabeceraEstadisticas_ = document.getElementById('panel-analitica-cabecera');
+        if (cabeceraEstadisticas_) {
+            const btnDiag = document.createElement('button');
+            btnDiag.type = 'button';
+            btnDiag.id = 'btn-abrir-diag-rendimiento';
+            btnDiag.className = 'btn-destacados-accion btn-destacados-editar';
+            btnDiag.title = 'Diagnóstico de rendimiento (solo preprod)';
+            btnDiag.setAttribute('aria-label', 'Abrir diagnóstico de rendimiento');
+            btnDiag.innerHTML = '<i class="fa-solid fa-stethoscope"></i>';
+            btnDiag.addEventListener('click', () => {
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            });
+            cabeceraEstadisticas_.appendChild(btnDiag);
+        }
 
         const peticionesEnCurso_ = new Set();
         let bloqueosTotalMs_ = 0;
@@ -10233,20 +10356,147 @@ if (window.OM_PREPRODUCCION) {
     // junto a #btn-ayuda-flotante en el CSS. Se abre y se cierra igual que
     // el resto de modales del buscador (clic en el fondo o en la X), sin
     // ningún estado que recordar entre visitas: siempre a demanda.
+    // Pasos de la demo interactiva (ver arrancarTourAyuda_ más abajo).
+    // "selectores" es una lista de candidatos en orden de preferencia —
+    // se usa el primero que exista Y esté realmente visible en este
+    // dispositivo/estado (p.ej. el panel de filtros se ve distinto en
+    // móvil que en escritorio, y el botón de la lista de la compra solo
+    // existe si ya hay una lista creada); si ninguno lo está, el paso se
+    // salta solo, sin romper el recorrido.
+    const TOUR_AYUDA_PASOS_ = [
+        {
+            selectores: ['#f-texto'],
+            titulo: 'Buscar productos',
+            texto: 'Escribe aquí el nombre, la referencia o el código de barras (EAN) del producto que buscas.',
+        },
+        {
+            selectores: ['#btn-abrir-filtros-movil', '.filtros'],
+            titulo: 'Filtros',
+            texto: 'Filtra por área, familia, precio, fecha de alta o solo ofertas. En el móvil, ábrelos con este icono.',
+        },
+        {
+            selectores: ['#btn-acceso-profesional'],
+            titulo: 'Acceso profesional',
+            texto: 'Pulsa aquí e introduce tu PIN para ver precios y catálogos al por mayor.',
+        },
+        {
+            selectores: ['.temporada-anadir-seleccion-btn'],
+            titulo: 'Añadir a la lista de la compra',
+            texto: 'Pulsa este icono en cualquier producto para añadirlo a tu lista de la compra.',
+        },
+        {
+            selectores: ['#btn-lista-compra-flotante'],
+            titulo: 'Tu lista de la compra',
+            texto: 'Accede a tu lista en cualquier momento desde aquí: expórtala a PDF, compártela o imprime etiquetas de precio.',
+        },
+    ];
+
     function inicializarAyuda_() {
         const overlay = $('modal-ayuda-overlay');
-        $('btn-ayuda-flotante').addEventListener('click', () => {
+        const abrirAyuda_ = () => {
             overlay.classList.add('activo');
             $('btn-subir-arriba').classList.add('oculto-por-modal');
             $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
-        });
+        };
         const cerrarAyuda_ = () => {
             overlay.classList.remove('activo');
             $('btn-subir-arriba').classList.remove('oculto-por-modal');
             $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         };
+        // A petición de Eloy: con la modal ya abierta, volver a pulsar el
+        // propio icono de ayuda debe cerrarla (antes solo cerraban la X o
+        // el clic fuera).
+        $('btn-ayuda-flotante').addEventListener('click', () => {
+            if (overlay.classList.contains('activo')) cerrarAyuda_(); else abrirAyuda_();
+        });
         $('modal-ayuda-cerrar').addEventListener('click', cerrarAyuda_);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarAyuda_(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('activo')) cerrarAyuda_(); });
+
+        $('btn-ayuda-ver-demo').addEventListener('click', () => {
+            cerrarAyuda_();
+            arrancarTourAyuda_();
+        });
+    }
+
+    // Busca, entre los selectores candidatos de un paso, el primero que
+    // exista en el DOM y esté realmente visible (offsetParent !== null
+    // descarta tanto display:none como cualquier ancestro oculto) —
+    // necesario porque el mismo paso apunta a elementos distintos según
+    // el dispositivo (filtros en móvil/escritorio) o el estado real del
+    // usuario (el botón de la lista de la compra no existe hasta que hay
+    // una lista creada).
+    function elementoVisibleParaPasoAyuda_(paso) {
+        for (const selector of paso.selectores) {
+            const el = document.querySelector(selector);
+            if (el && el.offsetParent !== null) return el;
+        }
+        return null;
+    }
+
+    let tourAyudaPasoActual_ = 0;
+
+    function arrancarTourAyuda_() {
+        tourAyudaPasoActual_ = 0;
+        $('tour-ayuda-overlay').classList.add('activo');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        mostrarPasoTourAyuda_(0);
+    }
+
+    function cerrarTourAyuda_() {
+        $('tour-ayuda-overlay').classList.remove('activo');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+    }
+
+    // Pinta el paso "indice": busca su elemento real visible, lo centra
+    // en pantalla con scroll suave y, tras darle tiempo a terminar (el
+    // scroll es asíncrono y no avisa cuándo acaba), coloca el foco sobre
+    // su posición ya final. Si ningún candidato del paso está visible
+    // ahora mismo, se salta automáticamente en la misma dirección en la
+    // que se estaba navegando, sin dejar un hueco vacío en el recorrido.
+    function mostrarPasoTourAyuda_(indice, direccion) {
+        direccion = direccion || 1;
+        if (indice < 0 || indice >= TOUR_AYUDA_PASOS_.length) { cerrarTourAyuda_(); return; }
+        const paso = TOUR_AYUDA_PASOS_[indice];
+        const el = elementoVisibleParaPasoAyuda_(paso);
+        if (!el) { mostrarPasoTourAyuda_(indice + direccion, direccion); return; }
+
+        tourAyudaPasoActual_ = indice;
+        $('tour-ayuda-paso-contador').textContent = `Paso ${indice + 1} de ${TOUR_AYUDA_PASOS_.length}`;
+        $('tour-ayuda-titulo').textContent = paso.titulo;
+        $('tour-ayuda-texto').textContent = paso.texto;
+        $('tour-ayuda-anterior').disabled = indice === 0;
+        $('tour-ayuda-siguiente').textContent = indice === TOUR_AYUDA_PASOS_.length - 1 ? 'Finalizar' : 'Siguiente';
+
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+            const r = el.getBoundingClientRect();
+            const margen = 8;
+            const spot = $('tour-ayuda-spotlight');
+            spot.style.left = Math.max(0, r.left - margen) + 'px';
+            spot.style.top = Math.max(0, r.top - margen) + 'px';
+            spot.style.width = (r.width + margen * 2) + 'px';
+            spot.style.height = (r.height + margen * 2) + 'px';
+        }, 400);
+    }
+
+    function inicializarTourAyuda_() {
+        $('tour-ayuda-siguiente').addEventListener('click', () => {
+            if (tourAyudaPasoActual_ === TOUR_AYUDA_PASOS_.length - 1) { cerrarTourAyuda_(); return; }
+            mostrarPasoTourAyuda_(tourAyudaPasoActual_ + 1, 1);
+        });
+        $('tour-ayuda-anterior').addEventListener('click', () => mostrarPasoTourAyuda_(tourAyudaPasoActual_ - 1, -1));
+        $('tour-ayuda-saltar').addEventListener('click', cerrarTourAyuda_);
+        document.addEventListener('keydown', (e) => {
+            if (!$('tour-ayuda-overlay').classList.contains('activo')) return;
+            if (e.key === 'Escape') cerrarTourAyuda_();
+            if (e.key === 'ArrowRight') $('tour-ayuda-siguiente').click();
+            if (e.key === 'ArrowLeft' && !$('tour-ayuda-anterior').disabled) $('tour-ayuda-anterior').click();
+        });
     }
 
     async function mostrarResultadosPorPrimeraVez() {
@@ -10255,6 +10505,7 @@ if (window.OM_PREPRODUCCION) {
         inicializarFolletoDestacados_();
         inicializarAccesoProfesionalBuscador_();
         inicializarAyuda_();
+        inicializarTourAyuda_();
         // Si había filtros guardados de una visita anterior en esta misma
         // sesión del navegador, restaurarFiltrosDesdeSesion_() ya los
         // aplica (y llama a aplicarFiltros() por su cuenta) — si no había
