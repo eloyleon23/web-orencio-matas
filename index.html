@@ -10654,35 +10654,61 @@ if (window.OM_PREPRODUCCION) {
             if (pasoAnterior && pasoAnterior.limpiar) pasoAnterior.limpiar();
         }
 
-        const paso = TOUR_AYUDA_PASOS_[indice];
-        tourAyudaPrepararPanelFiltrosMovil_(!!paso.usaFiltrosMovil);
-        tourAyudaPrepararModalTemporada_(!!paso.usaTemporadaModal);
-        if (paso.antes) paso.antes();
-
-        const el = elementoVisibleParaPasoAyuda_(paso);
-        if (!el) {
-            if (paso.limpiar) paso.limpiar();
-            mostrarPasoTourAyuda_(indice + direccion, direccion);
-            return;
-        }
-
-        tourAyudaPasoActual_ = indice;
-        $('tour-ayuda-paso-contador').textContent = `Paso ${indice + 1} de ${TOUR_AYUDA_PASOS_.length}`;
-        $('tour-ayuda-titulo').textContent = paso.titulo;
-        $('tour-ayuda-texto').textContent = paso.texto;
-        $('tour-ayuda-anterior').disabled = indice === 0;
-        $('tour-ayuda-siguiente').textContent = indice === TOUR_AYUDA_PASOS_.length - 1 ? 'Finalizar' : 'Siguiente';
-
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Bug real reportado por Eloy ("filtrar por área no sale bien"):
+        // este paso se dispara casi siempre dentro del propio manejador
+        // de clic de "Siguiente"/"Atrás" — y ESE clic original todavía
+        // está burbujeando hacia `document` en este mismo instante. El
+        // desplegable de área (como algunos otros controles de la
+        // página) tiene su propio listener en `document` que cierra
+        // "cualquier cosa abierta fuera de sí" en cuanto detecta un
+        // clic — si abriéramos el desplegable aquí mismo, ese mismo clic
+        // de "Siguiente" (que no es hijo suyo) lo volvería a cerrar en
+        // cuanto terminara de burbujear, justo después de abrirlo. Un
+        // setTimeout(0) deja que ese clic termine de burbujear del todo
+        // ANTES de tocar nada de la página real.
         setTimeout(() => {
-            const r = el.getBoundingClientRect();
-            const margen = 8;
-            const spot = $('tour-ayuda-spotlight');
-            spot.style.left = Math.max(0, r.left - margen) + 'px';
-            spot.style.top = Math.max(0, r.top - margen) + 'px';
-            spot.style.width = (r.width + margen * 2) + 'px';
-            spot.style.height = (r.height + margen * 2) + 'px';
-        }, 400);
+            const paso = TOUR_AYUDA_PASOS_[indice];
+            tourAyudaPrepararPanelFiltrosMovil_(!!paso.usaFiltrosMovil);
+            tourAyudaPrepararModalTemporada_(!!paso.usaTemporadaModal);
+            if (paso.antes) paso.antes();
+
+            const el = elementoVisibleParaPasoAyuda_(paso);
+            if (!el) {
+                if (paso.limpiar) paso.limpiar();
+                mostrarPasoTourAyuda_(indice + direccion, direccion);
+                return;
+            }
+
+            tourAyudaPasoActual_ = indice;
+            $('tour-ayuda-paso-contador').textContent = `Paso ${indice + 1} de ${TOUR_AYUDA_PASOS_.length}`;
+            $('tour-ayuda-titulo').textContent = paso.titulo;
+            $('tour-ayuda-texto').textContent = paso.texto;
+            $('tour-ayuda-anterior').disabled = indice === 0;
+            $('tour-ayuda-siguiente').textContent = indice === TOUR_AYUDA_PASOS_.length - 1 ? 'Finalizar' : 'Siguiente';
+
+            // El panel deslizante de filtros en móvil (#filtros-extra) es
+            // position:fixed y calcula su "top" UNA sola vez al abrirse,
+            // a partir de dónde está la barra de búsqueda en ESE
+            // instante (ver abrirFiltrosMovil/posicionarPanel) — nunca se
+            // recalcula si la página se desplaza después. Bug real
+            // reportado por Eloy ("filtrar por área no sale bien"):
+            // llamar aquí a scrollIntoView sobre un elemento DENTRO de
+            // ese panel desplazaba la página entera, dejando ese "top"
+            // ya calculado completamente desincronizado — el panel
+            // "parecía" roto/desplazado fuera de la pantalla. No hace
+            // falta desplazar nada para un panel fijo: ya está siempre
+            // dentro del viewport en cuanto se abre.
+            if (!el.closest('#filtros-extra')) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => {
+                const r = el.getBoundingClientRect();
+                const margen = 8;
+                const spot = $('tour-ayuda-spotlight');
+                spot.style.left = Math.max(0, r.left - margen) + 'px';
+                spot.style.top = Math.max(0, r.top - margen) + 'px';
+                spot.style.width = (r.width + margen * 2) + 'px';
+                spot.style.height = (r.height + margen * 2) + 'px';
+            }, 400);
+        }, 0);
     }
 
     function inicializarTourAyuda_() {
