@@ -10378,6 +10378,19 @@ if (window.OM_PREPRODUCCION) {
     // móvil que en escritorio, y el botón de la lista de la compra solo
     // existe si ya hay una lista creada); si ninguno lo está, el paso se
     // salta solo, sin romper el recorrido.
+    // Cada paso puede llevar, además de "selectores/titulo/texto":
+    //   - usaFiltrosMovil: true  → el engine (ver tourAyudaPrepararPanelFiltrosMovil_)
+    //     abre el panel de filtros en móvil mientras dure este paso (y
+    //     cualquier otro contiguo que también lo pida), y lo cierra solo
+    //     al llegar a un paso que ya no lo necesite.
+    //   - usaTemporadaModal: true → análogo, pero con la modal de "ver
+    //     todos" de una temporada (ver tourAyudaPrepararModalTemporada_).
+    //   - antes()/limpiar(): efectos secundarios propios de un único paso
+    //     (abrir una modal real, marcar un filtro de prueba...) — antes()
+    //     se ejecuta justo antes de buscar el elemento a iluminar;
+    //     limpiar() se ejecuta en cuanto se abandona ese paso concreto
+    //     (en cualquier dirección) o se sale de la demo, para no dejar
+    //     nada abierto ni ningún filtro de prueba activo al terminar.
     const TOUR_AYUDA_PASOS_ = [
         {
             selectores: ['#f-texto'],
@@ -10388,13 +10401,64 @@ if (window.OM_PREPRODUCCION) {
             selectores: ['#filtros-extra', '.filtros'],
             titulo: 'Cómo filtrar',
             texto: 'Este es el bloque de filtros: elige un área, marca una o varias familias, ajusta el rango de precio, acota por fecha de alta o activa "Solo productos en oferta". Los resultados se actualizan al momento, sin tener que pulsar nada más.',
-            prepararMovil: true,
+            usaFiltrosMovil: true,
         },
         {
-            selectores: ['#btn-acceso-profesional'],
+            selectores: ['#f-area-panel'],
+            titulo: 'Filtrar por área',
+            texto: 'Elige una o varias áreas (droguería, perfumería, pinturas, talleres) para acotar los resultados a solo esas.',
+            usaFiltrosMovil: true,
+            antes: () => {
+                const panel = document.getElementById('f-area-panel');
+                const btn = document.getElementById('f-area-btn');
+                if (panel && btn && !panel.classList.contains('abierto')) {
+                    btn.click();
+                    tourAyudaAreaAbiertaPorEstePaso_ = true;
+                }
+            },
+            limpiar: () => {
+                if (tourAyudaAreaAbiertaPorEstePaso_) {
+                    const btn = document.getElementById('f-area-btn');
+                    if (btn) btn.click();
+                    tourAyudaAreaAbiertaPorEstePaso_ = false;
+                }
+            },
+        },
+        {
+            selectores: ['#filtros-chips'],
+            titulo: 'Chips de filtro y limpiar filtros',
+            texto: 'Cada filtro activo aparece aquí como una "chip": pulsa su aspa para quitar solo ese filtro. El botón "Limpiar filtros" los quita todos de golpe.',
+            antes: () => {
+                const check = document.getElementById('f-oferta');
+                if (check && !check.checked) {
+                    check.checked = true;
+                    check.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            },
+            limpiar: () => { if (typeof limpiarFiltros === 'function') limpiarFiltros(); },
+        },
+        {
+            selectores: ['.modal-acceso-profesional-box'],
             titulo: 'Acceso profesional',
-            texto: 'Dentro de este mismo bloque de filtros, arriba del todo: pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor.',
-            prepararMovil: true,
+            texto: 'Dentro de este mismo bloque de filtros: pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor. Si no tienes código, puedes pulsar "¿No tienes código de acceso? Solicítalo por email" para pedirlo.',
+            antes: () => {
+                const overlay = document.getElementById('modal-acceso-profesional-overlay');
+                if (overlay && overlay.classList.contains('activo')) return;
+                const btn = document.getElementById('btn-acceso-profesional');
+                if (!btn) return;
+                if (btn.offsetParent === null) {
+                    const panel = document.getElementById('filtros-extra');
+                    if (panel && !panel.classList.contains('abierto')) abrirFiltrosMovil();
+                }
+                if (btn.offsetParent !== null) btn.click();
+            },
+            limpiar: () => {
+                const overlay = document.getElementById('modal-acceso-profesional-overlay');
+                if (overlay && overlay.classList.contains('activo')) {
+                    const cerrar = document.getElementById('modal-acceso-profesional-cerrar');
+                    if (cerrar) cerrar.click();
+                }
+            },
         },
         {
             selectores: ['.temporada-anadir-seleccion-btn'],
@@ -10402,9 +10466,60 @@ if (window.OM_PREPRODUCCION) {
             texto: 'Pulsa este icono en cualquier producto para añadirlo a tu lista de la compra.',
         },
         {
+            selectores: ['#modal-producto-lista-btn'],
+            titulo: 'Añadir desde la ficha de detalle',
+            texto: 'También puedes añadir el producto a tu lista desde su propia ficha de detalle, con este mismo botón.',
+            antes: () => {
+                const overlay = document.getElementById('modal-producto-overlay');
+                if (overlay && overlay.classList.contains('activo')) return;
+                const card = document.querySelector('.producto-card');
+                if (card) card.click();
+            },
+            limpiar: () => {
+                const overlay = document.getElementById('modal-producto-overlay');
+                if (overlay && overlay.classList.contains('activo') && typeof cerrarModalProducto === 'function') cerrarModalProducto();
+            },
+        },
+        {
             selectores: ['#btn-lista-compra-flotante'],
             titulo: 'Tu lista de la compra',
             texto: 'Accede a tu lista en cualquier momento desde aquí: expórtala a PDF, compártela o imprime etiquetas de precio.',
+        },
+        {
+            selectores: ['#modal-lista-compra-acciones'],
+            titulo: 'Dentro de tu lista de la compra',
+            texto: 'Desde aquí puedes ajustar unidades, quitar productos, exportar a PDF, generar un folleto con fotos, compartir por WhatsApp o correo, imprimir etiquetas de precio o vaciar/eliminar la lista entera.',
+            antes: () => {
+                const overlay = document.getElementById('modal-lista-compra-overlay');
+                if (overlay && overlay.classList.contains('activo')) return;
+                const btn = document.getElementById('btn-lista-compra-flotante');
+                if (btn) btn.click();
+            },
+            limpiar: () => {
+                const overlay = document.getElementById('modal-lista-compra-overlay');
+                if (overlay && overlay.classList.contains('activo')) {
+                    const cerrar = document.getElementById('modal-lista-compra-cerrar');
+                    if (cerrar) cerrar.click();
+                }
+            },
+        },
+        {
+            selectores: ['#temporada-ver-todos-overlay .destacados-buscador-controles'],
+            titulo: 'Temporada: filtrar',
+            texto: 'Dentro de una temporada también puedes filtrar por rango de precio y ordenar los resultados (relevancia, nombre, familia o precio).',
+            usaTemporadaModal: true,
+        },
+        {
+            selectores: ['.temporada-ver-todos-folleto-acciones'],
+            titulo: 'Temporada: descargar folleto',
+            texto: 'Descarga o comparte un folleto en PDF con los productos de esta temporada, con sus fotos y su precio.',
+            usaTemporadaModal: true,
+        },
+        {
+            selectores: ['.temporada-ver-todos-seleccion-panel'],
+            titulo: 'Temporada: añadir todo a la lista',
+            texto: '"Añadir todos los visibles" incorpora de golpe a tu lista de la compra todos los productos que se ven ahora mismo (ya filtrados) en esta temporada.',
+            usaTemporadaModal: true,
         },
     ];
 
@@ -10451,16 +10566,17 @@ if (window.OM_PREPRODUCCION) {
         return null;
     }
 
-    let tourAyudaPasoActual_ = 0;
+    let tourAyudaPasoActual_ = -1;
+    let tourAyudaAreaAbiertaPorEstePaso_ = false;
 
     // El bloque de filtros/acceso profesional es un panel deslizante que
     // en móvil empieza CERRADO (ver abrirFiltrosMovil/cerrarFiltrosMovil)
-    // — a petición de Eloy, los pasos "Cómo filtrar" y "Acceso
-    // profesional" (paso.prepararMovil) deben verse de verdad, no solo
-    // señalar el icono que los abre, así que la demo lo abre ella misma
-    // en móvil mientras dura esa pareja de pasos, y lo vuelve a cerrar en
-    // cuanto se avanza a otro paso o se sale de la demo — nunca lo deja
-    // abierto sin que el usuario lo pidiera.
+    // — a petición de Eloy, los pasos que lo necesitan (paso.usaFiltrosMovil)
+    // deben verse de verdad, no solo señalar el icono que los abre, así
+    // que la demo lo abre ella misma en móvil mientras dure ese tramo de
+    // pasos contiguos, y lo vuelve a cerrar en cuanto se llega a un paso
+    // que ya no lo necesita o se sale de la demo — nunca lo deja abierto
+    // sin que el usuario lo pidiera.
     let tourAyudaFiltrosMovilAbiertoPorTour_ = false;
     function tourAyudaPrepararPanelFiltrosMovil_(necesario) {
         const toggle = document.getElementById('btn-abrir-filtros-movil');
@@ -10476,8 +10592,29 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
+    // Mismo patrón que la función de arriba, pero con la modal de "ver
+    // todos" de una temporada — se abre la primera temporada vigente que
+    // haya en pantalla (si no hay ninguna, los pasos que la necesitan se
+    // saltan solos, como cualquier otro paso sin elemento visible).
+    let tourAyudaTemporadaAbiertaPorTour_ = false;
+    function tourAyudaPrepararModalTemporada_(necesario) {
+        const overlay = document.getElementById('temporada-ver-todos-overlay');
+        const abierta = !!(overlay && overlay.classList.contains('activo'));
+        if (necesario && !abierta) {
+            const disparador = document.querySelector('.seccion-temporada__titulo-clicable');
+            if (disparador) {
+                disparador.click();
+                tourAyudaTemporadaAbiertaPorTour_ = true;
+            }
+        } else if (!necesario && tourAyudaTemporadaAbiertaPorTour_) {
+            const cerrar = document.getElementById('temporada-ver-todos-cerrar');
+            if (cerrar) cerrar.click();
+            tourAyudaTemporadaAbiertaPorTour_ = false;
+        }
+    }
+
     function arrancarTourAyuda_() {
-        tourAyudaPasoActual_ = 0;
+        tourAyudaPasoActual_ = -1;
         $('tour-ayuda-overlay').classList.add('activo');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
@@ -10486,26 +10623,48 @@ if (window.OM_PREPRODUCCION) {
     }
 
     function cerrarTourAyuda_() {
+        const pasoActual = TOUR_AYUDA_PASOS_[tourAyudaPasoActual_];
+        if (pasoActual && pasoActual.limpiar) pasoActual.limpiar();
+        tourAyudaPrepararPanelFiltrosMovil_(false);
+        tourAyudaPrepararModalTemporada_(false);
+        tourAyudaPasoActual_ = -1;
         $('tour-ayuda-overlay').classList.remove('activo');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
-        tourAyudaPrepararPanelFiltrosMovil_(false);
     }
 
-    // Pinta el paso "indice": busca su elemento real visible, lo centra
-    // en pantalla con scroll suave y, tras darle tiempo a terminar (el
-    // scroll es asíncrono y no avisa cuándo acaba), coloca el foco sobre
-    // su posición ya final. Si ningún candidato del paso está visible
-    // ahora mismo, se salta automáticamente en la misma dirección en la
-    // que se estaba navegando, sin dejar un hueco vacío en el recorrido.
+    // Pinta el paso "indice": deshace lo que hubiera dejado preparado el
+    // paso anterior (su limpiar(), si existía), prepara lo que necesite
+    // este paso nuevo (filtros móviles/modal de temporada compartidos, y
+    // su propio antes() si lo tiene), busca su elemento real visible, lo
+    // centra en pantalla con scroll suave y, tras darle tiempo a terminar
+    // (el scroll es asíncrono y no avisa cuándo acaba), coloca el foco
+    // sobre su posición ya final. Si ningún candidato del paso está
+    // visible ahora mismo (tras su propio antes()), se deshace lo que ese
+    // paso hubiera preparado y se salta automáticamente en la misma
+    // dirección en la que se estaba navegando, sin dejar un hueco vacío
+    // ni nada a medio abrir en el recorrido.
     function mostrarPasoTourAyuda_(indice, direccion) {
         direccion = direccion || 1;
         if (indice < 0 || indice >= TOUR_AYUDA_PASOS_.length) { cerrarTourAyuda_(); return; }
+
+        if (indice !== tourAyudaPasoActual_) {
+            const pasoAnterior = TOUR_AYUDA_PASOS_[tourAyudaPasoActual_];
+            if (pasoAnterior && pasoAnterior.limpiar) pasoAnterior.limpiar();
+        }
+
         const paso = TOUR_AYUDA_PASOS_[indice];
-        tourAyudaPrepararPanelFiltrosMovil_(!!paso.prepararMovil);
+        tourAyudaPrepararPanelFiltrosMovil_(!!paso.usaFiltrosMovil);
+        tourAyudaPrepararModalTemporada_(!!paso.usaTemporadaModal);
+        if (paso.antes) paso.antes();
+
         const el = elementoVisibleParaPasoAyuda_(paso);
-        if (!el) { mostrarPasoTourAyuda_(indice + direccion, direccion); return; }
+        if (!el) {
+            if (paso.limpiar) paso.limpiar();
+            mostrarPasoTourAyuda_(indice + direccion, direccion);
+            return;
+        }
 
         tourAyudaPasoActual_ = indice;
         $('tour-ayuda-paso-contador').textContent = `Paso ${indice + 1} de ${TOUR_AYUDA_PASOS_.length}`;
