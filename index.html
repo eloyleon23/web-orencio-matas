@@ -10438,6 +10438,12 @@ if (window.OM_PREPRODUCCION) {
             limpiar: () => { if (typeof limpiarFiltros === 'function') limpiarFiltros(); },
         },
         {
+            selectores: ['#btn-acceso-profesional'],
+            titulo: 'Dónde está el acceso profesional',
+            texto: 'Este es el botón: lo encontrarás dentro del bloque de filtros, arriba del todo.',
+            usaFiltrosMovil: true,
+        },
+        {
             selectores: ['.modal-acceso-profesional-box'],
             titulo: 'Acceso profesional',
             texto: 'Dentro de este mismo bloque de filtros: pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor. Si no tienes código, puedes pulsar "¿No tienes código de acceso? Solicítalo por email" para pedirlo.',
@@ -10484,11 +10490,13 @@ if (window.OM_PREPRODUCCION) {
             selectores: ['#btn-lista-compra-flotante'],
             titulo: 'Tu lista de la compra',
             texto: 'Accede a tu lista en cualquier momento desde aquí: expórtala a PDF, compártela o imprime etiquetas de precio.',
+            usaListaCompraDemo: true,
         },
         {
             selectores: ['#modal-lista-compra-acciones'],
             titulo: 'Dentro de tu lista de la compra',
             texto: 'Desde aquí puedes ajustar unidades, quitar productos, exportar a PDF, generar un folleto con fotos, compartir por WhatsApp o correo, imprimir etiquetas de precio o vaciar/eliminar la lista entera.',
+            usaListaCompraDemo: true,
             antes: () => {
                 const overlay = document.getElementById('modal-lista-compra-overlay');
                 if (overlay && overlay.classList.contains('activo')) return;
@@ -10502,6 +10510,11 @@ if (window.OM_PREPRODUCCION) {
                     if (cerrar) cerrar.click();
                 }
             },
+        },
+        {
+            selectores: ['.seccion-temporada__titulo-clicable'],
+            titulo: 'Cómo ir a una temporada',
+            texto: 'Pulsa el título de una temporada para ver todos sus productos, filtrarlos y generar su folleto.',
         },
         {
             selectores: ['#temporada-ver-todos-overlay .destacados-buscador-controles'],
@@ -10613,6 +10626,35 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
+    // Mismo patrón otra vez, pero con la Lista de la compra — a petición
+    // de Eloy, el botón flotante y la modal deben verse de verdad aunque
+    // quien vea la demo no tenga ninguna lista creada todavía (el botón
+    // flotante solo se muestra, y la modal solo se abre, si
+    // listaCompraExiste_() es cierto). Mientras no haya una lista REAL,
+    // se finge una con un único producto real del catálogo — solo en
+    // memoria (listaCompraState_), SIN pasar nunca por el guardado en
+    // localStorage (listaCompraAnadir_/listaCompraGuardarEnStorage_) — y
+    // se restaura el estado exacto de antes (null, o la lista real si ya
+    // existía) en cuanto se abandonan estos pasos. Si el usuario YA tenía
+    // una lista real, esta función no la toca para nada.
+    let tourAyudaListaCompraEstadoPrevio_ = undefined; // undefined = no se ha fingido nada
+    function tourAyudaPrepararListaCompraDemo_(necesario) {
+        if (necesario) {
+            if (listaCompraExiste_()) return; // ya hay una lista real: no fingir nada
+            const productoEjemplo = TODOS.find(p => estaActivoEnCatalogo_(p));
+            tourAyudaListaCompraEstadoPrevio_ = listaCompraState_;
+            listaCompraState_ = {
+                version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], notas: '',
+                productos: productoEjemplo ? [{ ref: productoEjemplo.ref, unidades: 1 }] : [],
+            };
+            listaCompraActualizarUI_();
+        } else if (tourAyudaListaCompraEstadoPrevio_ !== undefined) {
+            listaCompraState_ = tourAyudaListaCompraEstadoPrevio_;
+            tourAyudaListaCompraEstadoPrevio_ = undefined;
+            listaCompraActualizarUI_();
+        }
+    }
+
     function arrancarTourAyuda_() {
         tourAyudaPasoActual_ = -1;
         $('tour-ayuda-overlay').classList.add('activo');
@@ -10627,6 +10669,7 @@ if (window.OM_PREPRODUCCION) {
         if (pasoActual && pasoActual.limpiar) pasoActual.limpiar();
         tourAyudaPrepararPanelFiltrosMovil_(false);
         tourAyudaPrepararModalTemporada_(false);
+        tourAyudaPrepararListaCompraDemo_(false);
         tourAyudaPasoActual_ = -1;
         $('tour-ayuda-overlay').classList.remove('activo');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
@@ -10670,6 +10713,7 @@ if (window.OM_PREPRODUCCION) {
             const paso = TOUR_AYUDA_PASOS_[indice];
             tourAyudaPrepararPanelFiltrosMovil_(!!paso.usaFiltrosMovil);
             tourAyudaPrepararModalTemporada_(!!paso.usaTemporadaModal);
+            tourAyudaPrepararListaCompraDemo_(!!paso.usaListaCompraDemo);
             if (paso.antes) paso.antes();
 
             const el = elementoVisibleParaPasoAyuda_(paso);
