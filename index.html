@@ -9105,7 +9105,12 @@ if (window.OM_PREPRODUCCION) {
             const btnDiag = document.createElement('button');
             btnDiag.type = 'button';
             btnDiag.id = 'btn-abrir-diag-rendimiento';
-            btnDiag.className = 'btn-destacados-accion btn-destacados-editar';
+            // "btn-destacados-editar" viene display:none por defecto (ver su
+            // CSS) y solo se muestra con ".visible" — aquí se añade directo
+            // en la creación (no hace falta la lógica condicional de JS que
+            // usa ese mismo patrón en otros botones, porque este bloque
+            // entero ya solo se ejecuta en preprod).
+            btnDiag.className = 'btn-destacados-accion btn-destacados-editar visible';
             btnDiag.title = 'Diagnóstico de rendimiento (solo preprod)';
             btnDiag.setAttribute('aria-label', 'Abrir diagnóstico de rendimiento');
             btnDiag.innerHTML = '<i class="fa-solid fa-stethoscope"></i>';
