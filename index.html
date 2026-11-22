@@ -10742,7 +10742,9 @@ if (window.OM_PREPRODUCCION) {
             // "parecía" roto/desplazado fuera de la pantalla. No hace
             // falta desplazar nada para un panel fijo: ya está siempre
             // dentro del viewport en cuanto se abre.
-            if (!el.closest('#filtros-extra')) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const panelFiltrosMovil = el.closest('#filtros-extra');
+            const dentroDePanelFijo = panelFiltrosMovil && getComputedStyle(panelFiltrosMovil).position === 'fixed';
+            if (!dentroDePanelFijo) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setTimeout(() => {
                 const r = el.getBoundingClientRect();
                 const margen = 8;
