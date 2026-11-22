@@ -5753,6 +5753,69 @@
             #btn-lista-compra-flotante .btn-lista-compra-flotante-texto { display: none; }
         }
 
+        /* Botón flotante de Ayuda — a petición de Eloy: acceso no intrusivo
+           a una guía rápida de uso (buscar, filtrar, acceso profesional,
+           lista de la compra) desde un botón discreto, sin ningún aviso
+           automático ni superposición no solicitada. En la misma esquina
+           que #btn-subir-arriba (derecha) pero apilado por ENCIMA de su
+           posición, para que nunca se solapen cuando ambos están visibles
+           a la vez (#btn-subir-arriba solo aparece al hacer scroll; este
+           botón, siempre). Azul (--blue) para diferenciarlo del resto de
+           flotantes (naranja de la lista, oscuro el de subir arriba). */
+        #btn-ayuda-flotante {
+            display: flex;
+            position: fixed;
+            right: 22px;
+            bottom: 80px;
+            z-index: 3990;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: var(--blue);
+            color: #fff;
+            font-size: 1.15rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            transition: filter .15s, transform .1s;
+        }
+        #btn-ayuda-flotante:hover { filter: brightness(1.08); }
+        #btn-ayuda-flotante:active { transform: translateY(1px); }
+        #btn-ayuda-flotante.oculto-por-modal { display: none !important; }
+        @media (max-width: 640px) {
+            #btn-ayuda-flotante {
+                right: 14px;
+                bottom: 62px;
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+                background: var(--blue);
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            }
+        }
+
+        /* Modal de Ayuda — mismo patrón visual que el resto de modales
+           (.modal-overlay + .modal-producto-box, ver esa clase para el
+           scroll/max-height ya resueltos), con un ancho algo más
+           contenido (más cómodo de leer que los 900px del detalle de
+           producto) y secciones separadas por un borde sutil. */
+        .modal-ayuda-box { max-width: 640px; padding: 30px 30px 26px; }
+        .ayuda-modal-subtitulo { color: var(--muted); font-size: 0.92rem; margin: 2px 0 18px; }
+        .ayuda-seccion { padding: 16px 0; border-top: 1px solid var(--border); }
+        .ayuda-seccion:first-of-type { border-top: none; padding-top: 4px; }
+        .ayuda-seccion h4 {
+            margin: 0 0 8px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .ayuda-seccion h4 i { color: var(--blue); width: 20px; text-align: center; }
+        .ayuda-seccion ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+        .ayuda-seccion ul li { margin-bottom: 4px; }
+
     </style>
 <!-- Google tag (gtag.js) -->
 <script>
@@ -5844,6 +5907,70 @@
     <i class="fa-solid fa-clipboard-list"></i>
     <span class="btn-lista-compra-flotante-texto">Lista de la compra</span>
 </button>
+
+<!-- Botón flotante de Ayuda y su modal — ver el comentario junto a
+     #btn-ayuda-flotante en el CSS. Puramente informativo, a demanda
+     (nunca se abre solo ni se muestra como aviso): un resumen rápido de
+     cómo buscar, filtrar, entrar como profesional y usar la lista de la
+     compra, pensado para quien no conoce el buscador. -->
+<button type="button" id="btn-ayuda-flotante" title="Ayuda: cómo usar el buscador" aria-label="Ver ayuda sobre cómo usar el buscador">
+    <i class="fa-solid fa-circle-question"></i>
+</button>
+<div class="modal-overlay" id="modal-ayuda-overlay">
+    <div class="modal-producto-box modal-ayuda-box">
+        <button class="modal-producto-cerrar" id="modal-ayuda-cerrar" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3><i class="fa-solid fa-circle-question"></i> Guía rápida del buscador</h3>
+        <p class="ayuda-modal-subtitulo">Un resumen de lo más útil para sacarle partido a la web.</p>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-magnifying-glass"></i> Buscar productos</h4>
+            <ul>
+                <li>Escribe el nombre, la referencia o el código de barras (EAN) del producto.</li>
+                <li>Reconoce sinónimos y abreviaturas habituales, y tolera pequeños errores de escritura.</li>
+                <li>Puedes escanear el código de barras con la cámara, o buscar a partir de una foto.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-filter"></i> Filtros</h4>
+            <ul>
+                <li>Filtra por área (droguería, perfumería, pinturas, talleres), familia, precio, fecha de alta o solo ofertas.</li>
+                <li>En el móvil, pulsa el icono de deslizadores junto al buscador para abrir el panel de filtros.</li>
+                <li>"Limpiar filtros" los borra todos de una vez.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-user-tie"></i> Acceso profesional</h4>
+            <ul>
+                <li>Pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor.</li>
+                <li>Marca "Recordar PIN en este dispositivo" para no tener que volver a introducirlo cada vez.</li>
+                <li>"Salir del modo profesional" cierra la sesión cuando quieras.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-clipboard-list"></i> Lista de la compra</h4>
+            <ul>
+                <li>Añade productos a tu lista desde cualquier tarjeta o desde su ficha de detalle.</li>
+                <li>Indica las unidades, o cajas/paquetes si el producto lo permite.</li>
+                <li>Accede a tu lista en cualquier momento desde el botón flotante naranja.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-gear"></i> Funciones de la lista de la compra</h4>
+            <ul>
+                <li>Expórtala a PDF, o compártela directamente por WhatsApp o correo.</li>
+                <li>Imprime etiquetas de precio de varios productos de la lista a la vez.</li>
+                <li>Recibirás un aviso si lleva tiempo creada, para que no se quede desactualizada.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -10102,11 +10229,32 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
+    // Botón flotante de Ayuda + su modal (guía rápida) — ver el comentario
+    // junto a #btn-ayuda-flotante en el CSS. Se abre y se cierra igual que
+    // el resto de modales del buscador (clic en el fondo o en la X), sin
+    // ningún estado que recordar entre visitas: siempre a demanda.
+    function inicializarAyuda_() {
+        const overlay = $('modal-ayuda-overlay');
+        $('btn-ayuda-flotante').addEventListener('click', () => {
+            overlay.classList.add('activo');
+            $('btn-subir-arriba').classList.add('oculto-por-modal');
+            $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        });
+        const cerrarAyuda_ = () => {
+            overlay.classList.remove('activo');
+            $('btn-subir-arriba').classList.remove('oculto-por-modal');
+            $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        };
+        $('modal-ayuda-cerrar').addEventListener('click', cerrarAyuda_);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarAyuda_(); });
+    }
+
     async function mostrarResultadosPorPrimeraVez() {
         inicializarFiltros();
         inicializarListaCompra_();
         inicializarFolletoDestacados_();
         inicializarAccesoProfesionalBuscador_();
+        inicializarAyuda_();
         // Si había filtros guardados de una visita anterior en esta misma
         // sesión del navegador, restaurarFiltrosDesdeSesion_() ya los
         // aplica (y llama a aplicarFiltros() por su cuenta) — si no había
@@ -12446,6 +12594,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-destacados-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         const pinGuardado = (() => { try { return localStorage.getItem('omDestacadosPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
             destacadosValidarPinYArrancar_(pinGuardado);
@@ -12463,6 +12612,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-destacados-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-destacados')) {
@@ -13170,6 +13320,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporada-ver-todos-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
 
         // Deja también situada en pantalla la sección/bloque de esta
         // temporada (si ya está pintado) — a petición de Eloy: poder
@@ -13236,6 +13387,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporada-ver-todos-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -16160,6 +16312,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         temporadaCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -16178,6 +16331,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     // ── Listeners del modal público "ver todos" (siempre presentes) ──
@@ -17282,6 +17436,7 @@ if (window.OM_PREPRODUCCION) {
         $('bc-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         bcCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omBloquesCategoriasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -17297,6 +17452,7 @@ if (window.OM_PREPRODUCCION) {
         $('bc-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-bloques-categorias')) {
@@ -17469,6 +17625,7 @@ if (window.OM_PREPRODUCCION) {
         $('pa-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         $('pa-vista-pin').style.display = 'block';
         $('pa-vista-principal').style.display = 'none';
         $('pa-pin-input').value = '';
@@ -17485,6 +17642,7 @@ if (window.OM_PREPRODUCCION) {
         $('pa-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-panel-analitica')) {
@@ -18067,6 +18225,7 @@ if (window.OM_PREPRODUCCION) {
         document.body.style.overflow = 'hidden';
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
 
         // Igual que al escribir en el buscador: más espacio libre, y el
         // icono del botón se invierte para indicar que el panel está abierto
@@ -18097,6 +18256,7 @@ if (window.OM_PREPRODUCCION) {
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
         $('btn-abrir-filtros-movil').classList.remove('activo');
         $('btn-limpiar-arriba').classList.remove('clicable');
     }
@@ -22591,6 +22751,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-producto-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
 
         // A petición de Eloy: "si clico en un producto sugerido... si le
         // das atrás te saca del buscador. Debería ir al producto del que
@@ -26545,6 +26706,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-producto-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
         // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
         // productos del listado o sugeridos dentro del modal), se limpia
         // sin crear ni quitar ninguna entrada de historial — un cierre
