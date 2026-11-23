@@ -692,6 +692,23 @@
             /* Subir todo el contenido y ahorrar el hueco superior */
             .layout { padding-top: 10px; }
 
+            /* A petición de Eloy: en móvil, para ganar pantalla, la
+               cabecera del sitio (logo + menú, .navbar-wrapper, siempre
+               visible porque es position:sticky) se oculta al hacer
+               scroll hacia abajo y el bloque del buscador/filtros (fijo,
+               justo debajo) sube a ocupar su sitio — ver
+               actualizarVisibilidadNavbarMovil_ más abajo, que calcula el
+               "top" de #grupo-buscador-principal según corresponda. Al
+               subir en el scroll, llegar arriba del todo o pulsar
+               "subir arriba" vuelve a aparecer. OJO: esto NO es lo mismo
+               que ocultar el propio buscador al hacer scroll — eso se
+               probó antes (ver el comentario junto a
+               actualizarVisibilidadBotonSubir) y se descartó porque
+               obligaba a subir/bajar solo para poder buscar; aquí el
+               buscador se queda siempre visible, solo cambia de sitio. */
+            .navbar-wrapper { transition: transform .25s ease; }
+            .navbar-wrapper.navbar-wrapper--oculta { transform: translateY(-100%); }
+
             /* ── Filtros como panel modal lateral en móvil ──
                Por defecto en móvil solo se ve la fila compacta: botón
                "Filtros" + buscador + escáner — sin la tarjeta blanca, sin
@@ -29426,6 +29443,11 @@ if (window.OM_PREPRODUCCION) {
     // porque cambia según el ancho de pantalla. Como al ser "fixed" sale
     // del flujo normal, también fijamos la altura del espaciador que
     // ocupa su hueco, para que el contenido de abajo no quede tapado.
+    // Si la cabecera del sitio (.navbar-wrapper) está oculta por scroll en
+    // móvil (ver actualizarVisibilidadNavbarMovil_ más abajo), el buscador
+    // fijo sube a ocupar su sitio (top:0) en vez de dejar su hueco en
+    // blanco.
+    let navbarMovilOculta_ = false;
     function ajustarPosicionBuscadorFijo() {
         const grupoBuscador = $('grupo-buscador-principal');
         const espaciador = $('espaciador-buscador-movil');
@@ -29449,7 +29471,7 @@ if (window.OM_PREPRODUCCION) {
             if (filtrosAside) filtrosAside.style.top = top;
             return;
         }
-        grupoBuscador.style.top = alturaNavbar + 'px';
+        grupoBuscador.style.top = (navbarMovilOculta_ ? 0 : alturaNavbar) + 'px';
         const alturaBuscadorFijo = grupoBuscador.getBoundingClientRect().height;
         if (espaciador) espaciador.style.height = alturaBuscadorFijo + 'px';
         // Limpia el "top" de escritorio por si se redimensiona desde una
@@ -29529,11 +29551,47 @@ if (window.OM_PREPRODUCCION) {
     // queda siempre visible (fija en móvil, sticky en escritorio); solo la
     // cabecera oscura (ver ocultarCabeceraBuscador, al enfocar el buscador)
     // sigue colapsándose como antes.
+    // A petición de Eloy: en móvil, para ganar pantalla, la cabecera del
+    // sitio (.navbar-wrapper, logo + menú) se oculta al bajar en el
+    // scroll y el buscador fijo de debajo sube a ocupar su sitio (ver
+    // navbarMovilOculta_/ajustarPosicionBuscadorFijo más arriba). Al
+    // subir en el scroll, llegar arriba del todo o pulsar "subir arriba"
+    // vuelve a aparecer. Un UMBRAL antes de empezar a ocultar evita que
+    // tiemble con el primer pixel de scroll, y exigir una bajada real
+    // (no solo estar por debajo del umbral) evita ocultarla de golpe al
+    // cargar la página ya con scroll restaurado por el navegador.
+    const navbarMovil_ = document.querySelector('.navbar-wrapper');
+    const UMBRAL_OCULTAR_NAVBAR_MOVIL_ = 80;
+    let ultimoScrollYNavbar_ = window.scrollY;
+    function ocultarNavbarMovil_() {
+        if (!navbarMovil_ || navbarMovilOculta_ || window.innerWidth > 768) return;
+        navbarMovil_.classList.add('navbar-wrapper--oculta');
+        navbarMovilOculta_ = true;
+        ajustarPosicionBuscadorFijo();
+    }
+    function mostrarNavbarMovil_() {
+        if (!navbarMovil_ || !navbarMovilOculta_) return;
+        navbarMovil_.classList.remove('navbar-wrapper--oculta');
+        navbarMovilOculta_ = false;
+        ajustarPosicionBuscadorFijo();
+    }
+    function actualizarVisibilidadNavbarMovil_(scrollActual) {
+        if (window.innerWidth > 768) { ultimoScrollYNavbar_ = scrollActual; return; }
+        const bajando = scrollActual > ultimoScrollYNavbar_;
+        if (scrollActual > UMBRAL_OCULTAR_NAVBAR_MOVIL_ && bajando) {
+            ocultarNavbarMovil_();
+        } else if (!bajando || scrollActual <= UMBRAL_OCULTAR_NAVBAR_MOVIL_) {
+            mostrarNavbarMovil_();
+        }
+        ultimoScrollYNavbar_ = scrollActual;
+    }
+
     function actualizarVisibilidadBotonSubir() {
         const scrollActual = window.scrollY;
         const visible = scrollActual > 400;
         btnSubirArriba.classList.toggle('visible', visible);
         if (scrollActual <= 0) mostrarCabeceraBuscador();
+        actualizarVisibilidadNavbarMovil_(scrollActual);
         scrollTicking = false;
     }
     window.addEventListener('scroll', () => {
@@ -29545,7 +29603,9 @@ if (window.OM_PREPRODUCCION) {
     btnSubirArriba.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         mostrarCabeceraBuscador();
+        mostrarNavbarMovil_();
     });
+    window.addEventListener('resize', debounce(() => { if (window.innerWidth > 768) mostrarNavbarMovil_(); }, 200));
     actualizarVisibilidadBotonSubir();
 
     $('btn-lista-compra-flotante').addEventListener('click', () => abrirModalListaCompra_());
