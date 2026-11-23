@@ -5895,18 +5895,46 @@
             .asistente-form__texto { display: none; }
             .asistente-form__icono { display: inline; }
         }
-        .asistente-sugerencias { display: flex; flex-wrap: wrap; gap: 8px; }
-        .asistente-sugerencias button {
+        /* Desplegable de autocompletado (petición de Eloy): al poner el
+           cursor en el campo aparecen soluciones ya definidas como
+           opciones, y se van filtrando conforme el usuario escribe. Se
+           coloca en el flujo normal (no position:absolute) justo debajo
+           del formulario — la modal que lo contiene tiene scroll propio
+           (overflow-y:auto, ver .modal-producto-box) y un desplegable
+           flotante se recortaría ahí en vez de superponerse de verdad. */
+        .asistente-autocompletado {
+            display: none;
             border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 240px;
+            overflow-y: auto;
+            margin-top: -8px;
+        }
+        .asistente-autocompletado.activo { display: block; }
+        .asistente-autocompletado button {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 10px 14px;
+            border: none;
+            border-bottom: 1px solid var(--border);
             background: #fff;
             color: var(--dark);
-            padding: 6px 12px;
-            border-radius: 999px;
-            font-size: 0.82rem;
+            font-size: 0.86rem;
             cursor: pointer;
         }
-        .asistente-sugerencias button:hover { background: #f8fafc; }
-        .asistente-resultado { min-height: 40px; }
+        .asistente-autocompletado button:last-child { border-bottom: none; }
+        .asistente-autocompletado button:hover,
+        .asistente-autocompletado button:focus { background: #f8fafc; }
+        .asistente-autocompletado__vacio {
+            padding: 10px 14px;
+            font-size: 0.84rem;
+            color: var(--muted);
+        }
+        /* Margen de verdad SOLO cuando hay contenido que mostrar — con
+           :empty en display:none no hace falta condicionar nada más: un
+           elemento oculto no deja ningún hueco igualmente. */
+        .asistente-resultado:not(:empty) { margin-top: 4px; }
         .asistente-resultado:empty { display: none; }
         .asistente-estado { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 0; text-align: center; color: var(--muted); }
         .asistente-estado img.cs-icono-ia-asistente { width: 32px; height: 32px; border-radius: 8px; }
@@ -6227,11 +6255,7 @@
                 <i class="fa-solid fa-arrow-right asistente-form__icono" aria-hidden="true"></i>
             </button>
         </form>
-        <div class="asistente-sugerencias" id="asistente-sugerencias">
-            <button type="button" data-ejemplo="quitar manchas de grasa de un suelo de garaje">Grasa en el suelo del garaje</button>
-            <button type="button" data-ejemplo="pintar una pared con humedad">Pintar pared con humedad</button>
-            <button type="button" data-ejemplo="eliminar óxido de una reja metálica">Óxido en una reja</button>
-        </div>
+        <div class="asistente-autocompletado" id="asistente-autocompletado"></div>
         <div class="asistente-resultado" id="asistente-resultado"></div>
     </div>
 </div>
@@ -10792,7 +10816,8 @@ if (window.OM_PREPRODUCCION) {
         const input = $('asistente-input');
         const btnEnviar = $('asistente-enviar');
         const resultado = $('asistente-resultado');
-        if (!overlay || !form || !input || !resultado) return;
+        const autocompletado = $('asistente-autocompletado');
+        if (!overlay || !form || !input || !resultado || !autocompletado) return;
 
         function escaparHtmlAsistente_(t) {
             const div = document.createElement('div');
@@ -10834,6 +10859,7 @@ if (window.OM_PREPRODUCCION) {
             $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
             $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
             cancelarPeticionAsistente_();
+            cerrarAutocompletado_();
         };
 
         $('btn-asistente-flotante').addEventListener('click', () => {
@@ -10843,11 +10869,90 @@ if (window.OM_PREPRODUCCION) {
         overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarAsistente_(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('activo')) cerrarAsistente_(); });
 
-        $('asistente-sugerencias').querySelectorAll('button[data-ejemplo]').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                input.value = btn.dataset.ejemplo;
-                preguntarAsistente_(input.value);
-            });
+        // ── Autocompletado: "soluciones comunes como opciones" al poner
+        // el cursor en el campo, filtrando entre las guías YA DEFINIDAS
+        // (D.soluciones — las reales del Sheet en cuanto terminan de
+        // cargar, el respaldo estático mientras tanto) conforme el
+        // usuario escribe. Si ninguna encaja, se avisa de que la
+        // pregunta se puede mandar igualmente al asistente con IA (el
+        // envío normal, sin tocar: nunca bloquea preguntar algo que no
+        // sea una de estas guías). Petición de Eloy: "así fomentamos que
+        // el usuario utilice el centro de soluciones".
+        let listaAutocompletado_ = null; // null = todavía no construida
+
+        function normalizarAsistente_(t) {
+            const D = window.SOLUCIONES_DATA;
+            return D && D.normalizarTexto ? D.normalizarTexto(t) : (t || '').toString().toLowerCase();
+        }
+
+        // Las "destacadas" (selección editorial, D.solucionesDestacadas)
+        // primero, el resto por orden alfabético — se reconstruye cada
+        // vez que hace falta (no una sola vez al abrir la modal): D.soluciones
+        // puede sustituirse de un momento a otro por las guías reales del
+        // Sheet mientras el usuario ya está escribiendo (cargarSolucionesReales,
+        // lanzada en segundo plano al abrir, ver abrirAsistente_).
+        function construirListaAutocompletado_() {
+            const D = window.SOLUCIONES_DATA;
+            if (!D) return [];
+            const soluciones = D.soluciones || {};
+            const ordenDestacadas = new Map((D.solucionesDestacadas || []).map((s, i) => [s.slug, i]));
+            return Object.keys(soluciones)
+                .map((slug) => ({ slug, title: soluciones[slug].title }))
+                .sort((a, b) => {
+                    const da = ordenDestacadas.has(a.slug) ? ordenDestacadas.get(a.slug) : Infinity;
+                    const db = ordenDestacadas.has(b.slug) ? ordenDestacadas.get(b.slug) : Infinity;
+                    if (da !== db) return da - db;
+                    return a.title.localeCompare(b.title, 'es');
+                });
+        }
+
+        function cerrarAutocompletado_() {
+            autocompletado.classList.remove('activo');
+            autocompletado.innerHTML = '';
+        }
+
+        function renderAutocompletado_(texto) {
+            // Se reconstruye la lista cada vez en vez de cachearla una
+            // sola vez: así, si las guías reales del Sheet todavía no
+            // habían llegado la primera vez que se mostró, en cuanto
+            // lleguen el desplegable las refleja sin más (próxima vez
+            // que se abra/escriba), nunca se queda congelado con el
+            // respaldo estático.
+            listaAutocompletado_ = construirListaAutocompletado_();
+            if (!listaAutocompletado_.length) { cerrarAutocompletado_(); return; }
+
+            const normal = normalizarAsistente_(texto).trim();
+            const items = (normal
+                ? listaAutocompletado_.filter((e) => normalizarAsistente_(e.title).includes(normal))
+                : listaAutocompletado_
+            ).slice(0, 8);
+
+            if (!items.length) {
+                autocompletado.innerHTML = '<p class="asistente-autocompletado__vacio">No tenemos ninguna guía con ese texto — pulsa enviar para preguntárselo a nuestro asistente con IA.</p>';
+            } else {
+                autocompletado.innerHTML = items.map((e) => `<button type="button" data-slug="${escaparHtmlAsistente_(e.slug)}">${escaparHtmlAsistente_(e.title)}</button>`).join('');
+                autocompletado.querySelectorAll('button[data-slug]').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const D = window.SOLUCIONES_DATA;
+                        const s = D && D.soluciones && D.soluciones[btn.dataset.slug];
+                        cerrarAutocompletado_();
+                        if (!s) { input.value = btn.textContent; preguntarAsistente_(input.value); return; }
+                        // Coincidencia exacta elegida de la lista: se
+                        // muestra DIRECTAMENTE, sin pasar por la IA — más
+                        // rápido, sin coste, y ya sabemos con certeza qué
+                        // guía es (nada que "adivinar").
+                        input.value = s.title;
+                        mostrarGuiaEnAsistente_(s, s.title);
+                    });
+                });
+            }
+            autocompletado.classList.add('activo');
+        }
+
+        input.addEventListener('focus', () => renderAutocompletado_(input.value));
+        input.addEventListener('input', () => renderAutocompletado_(input.value));
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#asistente-form') && !e.target.closest('#asistente-autocompletado')) cerrarAutocompletado_();
         });
 
         function renderEstado_(iconoHtml, texto) {
@@ -10898,6 +11003,39 @@ if (window.OM_PREPRODUCCION) {
             window.open(`soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`, '_blank', 'noopener');
         }
 
+        // Guía ya existente (escrita a mano) — resumen condensado aquí
+        // mismo, con enlace a la guía completa (pestaña nueva). Se usa
+        // tanto cuando la IA encuentra esta guía como cuando el usuario
+        // la elige DIRECTAMENTE del desplegable de autocompletado (sin
+        // pasar por la IA en ese caso — más rápido y sin coste).
+        function mostrarGuiaEnAsistente_(s, texto) {
+            cancelarPeticionAsistente_(); // por si había una pregunta a la IA en vuelo
+            canceladoPorCierre_ = false;
+            textoEnCurso_ = texto;
+            const refs = (s.recommendedProducts || []).map((x) => x.ref).filter(Boolean);
+            const D = window.SOLUCIONES_DATA;
+            renderEstado_(ICONO_IA_ASISTENTE_, 'Preparando la guía…');
+            D.cargarProductosPorRefs(refs).then((productos) => {
+                if (textoEnCurso_ !== texto) return;
+                resultado.innerHTML = `
+                    <div class="asistente-guia-cabecera">
+                        <h4>${escaparHtmlAsistente_(s.title)}</h4>
+                    </div>
+                    <p>${escaparHtmlAsistente_(s.description || '')}</p>
+                    <div class="asistente-guia-meta">
+                        ${s.difficulty ? `<span>Dificultad: ${escaparHtmlAsistente_(s.difficulty)}</span>` : ''}
+                        ${s.estimatedTime ? `<span>⏱ ${escaparHtmlAsistente_(s.estimatedTime)}</span>` : ''}
+                        ${s.result ? `<span>✓ ${escaparHtmlAsistente_(s.result)}</span>` : ''}
+                    </div>
+                    ${renderProductosAsistente_(productos, 'Productos recomendados:')}
+                    <button type="button" class="asistente-ver-completa" id="asistente-ver-guia">Ver la guía completa, paso a paso →</button>
+                `;
+                wireProductosAsistente_(productos);
+                const btnVer = $('asistente-ver-guia');
+                if (btnVer) btnVer.addEventListener('click', () => window.open(`soluciones/solucion.html?slug=${encodeURIComponent(s.slug)}`, '_blank', 'noopener'));
+            });
+        }
+
         function preguntarAsistente_(textoOriginal) {
             const texto = (textoOriginal || '').toString().trim();
             if (!texto) return;
@@ -10908,6 +11046,7 @@ if (window.OM_PREPRODUCCION) {
                 return;
             }
 
+            cerrarAutocompletado_();
             cancelarPeticionAsistente_();
             canceladoPorCierre_ = false;
             const controlador = new AbortController();
@@ -10939,30 +11078,10 @@ if (window.OM_PREPRODUCCION) {
                 }
 
                 // Guía ya existente (escrita a mano) que encaja con la
-                // pregunta — se muestra un resumen condensado aquí mismo,
-                // con enlace a la guía completa (pestaña nueva).
+                // pregunta — mismo resumen condensado que al elegirla
+                // directamente del desplegable (ver mostrarGuiaEnAsistente_).
                 if (r.solucion) {
-                    const s = r.solucion;
-                    const refs = (s.recommendedProducts || []).map((x) => x.ref).filter(Boolean);
-                    (window.SOLUCIONES_DATA.cargarProductosPorRefs(refs)).then((productos) => {
-                        if (textoEnCurso_ !== texto) return;
-                        resultado.innerHTML = `
-                            <div class="asistente-guia-cabecera">
-                                <h4>${escaparHtmlAsistente_(s.title)}</h4>
-                            </div>
-                            <p>${escaparHtmlAsistente_(s.description || '')}</p>
-                            <div class="asistente-guia-meta">
-                                ${s.difficulty ? `<span>Dificultad: ${escaparHtmlAsistente_(s.difficulty)}</span>` : ''}
-                                ${s.estimatedTime ? `<span>⏱ ${escaparHtmlAsistente_(s.estimatedTime)}</span>` : ''}
-                                ${s.result ? `<span>✓ ${escaparHtmlAsistente_(s.result)}</span>` : ''}
-                            </div>
-                            ${renderProductosAsistente_(productos, 'Productos recomendados:')}
-                            <button type="button" class="asistente-ver-completa" id="asistente-ver-guia">Ver la guía completa, paso a paso →</button>
-                        `;
-                        wireProductosAsistente_(productos);
-                        const btnVer = $('asistente-ver-guia');
-                        if (btnVer) btnVer.addEventListener('click', () => window.open(`soluciones/solucion.html?slug=${encodeURIComponent(s.slug)}`, '_blank', 'noopener'));
-                    });
+                    mostrarGuiaEnAsistente_(r.solucion, texto);
                     return;
                 }
 
