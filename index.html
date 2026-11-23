@@ -2191,13 +2191,13 @@
             align-items: center;
             gap: 10px;
             padding: 10px 12px;
-            background: #fef2f2;
-            border: 1px solid #fecaca;
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
             border-radius: 8px;
             cursor: pointer;
         }
-        .check-oferta input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--red); }
-        .check-oferta span { font-size: 0.88rem; font-weight: 600; color: #991b1b; }
+        .check-oferta input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--blue); }
+        .check-oferta span { font-size: 0.88rem; font-weight: 600; color: #0369a1; }
 
         .gestion-imagenes-header {
             padding: 8px 12px;
@@ -5753,6 +5753,144 @@
             #btn-lista-compra-flotante .btn-lista-compra-flotante-texto { display: none; }
         }
 
+        /* Botón flotante de Ayuda — a petición de Eloy: acceso no intrusivo
+           a una guía rápida de uso (buscar, filtrar, acceso profesional,
+           lista de la compra) desde un botón discreto, sin ningún aviso
+           automático ni superposición no solicitada. En la misma esquina
+           que #btn-subir-arriba (derecha) pero apilado por ENCIMA de su
+           posición, para que nunca se solapen cuando ambos están visibles
+           a la vez (#btn-subir-arriba solo aparece al hacer scroll; este
+           botón, siempre). Azul (--blue) para diferenciarlo del resto de
+           flotantes (naranja de la lista, oscuro el de subir arriba). */
+        #btn-ayuda-flotante {
+            display: flex;
+            position: fixed;
+            right: 22px;
+            bottom: 80px;
+            z-index: 3990;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: var(--blue);
+            color: #fff;
+            font-size: 1.15rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            transition: filter .15s, transform .1s;
+        }
+        #btn-ayuda-flotante:hover { filter: brightness(1.08); }
+        #btn-ayuda-flotante:active { transform: translateY(1px); }
+        #btn-ayuda-flotante.oculto-por-modal { display: none !important; }
+        @media (max-width: 640px) {
+            #btn-ayuda-flotante {
+                right: 14px;
+                bottom: 62px;
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+                background: var(--blue);
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            }
+        }
+
+        /* Modal de Ayuda — mismo patrón visual que el resto de modales
+           (.modal-overlay + .modal-producto-box, ver esa clase para el
+           scroll/max-height ya resueltos), con un ancho algo más
+           contenido (más cómodo de leer que los 900px del detalle de
+           producto) y secciones separadas por un borde sutil. */
+        .modal-ayuda-box { max-width: 640px; padding: 30px 30px 26px; }
+        .ayuda-modal-subtitulo { color: var(--muted); font-size: 0.92rem; margin: 2px 0 18px; }
+        .ayuda-seccion { padding: 16px 0; border-top: 1px solid var(--border); }
+        .ayuda-seccion:first-of-type { border-top: none; padding-top: 4px; }
+        .ayuda-seccion h4 {
+            margin: 0 0 8px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .ayuda-seccion h4 i { color: var(--blue); width: 20px; text-align: center; }
+        .ayuda-seccion ul { margin: 0; padding-left: 20px; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+        .ayuda-seccion ul li { margin-bottom: 4px; }
+        .btn-ayuda-ver-demo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 11px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-bottom: 6px;
+        }
+        .btn-ayuda-ver-demo:hover { filter: brightness(1.08); }
+        .btn-ayuda-ver-demo i { font-size: 1.05rem; }
+
+        /* Demo interactiva — "foco" (spotlight) sobre el elemento real de
+           la página de cada paso, mediante el truco de box-shadow con
+           difusión gigante: el propio recuadro (del tamaño exacto del
+           elemento señalado) queda transparente, y ese box-shadow oscurece
+           todo lo demás alrededor. #tour-ayuda-overlay cubre TODO el
+           viewport y con pointer-events normal (no "none") bloquea
+           cualquier clic sobre la página real mientras dura la demo — es
+           puramente instructiva, nunca interactúa con datos reales. */
+        #tour-ayuda-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 9500;
+        }
+        #tour-ayuda-overlay.activo { display: block; }
+        #tour-ayuda-spotlight {
+            position: fixed;
+            border-radius: 10px;
+            box-shadow: 0 0 0 9999px rgba(15, 23, 42, 0.75);
+            outline: 2px solid var(--blue);
+            transition: top .35s ease, left .35s ease, width .35s ease, height .35s ease;
+            pointer-events: none;
+        }
+        #tour-ayuda-tooltip {
+            position: fixed;
+            left: 50%;
+            bottom: 24px;
+            transform: translateX(-50%);
+            width: 340px;
+            max-width: calc(100vw - 32px);
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.35);
+        }
+        #tour-ayuda-tooltip.tour-ayuda-tooltip--arriba {
+            bottom: auto;
+            top: 24px;
+        }
+        #tour-ayuda-tooltip .tour-ayuda-paso { margin: 0 0 4px; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
+        #tour-ayuda-tooltip h5 { margin: 0 0 6px; font-size: 0.98rem; }
+        #tour-ayuda-tooltip p#tour-ayuda-texto { margin: 0 0 14px; font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+        .tour-ayuda-acciones { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+        .tour-ayuda-acciones button {
+            border: none;
+            background: var(--blue);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 7px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .tour-ayuda-saltar { background: transparent !important; color: var(--muted) !important; font-weight: 500 !important; text-decoration: underline; padding: 0 !important; }
+        .tour-ayuda-anterior { background: var(--light) !important; color: var(--muted) !important; }
+        .tour-ayuda-anterior:disabled { opacity: 0.45; cursor: default; }
+
     </style>
 <!-- Google tag (gtag.js) -->
 <script>
@@ -5844,6 +5982,97 @@
     <i class="fa-solid fa-clipboard-list"></i>
     <span class="btn-lista-compra-flotante-texto">Lista de la compra</span>
 </button>
+
+<!-- Botón flotante de Ayuda y su modal — ver el comentario junto a
+     #btn-ayuda-flotante en el CSS. Puramente informativo, a demanda
+     (nunca se abre solo ni se muestra como aviso): un resumen rápido de
+     cómo buscar, filtrar, entrar como profesional y usar la lista de la
+     compra, pensado para quien no conoce el buscador. -->
+<button type="button" id="btn-ayuda-flotante" title="Ayuda: cómo usar el buscador" aria-label="Ver ayuda sobre cómo usar el buscador">
+    <i class="fa-solid fa-circle-question"></i>
+</button>
+<div class="modal-overlay" id="modal-ayuda-overlay">
+    <div class="modal-producto-box modal-ayuda-box">
+        <button class="modal-producto-cerrar" id="modal-ayuda-cerrar" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3><i class="fa-solid fa-circle-question"></i> Guía rápida del buscador</h3>
+        <p class="ayuda-modal-subtitulo">Un resumen de lo más útil para sacarle partido a la web.</p>
+        <button type="button" id="btn-ayuda-ver-demo" class="btn-ayuda-ver-demo">
+            <i class="fa-solid fa-circle-play"></i> Ver demo interactiva
+        </button>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-magnifying-glass"></i> Buscar productos</h4>
+            <ul>
+                <li>Escribe el nombre, la referencia o el código de barras (EAN) del producto.</li>
+                <li>Reconoce sinónimos y abreviaturas habituales, y tolera pequeños errores de escritura.</li>
+                <li>Puedes escanear el código de barras con la cámara, o buscar a partir de una foto.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-filter"></i> Filtros</h4>
+            <ul>
+                <li>Filtra por área (droguería, perfumería, pinturas, talleres), familia, precio, fecha de alta o solo ofertas.</li>
+                <li>En el móvil, pulsa el icono de deslizadores junto al buscador para abrir el panel de filtros.</li>
+                <li>"Limpiar filtros" los borra todos de una vez.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-user-tie"></i> Acceso profesional</h4>
+            <ul>
+                <li>Lo encontrarás dentro del propio bloque de filtros, en la parte de arriba.</li>
+                <li>Pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor.</li>
+                <li>Marca "Recordar PIN en este dispositivo" para no tener que volver a introducirlo cada vez.</li>
+                <li>"Salir del modo profesional" cierra la sesión cuando quieras.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-clipboard-list"></i> Lista de la compra</h4>
+            <ul>
+                <li>Añade productos a tu lista desde cualquier tarjeta o desde su ficha de detalle.</li>
+                <li>Indica las unidades, o cajas/paquetes si el producto lo permite.</li>
+                <li>Accede a tu lista en cualquier momento desde el botón flotante naranja.</li>
+            </ul>
+        </div>
+
+        <div class="ayuda-seccion">
+            <h4><i class="fa-solid fa-gear"></i> Funciones de la lista de la compra</h4>
+            <ul>
+                <li>Expórtala a PDF, o compártela directamente por WhatsApp o correo.</li>
+                <li>Imprime etiquetas de precio de varios productos de la lista a la vez.</li>
+                <li>Recibirás un aviso si lleva tiempo creada, para que no se quede desactualizada.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Demo interactiva de la Ayuda — recorrido guiado sobre los elementos
+     REALES de esta misma página (no capturas ni maquetas), con un
+     "foco" que ilumina cada uno y una tarjeta con el texto del paso.
+     Ver inicializarAyuda_/arrancarTourAyuda_ más abajo. No interactúa
+     con los datos del usuario en ningún momento (puramente
+     ilustrativo): no añade productos reales a la lista de la compra ni
+     abre sesión profesional de verdad. -->
+<div id="tour-ayuda-overlay">
+    <div id="tour-ayuda-spotlight"></div>
+    <div id="tour-ayuda-tooltip">
+        <p class="tour-ayuda-paso" id="tour-ayuda-paso-contador"></p>
+        <h5 id="tour-ayuda-titulo"></h5>
+        <p id="tour-ayuda-texto"></p>
+        <div class="tour-ayuda-acciones">
+            <button type="button" id="tour-ayuda-saltar" class="tour-ayuda-saltar">Saltar demo</button>
+            <div style="display:flex; gap:8px;">
+                <button type="button" id="tour-ayuda-anterior" class="tour-ayuda-anterior">Atrás</button>
+                <button type="button" id="tour-ayuda-siguiente">Siguiente</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Google Tag Manager (noscript) -->
 <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-TWX6NRXN"
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
@@ -6183,7 +6412,16 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             </div>
         </div>
 
-        <div class="filtro-grupo" style="display: none;">
+        <!-- Bug real reportado por Eloy (22/11/2026): "se activa el
+             filtro de Solo en oferta pero es un filtro que no está" —
+             este grupo llevaba un display:none fijo, sin ningún control
+             visible para activarlo o desactivarlo a mano (solo podía
+             quedar marcado por restauración de sesión o por un enlace
+             con ?oferta=true en la URL). Visible de nuevo, y resuelto
+             ahora contra la sección Destacados en vez del campo "oferta"
+             de la hoja (manual, casi nunca se usa en la práctica) — ver
+             destacadoEfectivoPara_ en aplicarFiltros(). -->
+        <div class="filtro-grupo">
             <label class="check-oferta">
                 <input type="checkbox" id="f-oferta">
                 <span><i class="fa-solid fa-star"></i> Solo productos en oferta</span>
@@ -8850,10 +9088,41 @@ if (window.OM_PREPRODUCCION) {
         // flotante real de la Lista de la compra (ver #btn-lista-compra-flotante)
         // — este recuadro, al ser solo temporal/diagnóstico, no debe
         // competir con él ni taparlo.
-        panel.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
+        // Oculto por defecto (display:none) — a petición de Eloy: "no
+        // molesta de primeras". Se recoge igualmente en segundo plano
+        // (fetch/longtask) desde la carga de la página, para que ya haya
+        // datos reales en cuanto se abra; solo la VISIBILIDAD del
+        // recuadro es bajo demanda, mediante el pequeño icono añadido
+        // junto a "Estadísticas" más abajo en este mismo bloque.
+        panel.style.cssText = 'display:none;position:fixed;top:8px;left:8px;z-index:999999;background:rgba(15,23,42,0.88);color:#e2e8f0;font:11px/1.4 monospace;padding:8px 10px;border-radius:8px;max-width:280px;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,0.3);';
         panel.innerHTML = '<div style="display:flex;justify-content:space-between;gap:8px;"><strong>⏱ Diagnóstico (preprod)</strong><span id="om-diag-cerrar" style="cursor:pointer;opacity:0.7;">✕</span></div><div id="om-diag-cuerpo">Iniciando…</div>';
         document.body.appendChild(panel);
-        panel.querySelector('#om-diag-cerrar').addEventListener('click', () => panel.remove());
+        // Solo oculta (no elimina el nodo): así el icono de abajo puede
+        // volver a mostrarlo sin tener que reconstruirlo entero.
+        panel.querySelector('#om-diag-cerrar').addEventListener('click', () => { panel.style.display = 'none'; });
+
+        // Icono discreto junto a "Estadísticas" para abrir el recuadro de
+        // diagnóstico bajo demanda — antes aparecía solo y siempre en
+        // preprod, lo cual "molesta de primeras" según Eloy.
+        const cabeceraEstadisticas_ = document.getElementById('panel-analitica-cabecera');
+        if (cabeceraEstadisticas_) {
+            const btnDiag = document.createElement('button');
+            btnDiag.type = 'button';
+            btnDiag.id = 'btn-abrir-diag-rendimiento';
+            // "btn-destacados-editar" viene display:none por defecto (ver su
+            // CSS) y solo se muestra con ".visible" — aquí se añade directo
+            // en la creación (no hace falta la lógica condicional de JS que
+            // usa ese mismo patrón en otros botones, porque este bloque
+            // entero ya solo se ejecuta en preprod).
+            btnDiag.className = 'btn-destacados-accion btn-destacados-editar visible';
+            btnDiag.title = 'Diagnóstico de rendimiento (solo preprod)';
+            btnDiag.setAttribute('aria-label', 'Abrir diagnóstico de rendimiento');
+            btnDiag.innerHTML = '<i class="fa-solid fa-stethoscope"></i>';
+            btnDiag.addEventListener('click', () => {
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            });
+            cabeceraEstadisticas_.appendChild(btnDiag);
+        }
 
         const peticionesEnCurso_ = new Set();
         let bloqueosTotalMs_ = 0;
@@ -10102,11 +10371,501 @@ if (window.OM_PREPRODUCCION) {
         }
     }
 
+    // Botón flotante de Ayuda + su modal (guía rápida) — ver el comentario
+    // junto a #btn-ayuda-flotante en el CSS. Se abre y se cierra igual que
+    // el resto de modales del buscador (clic en el fondo o en la X), sin
+    // ningún estado que recordar entre visitas: siempre a demanda.
+    // Pasos de la demo interactiva (ver arrancarTourAyuda_ más abajo).
+    // "selectores" es una lista de candidatos en orden de preferencia —
+    // se usa el primero que exista Y esté realmente visible en este
+    // dispositivo/estado (p.ej. el panel de filtros se ve distinto en
+    // móvil que en escritorio, y el botón de la lista de la compra solo
+    // existe si ya hay una lista creada); si ninguno lo está, el paso se
+    // salta solo, sin romper el recorrido.
+    // Cada paso puede llevar, además de "selectores/titulo/texto":
+    //   - usaFiltrosMovil: true  → el engine (ver tourAyudaPrepararPanelFiltrosMovil_)
+    //     abre el panel de filtros en móvil mientras dure este paso (y
+    //     cualquier otro contiguo que también lo pida), y lo cierra solo
+    //     al llegar a un paso que ya no lo necesite.
+    //   - usaTemporadaModal: true → análogo, pero con la modal de "ver
+    //     todos" de una temporada (ver tourAyudaPrepararModalTemporada_).
+    //   - antes()/limpiar(): efectos secundarios propios de un único paso
+    //     (abrir una modal real, marcar un filtro de prueba...) — antes()
+    //     se ejecuta justo antes de buscar el elemento a iluminar;
+    //     limpiar() se ejecuta en cuanto se abandona ese paso concreto
+    //     (en cualquier dirección) o se sale de la demo, para no dejar
+    //     nada abierto ni ningún filtro de prueba activo al terminar.
+    const TOUR_AYUDA_PASOS_ = [
+        {
+            selectores: ['#f-texto'],
+            titulo: 'Buscar productos',
+            texto: 'Escribe aquí el nombre, la referencia o el código de barras (EAN) del producto que buscas.',
+        },
+        {
+            selectores: ['#filtros-extra', '.filtros'],
+            titulo: 'Cómo filtrar',
+            texto: 'Este es el bloque de filtros: elige un área, marca una o varias familias, ajusta el rango de precio, acota por fecha de alta o activa "Solo productos en oferta". Los resultados se actualizan al momento, sin tener que pulsar nada más.',
+            usaFiltrosMovil: true,
+        },
+        {
+            selectores: ['#f-area-panel'],
+            titulo: 'Filtrar por área',
+            texto: 'Elige una o varias áreas (droguería, perfumería, pinturas, talleres) para acotar los resultados a solo esas.',
+            usaFiltrosMovil: true,
+            antes: () => {
+                const panel = document.getElementById('f-area-panel');
+                const btn = document.getElementById('f-area-btn');
+                if (panel && btn && !panel.classList.contains('abierto')) {
+                    btn.click();
+                    tourAyudaAreaAbiertaPorEstePaso_ = true;
+                }
+            },
+            limpiar: () => {
+                if (tourAyudaAreaAbiertaPorEstePaso_) {
+                    const btn = document.getElementById('f-area-btn');
+                    if (btn) btn.click();
+                    tourAyudaAreaAbiertaPorEstePaso_ = false;
+                }
+            },
+        },
+        {
+            selectores: ['#filtros-chips'],
+            titulo: 'Chips de filtro y limpiar filtros',
+            texto: 'Cada filtro activo aparece aquí como una "chip": pulsa su aspa para quitar solo ese filtro. El botón "Limpiar filtros" los quita todos de golpe.',
+            antes: () => {
+                const check = document.getElementById('f-oferta');
+                if (check && !check.checked) {
+                    check.checked = true;
+                    check.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            },
+            limpiar: () => { if (typeof limpiarFiltros === 'function') limpiarFiltros(); },
+        },
+        {
+            selectores: ['#btn-acceso-profesional'],
+            titulo: 'Dónde está el acceso profesional',
+            texto: 'Este es el botón: lo encontrarás dentro del bloque de filtros, arriba del todo.',
+            usaFiltrosMovil: true,
+        },
+        {
+            selectores: ['.modal-acceso-profesional-box'],
+            titulo: 'Acceso profesional',
+            texto: 'Dentro de este mismo bloque de filtros: pulsa "Acceso profesional" e introduce tu PIN para ver precios y catálogos al por mayor. Si no tienes código, puedes pulsar "¿No tienes código de acceso? Solicítalo por email" para pedirlo.',
+            antes: () => {
+                const overlay = document.getElementById('modal-acceso-profesional-overlay');
+                if (overlay && overlay.classList.contains('activo')) return;
+                const btn = document.getElementById('btn-acceso-profesional');
+                if (!btn) return;
+                if (btn.offsetParent === null) {
+                    const panel = document.getElementById('filtros-extra');
+                    if (panel && !panel.classList.contains('abierto')) abrirFiltrosMovil();
+                }
+                if (btn.offsetParent !== null) btn.click();
+            },
+            limpiar: () => {
+                const overlay = document.getElementById('modal-acceso-profesional-overlay');
+                if (overlay && overlay.classList.contains('activo')) {
+                    const cerrar = document.getElementById('modal-acceso-profesional-cerrar');
+                    if (cerrar) cerrar.click();
+                }
+            },
+        },
+        {
+            selectores: ['.temporada-anadir-seleccion-btn'],
+            titulo: 'Añadir a la lista de la compra',
+            texto: 'Pulsa este icono en cualquier producto para añadirlo a tu lista de la compra.',
+        },
+        {
+            selectores: ['#modal-producto-lista-btn'],
+            titulo: 'Añadir desde la ficha de detalle',
+            texto: 'También puedes añadir el producto a tu lista desde su propia ficha de detalle, con este mismo botón.',
+            antes: () => {
+                const overlay = document.getElementById('modal-producto-overlay');
+                if (overlay && overlay.classList.contains('activo')) return;
+                const card = document.querySelector('.producto-card');
+                if (card) card.click();
+            },
+            limpiar: () => {
+                const overlay = document.getElementById('modal-producto-overlay');
+                if (overlay && overlay.classList.contains('activo') && typeof cerrarModalProducto === 'function') cerrarModalProducto();
+            },
+        },
+        {
+            selectores: ['#btn-lista-compra-flotante'],
+            titulo: 'Tu lista de la compra',
+            texto: 'Accede a tu lista en cualquier momento desde aquí: expórtala a PDF, compártela o imprime etiquetas de precio.',
+            usaListaCompraDemo: true,
+            // El propio tour oculta este botón flotante con
+            // "oculto-por-modal" mientras dura la demo (arrancarTourAyuda_),
+            // así que para señalarlo hay que mostrarlo solo en este paso.
+            antes: () => { $('btn-lista-compra-flotante').classList.remove('oculto-por-modal'); },
+            limpiar: () => { $('btn-lista-compra-flotante').classList.add('oculto-por-modal'); },
+        },
+        {
+            selectores: ['#modal-lista-compra-acciones'],
+            titulo: 'Dentro de tu lista de la compra',
+            texto: 'Desde aquí puedes ajustar unidades, quitar productos, exportar a PDF, generar un folleto con fotos, compartir por WhatsApp o correo, imprimir etiquetas de precio o vaciar/eliminar la lista entera.',
+            usaListaCompraDemo: true,
+            antes: () => {
+                const overlay = document.getElementById('modal-lista-compra-overlay');
+                if (overlay && overlay.classList.contains('activo')) return;
+                const btn = document.getElementById('btn-lista-compra-flotante');
+                if (btn) btn.click();
+            },
+            limpiar: () => {
+                const overlay = document.getElementById('modal-lista-compra-overlay');
+                if (overlay && overlay.classList.contains('activo')) {
+                    const cerrar = document.getElementById('modal-lista-compra-cerrar');
+                    if (cerrar) cerrar.click();
+                }
+            },
+        },
+        {
+            selectores: ['.seccion-temporada__titulo-clicable'],
+            titulo: 'Cómo ir a una temporada',
+            texto: 'Pulsa el título de una temporada para ver todos sus productos, filtrarlos y generar su folleto.',
+        },
+        {
+            selectores: ['#temporada-ver-todos-overlay .destacados-buscador-controles'],
+            titulo: 'Temporada: filtrar',
+            texto: 'Dentro de una temporada también puedes filtrar por rango de precio y ordenar los resultados (relevancia, nombre, familia o precio).',
+            usaTemporadaModal: true,
+        },
+        {
+            selectores: ['.temporada-ver-todos-folleto-acciones'],
+            titulo: 'Temporada: descargar folleto',
+            texto: 'Descarga o comparte un folleto en PDF con los productos de esta temporada, con sus fotos y su precio.',
+            usaTemporadaModal: true,
+        },
+        {
+            selectores: ['.temporada-ver-todos-seleccion-panel'],
+            titulo: 'Temporada: añadir todo a la lista',
+            texto: '"Añadir todos los visibles" incorpora de golpe a tu lista de la compra todos los productos que se ven ahora mismo (ya filtrados) en esta temporada.',
+            usaTemporadaModal: true,
+        },
+    ];
+
+    function inicializarAyuda_() {
+        const overlay = $('modal-ayuda-overlay');
+        const abrirAyuda_ = () => {
+            overlay.classList.add('activo');
+            $('btn-subir-arriba').classList.add('oculto-por-modal');
+            $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        };
+        const cerrarAyuda_ = () => {
+            overlay.classList.remove('activo');
+            $('btn-subir-arriba').classList.remove('oculto-por-modal');
+            $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        };
+        // A petición de Eloy: con la modal ya abierta, volver a pulsar el
+        // propio icono de ayuda debe cerrarla (antes solo cerraban la X o
+        // el clic fuera).
+        $('btn-ayuda-flotante').addEventListener('click', () => {
+            if (overlay.classList.contains('activo')) cerrarAyuda_(); else abrirAyuda_();
+        });
+        $('modal-ayuda-cerrar').addEventListener('click', cerrarAyuda_);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarAyuda_(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('activo')) cerrarAyuda_(); });
+
+        $('btn-ayuda-ver-demo').addEventListener('click', () => {
+            cerrarAyuda_();
+            arrancarTourAyuda_();
+        });
+    }
+
+    // Busca, entre los selectores candidatos de un paso, el primero que
+    // exista en el DOM y esté realmente visible (offsetParent !== null
+    // descarta tanto display:none como cualquier ancestro oculto) —
+    // necesario porque el mismo paso apunta a elementos distintos según
+    // el dispositivo (filtros en móvil/escritorio) o el estado real del
+    // usuario (el botón de la lista de la compra no existe hasta que hay
+    // una lista creada).
+    // No se usa el típico "offsetParent !== null" para decidir si un
+    // elemento está realmente visible: esa propiedad da null siempre para
+    // cualquier elemento position:fixed (p.ej. el botón flotante de la
+    // lista de la compra), esté o no visible de verdad, por lo que ese
+    // paso del tour se saltaba siempre aunque el botón estuviera en
+    // pantalla. Comprobar dimensiones reales funciona igual de bien para
+    // detectar display:none (propio o de un antecesor) y además sí
+    // funciona con elementos fijos.
+    function elementoRealmenteVisibleParaAyuda_(el) {
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+    }
+
+    function elementoVisibleParaPasoAyuda_(paso) {
+        for (const selector of paso.selectores) {
+            const el = document.querySelector(selector);
+            if (el && elementoRealmenteVisibleParaAyuda_(el)) return el;
+        }
+        return null;
+    }
+
+    let tourAyudaPasoActual_ = -1;
+    let tourAyudaAreaAbiertaPorEstePaso_ = false;
+
+    // El bloque de filtros/acceso profesional es un panel deslizante que
+    // en móvil empieza CERRADO (ver abrirFiltrosMovil/cerrarFiltrosMovil)
+    // — a petición de Eloy, los pasos que lo necesitan (paso.usaFiltrosMovil)
+    // deben verse de verdad, no solo señalar el icono que los abre, así
+    // que la demo lo abre ella misma en móvil mientras dure ese tramo de
+    // pasos contiguos, y lo vuelve a cerrar en cuanto se llega a un paso
+    // que ya no lo necesita o se sale de la demo — nunca lo deja abierto
+    // sin que el usuario lo pidiera.
+    let tourAyudaFiltrosMovilAbiertoPorTour_ = false;
+    function tourAyudaPrepararPanelFiltrosMovil_(necesario) {
+        const toggle = document.getElementById('btn-abrir-filtros-movil');
+        const enMovil = !!(toggle && toggle.offsetParent !== null);
+        const panel = document.getElementById('filtros-extra');
+        const panelAbierto = panel && panel.classList.contains('abierto');
+        if (necesario && enMovil && !panelAbierto) {
+            abrirFiltrosMovil();
+            tourAyudaFiltrosMovilAbiertoPorTour_ = true;
+        } else if (!necesario && tourAyudaFiltrosMovilAbiertoPorTour_) {
+            cerrarFiltrosMovil();
+            tourAyudaFiltrosMovilAbiertoPorTour_ = false;
+        }
+    }
+
+    // Mismo patrón que la función de arriba, pero con la modal de "ver
+    // todos" de una temporada — se abre la primera temporada vigente que
+    // haya en pantalla (si no hay ninguna, los pasos que la necesitan se
+    // saltan solos, como cualquier otro paso sin elemento visible).
+    let tourAyudaTemporadaAbiertaPorTour_ = false;
+    function tourAyudaPrepararModalTemporada_(necesario) {
+        const overlay = document.getElementById('temporada-ver-todos-overlay');
+        const abierta = !!(overlay && overlay.classList.contains('activo'));
+        if (necesario && !abierta) {
+            const disparador = document.querySelector('.seccion-temporada__titulo-clicable');
+            if (disparador) {
+                disparador.click();
+                tourAyudaTemporadaAbiertaPorTour_ = true;
+            }
+        } else if (!necesario && tourAyudaTemporadaAbiertaPorTour_) {
+            const cerrar = document.getElementById('temporada-ver-todos-cerrar');
+            if (cerrar) cerrar.click();
+            tourAyudaTemporadaAbiertaPorTour_ = false;
+        }
+    }
+
+    // Mismo patrón otra vez, pero con la Lista de la compra — a petición
+    // de Eloy, el botón flotante y la modal deben verse de verdad aunque
+    // quien vea la demo no tenga ninguna lista creada todavía (el botón
+    // flotante solo se muestra, y la modal solo se abre, si
+    // listaCompraExiste_() es cierto). Mientras no haya una lista REAL,
+    // se finge una con un único producto real del catálogo — solo en
+    // memoria (listaCompraState_), SIN pasar nunca por el guardado en
+    // localStorage (listaCompraAnadir_/listaCompraGuardarEnStorage_) — y
+    // se restaura el estado exacto de antes (null, o la lista real si ya
+    // existía) en cuanto se abandonan estos pasos. Si el usuario YA tenía
+    // una lista real, esta función no la toca para nada.
+    let tourAyudaListaCompraEstadoPrevio_ = undefined; // undefined = no se ha fingido nada
+    function tourAyudaPrepararListaCompraDemo_(necesario) {
+        if (necesario) {
+            if (listaCompraExiste_()) return; // ya hay una lista real: no fingir nada
+            const productoEjemplo = TODOS.find(p => estaActivoEnCatalogo_(p));
+            tourAyudaListaCompraEstadoPrevio_ = listaCompraState_;
+            listaCompraState_ = {
+                version: LISTA_COMPRA_VERSION_, creado: Date.now(), avisosMostrados: [], notas: '',
+                productos: productoEjemplo ? [{ ref: productoEjemplo.ref, unidades: 1 }] : [],
+            };
+            listaCompraActualizarUI_();
+        } else if (tourAyudaListaCompraEstadoPrevio_ !== undefined) {
+            listaCompraState_ = tourAyudaListaCompraEstadoPrevio_;
+            tourAyudaListaCompraEstadoPrevio_ = undefined;
+            listaCompraActualizarUI_();
+        }
+    }
+
+    function arrancarTourAyuda_() {
+        tourAyudaPasoActual_ = -1;
+        $('tour-ayuda-overlay').classList.add('activo');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-subir-arriba').classList.add('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        mostrarPasoTourAyuda_(0);
+    }
+
+    function cerrarTourAyuda_() {
+        const pasoActual = TOUR_AYUDA_PASOS_[tourAyudaPasoActual_];
+        if (pasoActual && pasoActual.limpiar) pasoActual.limpiar();
+        tourAyudaPrepararPanelFiltrosMovil_(false);
+        tourAyudaPrepararModalTemporada_(false);
+        tourAyudaPrepararListaCompraDemo_(false);
+        tourAyudaPasoActual_ = -1;
+        $('tour-ayuda-overlay').classList.remove('activo');
+        $('tour-ayuda-tooltip').classList.remove('tour-ayuda-tooltip--arriba');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-subir-arriba').classList.remove('oculto-por-modal');
+        $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+    }
+
+    // Pinta el paso "indice": deshace lo que hubiera dejado preparado el
+    // paso anterior (su limpiar(), si existía), prepara lo que necesite
+    // este paso nuevo (filtros móviles/modal de temporada compartidos, y
+    // su propio antes() si lo tiene), busca su elemento real visible, lo
+    // centra en pantalla con scroll suave y, tras darle tiempo a terminar
+    // (el scroll es asíncrono y no avisa cuándo acaba), coloca el foco
+    // sobre su posición ya final. Si ningún candidato del paso está
+    // visible ahora mismo (tras su propio antes()), se deshace lo que ese
+    // paso hubiera preparado y se salta automáticamente en la misma
+    // dirección en la que se estaba navegando, sin dejar un hueco vacío
+    // ni nada a medio abrir en el recorrido.
+    function mostrarPasoTourAyuda_(indice, direccion) {
+        direccion = direccion || 1;
+        if (indice < 0 || indice >= TOUR_AYUDA_PASOS_.length) { cerrarTourAyuda_(); return; }
+
+        if (indice !== tourAyudaPasoActual_) {
+            const pasoAnterior = TOUR_AYUDA_PASOS_[tourAyudaPasoActual_];
+            if (pasoAnterior && pasoAnterior.limpiar) pasoAnterior.limpiar();
+        }
+
+        // Bug real reportado por Eloy ("filtrar por área no sale bien"):
+        // este paso se dispara casi siempre dentro del propio manejador
+        // de clic de "Siguiente"/"Atrás" — y ESE clic original todavía
+        // está burbujeando hacia `document` en este mismo instante. El
+        // desplegable de área (como algunos otros controles de la
+        // página) tiene su propio listener en `document` que cierra
+        // "cualquier cosa abierta fuera de sí" en cuanto detecta un
+        // clic — si abriéramos el desplegable aquí mismo, ese mismo clic
+        // de "Siguiente" (que no es hijo suyo) lo volvería a cerrar en
+        // cuanto terminara de burbujear, justo después de abrirlo. Un
+        // setTimeout(0) deja que ese clic termine de burbujear del todo
+        // ANTES de tocar nada de la página real.
+        setTimeout(() => {
+            const paso = TOUR_AYUDA_PASOS_[indice];
+            tourAyudaPrepararPanelFiltrosMovil_(!!paso.usaFiltrosMovil);
+            tourAyudaPrepararModalTemporada_(!!paso.usaTemporadaModal);
+            tourAyudaPrepararListaCompraDemo_(!!paso.usaListaCompraDemo);
+            if (paso.antes) paso.antes();
+
+            const el = elementoVisibleParaPasoAyuda_(paso);
+            if (!el) {
+                if (paso.limpiar) paso.limpiar();
+                mostrarPasoTourAyuda_(indice + direccion, direccion);
+                return;
+            }
+
+            tourAyudaPasoActual_ = indice;
+            $('tour-ayuda-paso-contador').textContent = `Paso ${indice + 1} de ${TOUR_AYUDA_PASOS_.length}`;
+            $('tour-ayuda-titulo').textContent = paso.titulo;
+            $('tour-ayuda-texto').textContent = paso.texto;
+            $('tour-ayuda-anterior').disabled = indice === 0;
+            $('tour-ayuda-siguiente').textContent = indice === TOUR_AYUDA_PASOS_.length - 1 ? 'Finalizar' : 'Siguiente';
+
+            // El panel deslizante de filtros en móvil (#filtros-extra) es
+            // position:fixed y calcula su "top" UNA sola vez al abrirse,
+            // a partir de dónde está la barra de búsqueda en ESE
+            // instante (ver abrirFiltrosMovil/posicionarPanel) — nunca se
+            // recalcula si la página se desplaza después. Bug real
+            // reportado por Eloy ("filtrar por área no sale bien"):
+            // llamar aquí a scrollIntoView sobre un elemento DENTRO de
+            // ese panel desplazaba la página entera, dejando ese "top"
+            // ya calculado completamente desincronizado — el panel
+            // "parecía" roto/desplazado fuera de la pantalla. No hace
+            // falta desplazar nada para un panel fijo: ya está siempre
+            // dentro del viewport en cuanto se abre.
+            const panelFiltrosMovil = el.closest('#filtros-extra');
+            const dentroDePanelFijo = panelFiltrosMovil && getComputedStyle(panelFiltrosMovil).position === 'fixed';
+            if (!dentroDePanelFijo) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // No basta con medir una sola vez a los 400ms: en el panel de
+            // área dentro del cajón de filtros en móvil se vio moverse
+            // igual de "estable" (sin cambiar ni un píxel) durante más de
+            // 400ms y LUEGO saltar a su posición definitiva — ninguna
+            // mutación de clase/estilo de por medio, así que debe ser un
+            // reflow ajeno (tipográfico o de algún módulo que se carga en
+            // segundo plano con requestIdleCallback). El spotlight se
+            // quedaba fijado sobre esa posición "estable" pero todavía
+            // provisional ("filtrar por área" se veía mal, bug real
+            // reportado por Eloy). Para no caer otra vez en esa falsa
+            // meseta, se exige que el rect no cambie durante una RACHA
+            // continua (no solo dos medidas seguidas) antes de darlo por
+            // bueno, con un tope de tiempo total por si no llega a
+            // asentarse del todo.
+            const colocarSpotCuandoEsteEstable = () => {
+                const inicio = performance.now();
+                let anterior = null;
+                let estableDesde = inicio;
+                const RACHA_MINIMA_MS = 300;
+                const TOPE_TOTAL_MS = 1800;
+                const comprobar = () => {
+                    const r = el.getBoundingClientRect();
+                    const ahora = performance.now();
+                    const cambia = !anterior
+                        || Math.abs(r.top - anterior.top) >= 1 || Math.abs(r.left - anterior.left) >= 1
+                        || Math.abs(r.width - anterior.width) >= 1 || Math.abs(r.height - anterior.height) >= 1;
+                    if (cambia) estableDesde = ahora;
+                    anterior = r;
+                    const llevaEstableBastante = (ahora - estableDesde) >= RACHA_MINIMA_MS;
+                    const seAgotoElTiempo = (ahora - inicio) >= TOPE_TOTAL_MS;
+                    if (!llevaEstableBastante && !seAgotoElTiempo) {
+                        setTimeout(comprobar, 100);
+                        return;
+                    }
+                    fijarSpotEnRect_(r);
+                };
+                setTimeout(comprobar, 400);
+            };
+
+            const fijarSpotEnRect_ = (r) => {
+                    const margen = 8;
+                    const spot = $('tour-ayuda-spotlight');
+                    const spotRect = {
+                        left: Math.max(0, r.left - margen),
+                        top: Math.max(0, r.top - margen),
+                        width: r.width + margen * 2,
+                        height: r.height + margen * 2,
+                    };
+                    spot.style.left = spotRect.left + 'px';
+                    spot.style.top = spotRect.top + 'px';
+                    spot.style.width = spotRect.width + 'px';
+                    spot.style.height = spotRect.height + 'px';
+
+                    // Si la tarjeta de texto (abajo, por defecto) tapase el
+                    // elemento resaltado, la subimos arriba para no interferir.
+                    // Se usan las coordenadas recién calculadas del elemento
+                    // (no spot.getBoundingClientRect()): el spotlight tiene
+                    // transición CSS en top/left/width/height, así que leer su
+                    // rect justo tras cambiar el estilo aún devolvía la
+                    // posición del paso anterior.
+                    const tooltip = $('tour-ayuda-tooltip');
+                    tooltip.classList.remove('tour-ayuda-tooltip--arriba');
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    const spotBottom = spotRect.top + spotRect.height;
+                    const spotRight = spotRect.left + spotRect.width;
+                    const solapan = spotBottom > tooltipRect.top && spotRect.top < tooltipRect.bottom
+                        && spotRight > tooltipRect.left && spotRect.left < tooltipRect.right;
+                    if (solapan) tooltip.classList.add('tour-ayuda-tooltip--arriba');
+            };
+            colocarSpotCuandoEsteEstable();
+        }, 0);
+    }
+
+    function inicializarTourAyuda_() {
+        $('tour-ayuda-siguiente').addEventListener('click', () => {
+            if (tourAyudaPasoActual_ === TOUR_AYUDA_PASOS_.length - 1) { cerrarTourAyuda_(); return; }
+            mostrarPasoTourAyuda_(tourAyudaPasoActual_ + 1, 1);
+        });
+        $('tour-ayuda-anterior').addEventListener('click', () => mostrarPasoTourAyuda_(tourAyudaPasoActual_ - 1, -1));
+        $('tour-ayuda-saltar').addEventListener('click', cerrarTourAyuda_);
+        document.addEventListener('keydown', (e) => {
+            if (!$('tour-ayuda-overlay').classList.contains('activo')) return;
+            if (e.key === 'Escape') cerrarTourAyuda_();
+            if (e.key === 'ArrowRight') $('tour-ayuda-siguiente').click();
+            if (e.key === 'ArrowLeft' && !$('tour-ayuda-anterior').disabled) $('tour-ayuda-anterior').click();
+        });
+    }
+
     async function mostrarResultadosPorPrimeraVez() {
         inicializarFiltros();
         inicializarListaCompra_();
         inicializarFolletoDestacados_();
         inicializarAccesoProfesionalBuscador_();
+        inicializarAyuda_();
+        inicializarTourAyuda_();
         // Si había filtros guardados de una visita anterior en esta misma
         // sesión del navegador, restaurarFiltrosDesdeSesion_() ya los
         // aplica (y llama a aplicarFiltros() por su cuenta) — si no había
@@ -11986,6 +12745,15 @@ if (window.OM_PREPRODUCCION) {
             if ($('destacados-vista-principal') && $('destacados-vista-principal').style.display !== 'none') {
                 destacadosRenderizarListadoGestion_();
             }
+            // El filtro "Solo productos en oferta" depende de estos datos
+            // (ver destacadoEfectivoPara_) — si ya estaba activo al cargar
+            // la página (restaurado de una sesión anterior o por URL) y
+            // esta petición todavía estaba en vuelo cuando se aplicaron
+            // los filtros por primera vez, el grid se habría quedado
+            // filtrando contra una lista de Destacados todavía vacía. Se
+            // reaplica aquí, una vez ya hay datos reales, igual que ya
+            // hace cargarCampanasEscaparate_ para el mismo filtro.
+            if ($('f-oferta') && $('f-oferta').checked && typeof aplicarFiltros === 'function' && TODOS.length) aplicarFiltros();
         })().finally(() => { cargarDestacadosEnVuelo_ = null; });
         return cargarDestacadosEnVuelo_;
     }
@@ -12446,6 +13214,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-destacados-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         const pinGuardado = (() => { try { return localStorage.getItem('omDestacadosPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
             destacadosValidarPinYArrancar_(pinGuardado);
@@ -12463,6 +13232,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-destacados-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-destacados')) {
@@ -13170,6 +13940,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporada-ver-todos-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
 
         // Deja también situada en pantalla la sección/bloque de esta
         // temporada (si ya está pintado) — a petición de Eloy: poder
@@ -13236,6 +14007,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporada-ver-todos-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -16160,6 +16932,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         temporadaCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -16178,6 +16951,7 @@ if (window.OM_PREPRODUCCION) {
         $('temporadas-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     // ── Listeners del modal público "ver todos" (siempre presentes) ──
@@ -17282,6 +18056,7 @@ if (window.OM_PREPRODUCCION) {
         $('bc-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         bcCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omBloquesCategoriasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -17297,6 +18072,7 @@ if (window.OM_PREPRODUCCION) {
         $('bc-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-bloques-categorias')) {
@@ -17469,6 +18245,7 @@ if (window.OM_PREPRODUCCION) {
         $('pa-modal-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
         $('pa-vista-pin').style.display = 'block';
         $('pa-vista-principal').style.display = 'none';
         $('pa-pin-input').value = '';
@@ -17485,6 +18262,7 @@ if (window.OM_PREPRODUCCION) {
         $('pa-modal-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-panel-analitica')) {
@@ -18067,6 +18845,7 @@ if (window.OM_PREPRODUCCION) {
         document.body.style.overflow = 'hidden';
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
 
         // Igual que al escribir en el buscador: más espacio libre, y el
         // icono del botón se invierte para indicar que el panel está abierto
@@ -18097,6 +18876,7 @@ if (window.OM_PREPRODUCCION) {
         document.body.style.overflow = '';
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
         $('btn-abrir-filtros-movil').classList.remove('activo');
         $('btn-limpiar-arriba').classList.remove('clicable');
     }
@@ -18167,7 +18947,15 @@ if (window.OM_PREPRODUCCION) {
             if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
             if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
             if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
-            if (soloOferta && !p.oferta) return false;
+            // Bug real reportado por Eloy (22/11/2026): este filtro
+            // comprobaba el campo "oferta" de la hoja Productos, un campo
+            // manual que en la práctica casi nunca se rellena (el
+            // mecanismo que SÍ se usa de verdad para marcar ofertas es la
+            // sección "Destacados", con su propia gestión). Ahora "Solo
+            // productos en oferta" se resuelve igual que el resto del
+            // buscador (tarjetas, ficha de detalle): vigente en Destacados
+            // o en una campaña de escaparate activa — ver destacadoEfectivoPara_.
+            if (soloOferta && !destacadoEfectivoPara_(p.ref)) return false;
             if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
             if (soloTieneImagen && !tieneImagenAsociada(p)) return false;
             if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
@@ -18264,7 +19052,15 @@ if (window.OM_PREPRODUCCION) {
                 if (volumenSel.length && !volumenSel.includes(p.variante_volumen)) return false;
                 if (microasSel.length && !microasSel.includes(p.variante_micras)) return false;
                 if (otrosSel.length && !otrosSel.includes(p.variante)) return false;
-                if (soloOferta && !p.oferta) return false;
+                // Bug real reportado por Eloy (22/11/2026): este filtro
+            // comprobaba el campo "oferta" de la hoja Productos, un campo
+            // manual que en la práctica casi nunca se rellena (el
+            // mecanismo que SÍ se usa de verdad para marcar ofertas es la
+            // sección "Destacados", con su propia gestión). Ahora "Solo
+            // productos en oferta" se resuelve igual que el resto del
+            // buscador (tarjetas, ficha de detalle): vigente en Destacados
+            // o en una campaña de escaparate activa — ver destacadoEfectivoPara_.
+            if (soloOferta && !destacadoEfectivoPara_(p.ref)) return false;
                 if (soloImagenesValidadas && !p.imagen_validada && !p.fecha_actualizacion_imagen) return false;
                 if (soloTieneImagen && !tieneImagenAsociada(p)) return false;
                 if (soloImagenesSinValidar && (p.imagen_validada || p.fecha_actualizacion_imagen)) return false;
@@ -22591,6 +23387,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-producto-overlay').classList.add('activo');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.add('oculto-por-modal');
 
         // A petición de Eloy: "si clico en un producto sugerido... si le
         // das atrás te saca del buscador. Debería ir al producto del que
@@ -26545,6 +27342,7 @@ if (window.OM_PREPRODUCCION) {
         $('modal-producto-overlay').classList.remove('activo');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+        $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
         // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
         // productos del listado o sugeridos dentro del modal), se limpia
         // sin crear ni quitar ninguna entrada de historial — un cierre
