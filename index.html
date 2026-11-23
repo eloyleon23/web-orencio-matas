@@ -5853,16 +5853,41 @@
         .modal-asistente-box { max-width: 560px; padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 16px; }
         .asistente-subtitulo { color: var(--muted); font-size: 0.92rem; margin: -8px 0 0; }
         .asistente-form { display: flex; gap: 8px; }
+        /* Envuelve solo el <input> (no el botón de enviar, que sigue
+           siendo "hermano" en el flex de .asistente-form) — necesario
+           para poder colocar el botón de limpiar (×) DENTRO del propio
+           campo de texto, en vez de como un botón más al lado. */
+        .asistente-input-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
         .asistente-form input {
-            flex: 1 1 auto;
+            width: 100%;
             min-width: 0; /* si no, el ancho mínimo por defecto del <input> empuja el botón fuera de la modal en móvil */
-            padding: 11px 14px;
+            padding: 11px 34px 11px 14px; /* hueco a la derecha para el botón de limpiar */
             border: 1px solid var(--border);
             border-radius: 8px;
             font-family: inherit;
             font-size: 16px; /* evita el zoom automático de iOS al enfocar */
         }
-        .asistente-form button {
+        .asistente-input-limpiar {
+            display: none;
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: var(--muted);
+            font-size: 0.75rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+        }
+        .asistente-input-limpiar.visible { display: flex; }
+        .asistente-input-limpiar:hover { background: #cbd5e1; color: var(--dark); }
+        .asistente-form > button {
             flex: 0 0 auto;
             border: none;
             background: var(--peach);
@@ -5872,7 +5897,7 @@
             font-weight: 700;
             cursor: pointer;
         }
-        .asistente-form button:disabled { opacity: .6; cursor: default; }
+        .asistente-form > button:disabled { opacity: .6; cursor: default; }
         /* A petición de Eloy: en móvil, para ganar espacio para el
            propio campo de texto, el botón de enviar se reduce a un
            icono de flecha (sin el texto "Preguntar", que era lo que más
@@ -5882,7 +5907,7 @@
         .asistente-form__texto { display: inline; }
         .asistente-form__icono { display: none; }
         @media (max-width: 640px) {
-            .asistente-form button {
+            .asistente-form > button {
                 width: 44px;
                 height: 44px;
                 padding: 0;
@@ -6249,7 +6274,12 @@
         <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Asistente de soluciones</h3>
         <p class="asistente-subtitulo">Cuéntanos qué necesitas resolver (p. ej. "quitar manchas de grasa de un suelo de garaje") y te proponemos una solución con productos de nuestro catálogo.</p>
         <form class="asistente-form" id="asistente-form">
-            <input type="text" id="asistente-input" placeholder="¿Qué necesitas resolver?" autocomplete="off" maxlength="200">
+            <div class="asistente-input-wrap">
+                <input type="text" id="asistente-input" placeholder="¿Qué necesitas resolver?" autocomplete="off" maxlength="200">
+                <button type="button" class="asistente-input-limpiar" id="asistente-input-limpiar" aria-label="Limpiar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
             <button type="submit" id="asistente-enviar" aria-label="Preguntar">
                 <span class="asistente-form__texto">Preguntar</span>
                 <i class="fa-solid fa-arrow-right asistente-form__icono" aria-hidden="true"></i>
@@ -10817,7 +10847,8 @@ if (window.OM_PREPRODUCCION) {
         const btnEnviar = $('asistente-enviar');
         const resultado = $('asistente-resultado');
         const autocompletado = $('asistente-autocompletado');
-        if (!overlay || !form || !input || !resultado || !autocompletado) return;
+        const btnLimpiar = $('asistente-input-limpiar');
+        if (!overlay || !form || !input || !resultado || !autocompletado || !btnLimpiar) return;
 
         function escaparHtmlAsistente_(t) {
             const div = document.createElement('div');
@@ -10851,6 +10882,7 @@ if (window.OM_PREPRODUCCION) {
             // esa descarga.
             const D = window.SOLUCIONES_DATA;
             if (D) { D.cargarCatalogoReal().catch(() => {}); D.cargarSolucionesReales().catch(() => {}); }
+            actualizarVisibilidadLimpiarAsistente_();
             setTimeout(() => input.focus(), 60);
         };
         const cerrarAsistente_ = () => {
@@ -10936,12 +10968,13 @@ if (window.OM_PREPRODUCCION) {
                         const D = window.SOLUCIONES_DATA;
                         const s = D && D.soluciones && D.soluciones[btn.dataset.slug];
                         cerrarAutocompletado_();
-                        if (!s) { input.value = btn.textContent; preguntarAsistente_(input.value); return; }
+                        if (!s) { input.value = btn.textContent; actualizarVisibilidadLimpiarAsistente_(); preguntarAsistente_(input.value); return; }
                         // Coincidencia exacta elegida de la lista: se
                         // muestra DIRECTAMENTE, sin pasar por la IA — más
                         // rápido, sin coste, y ya sabemos con certeza qué
                         // guía es (nada que "adivinar").
                         input.value = s.title;
+                        actualizarVisibilidadLimpiarAsistente_();
                         mostrarGuiaEnAsistente_(s, s.title);
                     });
                 });
@@ -10949,8 +10982,28 @@ if (window.OM_PREPRODUCCION) {
             autocompletado.classList.add('activo');
         }
 
+        // Botón de limpiar (×) DENTRO del propio campo — a petición de
+        // Eloy. Visible solo con algo escrito; al pulsarlo se vacía el
+        // campo, se quita también el resultado que hubiera (si el
+        // usuario limpia el formulario, lo normal es que quiera empezar
+        // de cero, no dejar la última respuesta ahí colgada) y se
+        // vuelve a enfocar el campo (reabre el desplegable con las
+        // soluciones comunes, como al abrir la modal).
+        function actualizarVisibilidadLimpiarAsistente_() {
+            btnLimpiar.classList.toggle('visible', input.value.trim().length > 0);
+        }
         input.addEventListener('focus', () => renderAutocompletado_(input.value));
-        input.addEventListener('input', () => renderAutocompletado_(input.value));
+        input.addEventListener('input', () => {
+            renderAutocompletado_(input.value);
+            actualizarVisibilidadLimpiarAsistente_();
+        });
+        btnLimpiar.addEventListener('click', () => {
+            input.value = '';
+            resultado.innerHTML = '';
+            actualizarVisibilidadLimpiarAsistente_();
+            input.focus();
+            renderAutocompletado_('');
+        });
         document.addEventListener('click', (e) => {
             if (!e.target.closest('#asistente-form') && !e.target.closest('#asistente-autocompletado')) cerrarAutocompletado_();
         });
