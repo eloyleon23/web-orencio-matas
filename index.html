@@ -10912,11 +10912,6 @@ if (window.OM_PREPRODUCCION) {
         // el usuario utilice el centro de soluciones".
         let listaAutocompletado_ = null; // null = todavía no construida
 
-        function normalizarAsistente_(t) {
-            const D = window.SOLUCIONES_DATA;
-            return D && D.normalizarTexto ? D.normalizarTexto(t) : (t || '').toString().toLowerCase();
-        }
-
         // Las "destacadas" (selección editorial, D.solucionesDestacadas)
         // primero, el resto por orden alfabético — se reconstruye cada
         // vez que hace falta (no una sola vez al abrir la modal): D.soluciones
@@ -10953,11 +10948,25 @@ if (window.OM_PREPRODUCCION) {
             listaAutocompletado_ = construirListaAutocompletado_();
             if (!listaAutocompletado_.length) { cerrarAutocompletado_(); return; }
 
-            const normal = normalizarAsistente_(texto).trim();
-            const items = (normal
-                ? listaAutocompletado_.filter((e) => normalizarAsistente_(e.title).includes(normal))
-                : listaAutocompletado_
-            ).slice(0, 8);
+            const D = window.SOLUCIONES_DATA;
+            const normal = (texto || '').toString().trim();
+            // Campo vacío: las destacadas (construirListaAutocompletado_).
+            // Con texto: el MISMO motor de búsqueda que ya usa el propio
+            // Centro de Soluciones (buscarSolucionesCombinado — combina
+            // ~90 sinónimos/términos coloquiales curados a mano con la
+            // coincidencia literal en título/descripción/productos, ver
+            // su comentario en soluciones-data.js), con el mismo tope de
+            // 12 resultados — antes aquí solo se comparaba el texto
+            // escrito contra el TÍTULO de cada guía, mucho más limitado:
+            // "cloro" no encontraba la guía de piscinas aunque esa
+            // palabra nunca aparece en su título, y Eloy detectó que el
+            // asistente del buscador devolvía bastantes menos opciones
+            // que buscar lo mismo en el Centro de Soluciones.
+            const items = !normal
+                ? listaAutocompletado_.slice(0, 8)
+                : (D && D.buscarSolucionesCombinado ? D.buscarSolucionesCombinado(normal) : [])
+                    .slice(0, 12)
+                    .map((s) => ({ slug: s.slug, title: s.title }));
 
             if (!items.length) {
                 autocompletado.innerHTML = '<p class="asistente-autocompletado__vacio">No tenemos ninguna guía con ese texto — pulsa enviar para preguntárselo a nuestro asistente con IA.</p>';
