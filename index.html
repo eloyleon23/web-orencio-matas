@@ -5869,6 +5869,10 @@
             padding: 16px 18px;
             box-shadow: 0 10px 30px rgba(0,0,0,.35);
         }
+        #tour-ayuda-tooltip.tour-ayuda-tooltip--arriba {
+            bottom: auto;
+            top: 24px;
+        }
         #tour-ayuda-tooltip .tour-ayuda-paso { margin: 0 0 4px; font-size: 0.75rem; color: var(--muted); font-weight: 600; }
         #tour-ayuda-tooltip h5 { margin: 0 0 6px; font-size: 0.98rem; }
         #tour-ayuda-tooltip p#tour-ayuda-texto { margin: 0 0 14px; font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
@@ -10672,6 +10676,7 @@ if (window.OM_PREPRODUCCION) {
         tourAyudaPrepararListaCompraDemo_(false);
         tourAyudaPasoActual_ = -1;
         $('tour-ayuda-overlay').classList.remove('activo');
+        $('tour-ayuda-tooltip').classList.remove('tour-ayuda-tooltip--arriba');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
@@ -10749,10 +10754,32 @@ if (window.OM_PREPRODUCCION) {
                 const r = el.getBoundingClientRect();
                 const margen = 8;
                 const spot = $('tour-ayuda-spotlight');
-                spot.style.left = Math.max(0, r.left - margen) + 'px';
-                spot.style.top = Math.max(0, r.top - margen) + 'px';
-                spot.style.width = (r.width + margen * 2) + 'px';
-                spot.style.height = (r.height + margen * 2) + 'px';
+                const spotRect = {
+                    left: Math.max(0, r.left - margen),
+                    top: Math.max(0, r.top - margen),
+                    width: r.width + margen * 2,
+                    height: r.height + margen * 2,
+                };
+                spot.style.left = spotRect.left + 'px';
+                spot.style.top = spotRect.top + 'px';
+                spot.style.width = spotRect.width + 'px';
+                spot.style.height = spotRect.height + 'px';
+
+                // Si la tarjeta de texto (abajo, por defecto) tapase el
+                // elemento resaltado, la subimos arriba para no interferir.
+                // Se usan las coordenadas recién calculadas del elemento
+                // (no spot.getBoundingClientRect()): el spotlight tiene
+                // transición CSS en top/left/width/height, así que leer su
+                // rect justo tras cambiar el estilo aún devolvía la
+                // posición del paso anterior.
+                const tooltip = $('tour-ayuda-tooltip');
+                tooltip.classList.remove('tour-ayuda-tooltip--arriba');
+                const tooltipRect = tooltip.getBoundingClientRect();
+                const spotBottom = spotRect.top + spotRect.height;
+                const spotRight = spotRect.left + spotRect.width;
+                const solapan = spotBottom > tooltipRect.top && spotRect.top < tooltipRect.bottom
+                    && spotRight > tooltipRect.left && spotRect.left < tooltipRect.right;
+                if (solapan) tooltip.classList.add('tour-ayuda-tooltip--arriba');
             }, 400);
         }, 0);
     }
