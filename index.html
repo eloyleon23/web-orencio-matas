@@ -5873,6 +5873,28 @@
             cursor: pointer;
         }
         .asistente-form button:disabled { opacity: .6; cursor: default; }
+        /* A petición de Eloy: en móvil, para ganar espacio para el
+           propio campo de texto, el botón de enviar se reduce a un
+           icono de flecha (sin el texto "Preguntar", que era lo que más
+           sitio ocupaba) — el icono y el texto para lectores de
+           pantalla siguen ahí (aria-label en el botón, ver HTML),
+           ningún cambio de comportamiento, solo de tamaño. */
+        .asistente-form__texto { display: inline; }
+        .asistente-form__icono { display: none; }
+        @media (max-width: 640px) {
+            .asistente-form button {
+                width: 44px;
+                height: 44px;
+                padding: 0;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.05rem;
+            }
+            .asistente-form__texto { display: none; }
+            .asistente-form__icono { display: inline; }
+        }
         .asistente-sugerencias { display: flex; flex-wrap: wrap; gap: 8px; }
         .asistente-sugerencias button {
             border: 1px solid var(--border);
@@ -6200,7 +6222,10 @@
         <p class="asistente-subtitulo">Cuéntanos qué necesitas resolver (p. ej. "quitar manchas de grasa de un suelo de garaje") y te proponemos una solución con productos de nuestro catálogo.</p>
         <form class="asistente-form" id="asistente-form">
             <input type="text" id="asistente-input" placeholder="¿Qué necesitas resolver?" autocomplete="off" maxlength="200">
-            <button type="submit" id="asistente-enviar">Preguntar</button>
+            <button type="submit" id="asistente-enviar" aria-label="Preguntar">
+                <span class="asistente-form__texto">Preguntar</span>
+                <i class="fa-solid fa-arrow-right asistente-form__icono" aria-hidden="true"></i>
+            </button>
         </form>
         <div class="asistente-sugerencias" id="asistente-sugerencias">
             <button type="button" data-ejemplo="quitar manchas de grasa de un suelo de garaje">Grasa en el suelo del garaje</button>
