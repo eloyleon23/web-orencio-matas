@@ -10770,37 +10770,77 @@ if (window.OM_PREPRODUCCION) {
             const panelFiltrosMovil = el.closest('#filtros-extra');
             const dentroDePanelFijo = panelFiltrosMovil && getComputedStyle(panelFiltrosMovil).position === 'fixed';
             if (!dentroDePanelFijo) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => {
-                const r = el.getBoundingClientRect();
-                const margen = 8;
-                const spot = $('tour-ayuda-spotlight');
-                const spotRect = {
-                    left: Math.max(0, r.left - margen),
-                    top: Math.max(0, r.top - margen),
-                    width: r.width + margen * 2,
-                    height: r.height + margen * 2,
-                };
-                spot.style.left = spotRect.left + 'px';
-                spot.style.top = spotRect.top + 'px';
-                spot.style.width = spotRect.width + 'px';
-                spot.style.height = spotRect.height + 'px';
 
-                // Si la tarjeta de texto (abajo, por defecto) tapase el
-                // elemento resaltado, la subimos arriba para no interferir.
-                // Se usan las coordenadas recién calculadas del elemento
-                // (no spot.getBoundingClientRect()): el spotlight tiene
-                // transición CSS en top/left/width/height, así que leer su
-                // rect justo tras cambiar el estilo aún devolvía la
-                // posición del paso anterior.
-                const tooltip = $('tour-ayuda-tooltip');
-                tooltip.classList.remove('tour-ayuda-tooltip--arriba');
-                const tooltipRect = tooltip.getBoundingClientRect();
-                const spotBottom = spotRect.top + spotRect.height;
-                const spotRight = spotRect.left + spotRect.width;
-                const solapan = spotBottom > tooltipRect.top && spotRect.top < tooltipRect.bottom
-                    && spotRight > tooltipRect.left && spotRect.left < tooltipRect.right;
-                if (solapan) tooltip.classList.add('tour-ayuda-tooltip--arriba');
-            }, 400);
+            // No basta con medir una sola vez a los 400ms: en el panel de
+            // área dentro del cajón de filtros en móvil se vio moverse
+            // igual de "estable" (sin cambiar ni un píxel) durante más de
+            // 400ms y LUEGO saltar a su posición definitiva — ninguna
+            // mutación de clase/estilo de por medio, así que debe ser un
+            // reflow ajeno (tipográfico o de algún módulo que se carga en
+            // segundo plano con requestIdleCallback). El spotlight se
+            // quedaba fijado sobre esa posición "estable" pero todavía
+            // provisional ("filtrar por área" se veía mal, bug real
+            // reportado por Eloy). Para no caer otra vez en esa falsa
+            // meseta, se exige que el rect no cambie durante una RACHA
+            // continua (no solo dos medidas seguidas) antes de darlo por
+            // bueno, con un tope de tiempo total por si no llega a
+            // asentarse del todo.
+            const colocarSpotCuandoEsteEstable = () => {
+                const inicio = performance.now();
+                let anterior = null;
+                let estableDesde = inicio;
+                const RACHA_MINIMA_MS = 300;
+                const TOPE_TOTAL_MS = 1800;
+                const comprobar = () => {
+                    const r = el.getBoundingClientRect();
+                    const ahora = performance.now();
+                    const cambia = !anterior
+                        || Math.abs(r.top - anterior.top) >= 1 || Math.abs(r.left - anterior.left) >= 1
+                        || Math.abs(r.width - anterior.width) >= 1 || Math.abs(r.height - anterior.height) >= 1;
+                    if (cambia) estableDesde = ahora;
+                    anterior = r;
+                    const llevaEstableBastante = (ahora - estableDesde) >= RACHA_MINIMA_MS;
+                    const seAgotoElTiempo = (ahora - inicio) >= TOPE_TOTAL_MS;
+                    if (!llevaEstableBastante && !seAgotoElTiempo) {
+                        setTimeout(comprobar, 100);
+                        return;
+                    }
+                    fijarSpotEnRect_(r);
+                };
+                setTimeout(comprobar, 400);
+            };
+
+            const fijarSpotEnRect_ = (r) => {
+                    const margen = 8;
+                    const spot = $('tour-ayuda-spotlight');
+                    const spotRect = {
+                        left: Math.max(0, r.left - margen),
+                        top: Math.max(0, r.top - margen),
+                        width: r.width + margen * 2,
+                        height: r.height + margen * 2,
+                    };
+                    spot.style.left = spotRect.left + 'px';
+                    spot.style.top = spotRect.top + 'px';
+                    spot.style.width = spotRect.width + 'px';
+                    spot.style.height = spotRect.height + 'px';
+
+                    // Si la tarjeta de texto (abajo, por defecto) tapase el
+                    // elemento resaltado, la subimos arriba para no interferir.
+                    // Se usan las coordenadas recién calculadas del elemento
+                    // (no spot.getBoundingClientRect()): el spotlight tiene
+                    // transición CSS en top/left/width/height, así que leer su
+                    // rect justo tras cambiar el estilo aún devolvía la
+                    // posición del paso anterior.
+                    const tooltip = $('tour-ayuda-tooltip');
+                    tooltip.classList.remove('tour-ayuda-tooltip--arriba');
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    const spotBottom = spotRect.top + spotRect.height;
+                    const spotRight = spotRect.left + spotRect.width;
+                    const solapan = spotBottom > tooltipRect.top && spotRect.top < tooltipRect.bottom
+                        && spotRight > tooltipRect.left && spotRect.left < tooltipRect.right;
+                    if (solapan) tooltip.classList.add('tour-ayuda-tooltip--arriba');
+            };
+            colocarSpotCuandoEsteEstable();
         }, 0);
     }
 
