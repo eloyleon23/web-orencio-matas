@@ -10495,6 +10495,11 @@ if (window.OM_PREPRODUCCION) {
             titulo: 'Tu lista de la compra',
             texto: 'Accede a tu lista en cualquier momento desde aquí: expórtala a PDF, compártela o imprime etiquetas de precio.',
             usaListaCompraDemo: true,
+            // El propio tour oculta este botón flotante con
+            // "oculto-por-modal" mientras dura la demo (arrancarTourAyuda_),
+            // así que para señalarlo hay que mostrarlo solo en este paso.
+            antes: () => { $('btn-lista-compra-flotante').classList.remove('oculto-por-modal'); },
+            limpiar: () => { $('btn-lista-compra-flotante').classList.add('oculto-por-modal'); },
         },
         {
             selectores: ['#modal-lista-compra-acciones'],
@@ -10575,10 +10580,25 @@ if (window.OM_PREPRODUCCION) {
     // el dispositivo (filtros en móvil/escritorio) o el estado real del
     // usuario (el botón de la lista de la compra no existe hasta que hay
     // una lista creada).
+    // No se usa el típico "offsetParent !== null" para decidir si un
+    // elemento está realmente visible: esa propiedad da null siempre para
+    // cualquier elemento position:fixed (p.ej. el botón flotante de la
+    // lista de la compra), esté o no visible de verdad, por lo que ese
+    // paso del tour se saltaba siempre aunque el botón estuviera en
+    // pantalla. Comprobar dimensiones reales funciona igual de bien para
+    // detectar display:none (propio o de un antecesor) y además sí
+    // funciona con elementos fijos.
+    function elementoRealmenteVisibleParaAyuda_(el) {
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return false;
+        const r = el.getBoundingClientRect();
+        return r.width > 0 && r.height > 0;
+    }
+
     function elementoVisibleParaPasoAyuda_(paso) {
         for (const selector of paso.selectores) {
             const el = document.querySelector(selector);
-            if (el && el.offsetParent !== null) return el;
+            if (el && elementoRealmenteVisibleParaAyuda_(el)) return el;
         }
         return null;
     }
