@@ -5941,6 +5941,9 @@
         }
         .asistente-autocompletado.activo { display: flex; }
         .asistente-autocompletado button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
             flex: 0 1 auto;
             max-width: 100%; /* si no, los títulos largos se salen de la modal en móvil en vez de hacer wrap dentro del chip */
             border: 1px solid var(--border);
@@ -5952,6 +5955,14 @@
             line-height: 1.3;
             text-align: left;
             cursor: pointer;
+        }
+        .asistente-chip__icono {
+            flex: 0 0 auto;
+            font-size: 1rem;
+        }
+        .asistente-chip__texto {
+            flex: 0 1 auto;
+            min-width: 0;
         }
         .asistente-autocompletado button:hover,
         .asistente-autocompletado button:focus {
@@ -10867,6 +10878,23 @@ if (window.OM_PREPRODUCCION) {
 
         const ICONO_IA_ASISTENTE_ = '<img src="assets/logos/apple-touch-icon.png" alt="" class="cs-icono-ia-asistente">';
 
+        // Emoji por área (D.areas: coche, pintura, madera, metal, limpieza,
+        // pegado, suelos, piscinas, plagas, jardín, perfumería — mismas
+        // áreas que usa el propio Centro de Soluciones) para que cada chip
+        // del desplegable lleve un icono que ayude a identificar de un
+        // vistazo de qué ámbito es la guía, sin tener que leer el título
+        // completo. Se construye una sola vez (D.areas es estático, no se
+        // recarga como D.soluciones) y se cachea por slug de categoría.
+        let iconosPorCategoriaAsistente_ = null;
+        function iconoCategoriaAsistente_(categoria) {
+            if (!iconosPorCategoriaAsistente_) {
+                iconosPorCategoriaAsistente_ = new Map();
+                const D = window.SOLUCIONES_DATA;
+                (D && D.areas || []).forEach((a) => iconosPorCategoriaAsistente_.set(a.id, a.emoji));
+            }
+            return iconosPorCategoriaAsistente_.get(categoria) || '🧰';
+        }
+
         let controladorActual_ = null;
         let textoEnCurso_ = '';
         let canceladoPorCierre_ = false;
@@ -10933,7 +10961,7 @@ if (window.OM_PREPRODUCCION) {
             const soluciones = D.soluciones || {};
             const ordenDestacadas = new Map((D.solucionesDestacadas || []).map((s, i) => [s.slug, i]));
             return Object.keys(soluciones)
-                .map((slug) => ({ slug, title: soluciones[slug].title }))
+                .map((slug) => ({ slug, title: soluciones[slug].title, category: soluciones[slug].category }))
                 .sort((a, b) => {
                     const da = ordenDestacadas.has(a.slug) ? ordenDestacadas.get(a.slug) : Infinity;
                     const db = ordenDestacadas.has(b.slug) ? ordenDestacadas.get(b.slug) : Infinity;
@@ -10975,12 +11003,12 @@ if (window.OM_PREPRODUCCION) {
                 ? listaAutocompletado_.slice(0, 8)
                 : (D && D.buscarSolucionesCombinado ? D.buscarSolucionesCombinado(normal) : [])
                     .slice(0, 12)
-                    .map((s) => ({ slug: s.slug, title: s.title }));
+                    .map((s) => ({ slug: s.slug, title: s.title, category: s.category }));
 
             if (!items.length) {
                 autocompletado.innerHTML = '<p class="asistente-autocompletado__vacio">No tenemos ninguna guía con ese texto — pulsa enviar para preguntárselo a nuestro asistente con IA.</p>';
             } else {
-                autocompletado.innerHTML = items.map((e) => `<button type="button" data-slug="${escaparHtmlAsistente_(e.slug)}">${escaparHtmlAsistente_(e.title)}</button>`).join('');
+                autocompletado.innerHTML = items.map((e) => `<button type="button" data-slug="${escaparHtmlAsistente_(e.slug)}"><span class="asistente-chip__icono" aria-hidden="true">${iconoCategoriaAsistente_(e.category)}</span><span class="asistente-chip__texto">${escaparHtmlAsistente_(e.title)}</span></button>`).join('');
                 autocompletado.querySelectorAll('button[data-slug]').forEach((btn) => {
                     btn.addEventListener('click', () => {
                         const D = window.SOLUCIONES_DATA;
