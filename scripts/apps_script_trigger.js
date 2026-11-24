@@ -11,7 +11,7 @@
 // Viaja en la respuesta de obtener_productos (ver version_backend) para
 // que buscador.html pueda avisar si lo que ve en vivo no es lo último
 // que se desplegó — ver comprobarVersionBackend_ en buscador.html.
-const VERSION_BACKEND = '2026-11-24-diagnostico-catalogo';
+const VERSION_BACKEND = '2026-11-24-visibilidad-por-perfil';
 
 // ── Configuración ──────────────────────────────────────────────────────────
 const GITHUB_TOKEN        = 'TU_GITHUB_TOKEN_AQUI';
@@ -422,6 +422,23 @@ function sincronizarRegistroProductos(opciones) {
     sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('precio_mayor_con_iva');
     prodHeaderRow.push('precio_mayor_con_iva');
   }
+  // Visibilidad por perfil (a petición de Eloy, 24/11/2026): hay
+  // productos orientados solo a usuario normal o solo a profesional —
+  // dos columnas nuevas, "si" por defecto (igual que si están vacías,
+  // ver el resto de este bloque más abajo). Igual que
+  // "incluir_en_catalogo" más abajo, estas DOS columnas NUNCA se
+  // sobrescriben aquí si ya tienen "si"/"no" (lo decide el admin desde
+  // la ficha de detalle en preproducción o desde panel_admin.html) —
+  // solo se rellenan a "si" si la celda está vacía, tanto en productos
+  // nuevos como ya existentes (ver más abajo en el propio bucle).
+  if (!prodHeaderRow.includes('visible_usuario_normal')) {
+    sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('visible_usuario_normal');
+    prodHeaderRow.push('visible_usuario_normal');
+  }
+  if (!prodHeaderRow.includes('visible_usuario_profesional')) {
+    sheetProd.getRange(1, prodHeaderRow.length + 1).setValue('visible_usuario_profesional');
+    prodHeaderRow.push('visible_usuario_profesional');
+  }
 
   const PROD = {};
   prodHeaderRow.forEach((h, i) => { PROD[h] = i; });
@@ -599,6 +616,18 @@ function sincronizarRegistroProductos(opciones) {
           productosReactivados.push({ ean: ean, nombre: desc });
         }
 
+        // Visibilidad por perfil: SOLO se rellena a "si" si la celda
+        // está vacía (producto anterior a que existieran estas
+        // columnas) — si ya tiene "si" o "no", es una decisión tomada
+        // a propósito (desde la ficha de detalle en preproducción o
+        // panel_admin.html) y el CRM NUNCA debe pisarla.
+        ['visible_usuario_normal', 'visible_usuario_profesional'].forEach((col) => {
+          if (PROD[col] !== undefined && (!prodRow[PROD[col]] || prodRow[PROD[col]].toString().trim() === '')) {
+            prodRow[PROD[col]] = 'si';
+            cambios = true;
+          }
+        });
+
         if (cambios && PROD['fecha_registro'] !== undefined) prodRow[PROD['fecha_registro']] = hoy;
 
         // Bug real detectado (18/11/2026): "actualizados" se incrementaba
@@ -637,6 +666,8 @@ function sincronizarRegistroProductos(opciones) {
         }
         set('mostrar_precio',      'si');
         set('incluir_en_catalogo', 'si');
+        set('visible_usuario_normal',      'si');
+        set('visible_usuario_profesional', 'si');
         set('oferta',              'no');
         set('espacios_a_ocupar',   1);
         set('imagen_drive_id',     imagenId || 'NO_TIENE_FOTO');
@@ -3578,6 +3609,18 @@ function regenerarCacheCompletaDesdeSheet_() {
         // vacía — solo empieza a mostrarse en cuanto se rellene un
         // producto desde panel_admin.
         fabricante: valorCelda_(row, 'marca'),
+        // Visibilidad por perfil (a petición de Eloy, 24/11/2026): "si"
+        // por defecto, tanto si la celda está vacía como si tiene
+        // cualquier otro valor que no sea "no" explícitamente — mismo
+        // criterio que incluirEnCatalogo arriba. El producto se queda
+        // SIEMPRE en esta caché (nunca se excluye aquí, a diferencia de
+        // fecha_baja/incluir_en_catalogo): quién puede verlo de verdad
+        // se decide en obtener_productos, según el perfil de quien
+        // pregunta — así, si luego se habilita de nuevo para algún
+        // perfil, no hace falta esperar a la próxima regeneración
+        // completa para que vuelva a aparecer.
+        visible_usuario_normal: (valorCelda_(row, 'visible_usuario_normal') || '').toLowerCase() === 'no' ? 'no' : 'si',
+        visible_usuario_profesional: (valorCelda_(row, 'visible_usuario_profesional') || '').toLowerCase() === 'no' ? 'no' : 'si',
       });
     });
   }
@@ -4203,6 +4246,25 @@ function doGet(e) {
           return copia;
         });
       };
+      // Visibilidad por perfil (visible_usuario_normal/visible_usuario_profesional,
+      // a petición de Eloy, 24/11/2026): hay productos orientados solo a un
+      // perfil u otro. Se decide AQUÍ, en el servidor, con el mismo
+      // pinProfesionalOk ya calculado — así todas las páginas que llaman a
+      // esta acción (buscador/index.html, Centro de Soluciones,
+      // Escaparate OM) quedan cubiertas de una vez, sin depender de que
+      // cada una repita el filtro por su cuenta en el cliente, y sin
+      // poder saltárselo manipulando el JS del navegador. Mismo criterio
+      // que quitarPrecioMayor_: en vista previa de preproducción
+      // (vistaPreviaPreproduccionOk) se ve todo sin filtrar, para que el
+      // admin pueda encontrar y gestionar también los productos ocultos
+      // — en preproducción solo se filtra de verdad si se navega con un
+      // PIN profesional activo (mismo comportamiento que tendría ese
+      // perfil en producción).
+      const ocultarPorVisibilidad_ = (lista) => {
+        if (vistaPreviaPreproduccionOk) return lista;
+        const campo = pinProfesionalOk ? 'visible_usuario_profesional' : 'visible_usuario_normal';
+        return lista.filter(p => (p[campo] || 'si') !== 'no');
+      };
       // Filtro opcional por referencias (?refs=REF1,REF2,...) — para
       // cuando solo hace falta un puñado concreto de productos, no el
       // catálogo entero (miles de productos, varios MB). Usado por
@@ -4227,11 +4289,11 @@ function doGet(e) {
       const refsParam = (e.parameter && e.parameter.refs || '').toString().trim();
       if (refsParam) {
         const refsSet = new Set(refsParam.split(',').map(r => r.trim()).filter(Boolean));
-        const filtrados = quitarPrecioMayor_((datos.productos || []).filter(p => refsSet.has(p.ref)));
+        const filtrados = quitarPrecioMayor_(ocultarPorVisibilidad_((datos.productos || []).filter(p => refsSet.has(p.ref))));
         return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, metaRespuesta_, { productos: filtrados })))
           .setMimeType(ContentService.MimeType.JSON);
       }
-      return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, metaRespuesta_, { productos: quitarPrecioMayor_(datos.productos || []) })))
+      return ContentService.createTextOutput(JSON.stringify(Object.assign({}, datos, metaRespuesta_, { productos: quitarPrecioMayor_(ocultarPorVisibilidad_(datos.productos || [])) })))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -4549,6 +4611,11 @@ function doPost(e) {
     if (accion === 'habilitar_producto_catalogo') {
       console.log('Acción: habilitar_producto_catalogo');
       return procesarHabilitarProductoCatalogo(data);
+    }
+
+    if (accion === 'actualizar_visibilidad_producto') {
+      console.log('Acción: actualizar_visibilidad_producto');
+      return procesarActualizarVisibilidadProducto(data);
     }
 
     if (accion === 'marcar_sin_imagen') {
@@ -9180,6 +9247,91 @@ function _procesarCambiarIncluirEnCatalogo_(data, valor) {
 
   } catch (err) {
     console.error('Error al cambiar incluir_en_catalogo del producto:', err);
+    return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+// ── Editar visibilidad de un producto por perfil (usuario normal /
+//    profesional) — a petición de Eloy, 24/11/2026 ────────────────────────
+// Distinto de incluir_en_catalogo (oculto a TODOS) y de dar de
+// baja/reactivar (ciclo de vida del CRM): hay productos orientados solo
+// a un perfil u otro (p. ej. consumibles de taller que no interesan al
+// cliente normal, o al revés). Mismo patrón que
+// _procesarCambiarIncluirEnCatalogo_, pero escribe los DOS campos a la
+// vez en una sola llamada — la modal "Editar visibilidad" de la ficha
+// de detalle (solo en preproducción, ver
+// window.MOSTRAR_BOTON_EDITAR_VISIBILIDAD en index.html) manda los dos
+// valores juntos desde sus dos interruptores. Si se guardan ambos a
+// "no", el producto deja de ser visible para cualquier perfil — no hace
+// falta ningún caso especial para eso: es la simple consecuencia de que
+// obtener_productos filtra por perfil (ver ocultarPorVisibilidad_ más
+// arriba), nunca por los dos campos a la vez.
+function procesarActualizarVisibilidadProducto(data) {
+  try {
+    const referencia = data.referencia;
+    if (!referencia) {
+      throw new Error('Falta la referencia del producto');
+    }
+    const visibleNormal      = data.visible_usuario_normal      === 'no' ? 'no' : 'si';
+    const visibleProfesional = data.visible_usuario_profesional === 'no' ? 'no' : 'si';
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheetProd = ss.getSheetByName('Productos');
+    const prodData = sheetProd.getDataRange().getValues();
+    const prodHeaders = prodData[0];
+
+    const PROD = {};
+    prodHeaders.forEach((h, i) => {
+      PROD[h.toString().toLowerCase().replace(/\s+/g, '_')] = i;
+    });
+
+    // Red de seguridad por si esta acción se usa antes de que exista
+    // ninguna sincronización del CRM que haya creado ya las columnas
+    // (ver el bloque de auto-creación en procesarListadoProductosExcel_)
+    // — mismo criterio que guardarProducto() con ficha_url/info_adicional.
+    ['visible_usuario_normal', 'visible_usuario_profesional'].forEach((col) => {
+      if (PROD[col] === undefined) {
+        sheetProd.getRange(1, sheetProd.getLastColumn() + 1).setValue(col);
+        PROD[col] = sheetProd.getLastColumn() - 1;
+      }
+    });
+
+    let prodRowIdx = -1;
+    for (let i = 0; i < prodData.length; i++) {
+      const ref = prodData[i][PROD['referencia']] ? prodData[i][PROD['referencia']].toString().trim() : '';
+      if (ref === referencia.toString().trim()) {
+        prodRowIdx = i;
+        break;
+      }
+    }
+
+    if (prodRowIdx === -1) {
+      console.log('Producto no encontrado:', referencia);
+      return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Producto no encontrado' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    const prodRowNum = prodRowIdx + 1;
+    sheetProd.getRange(prodRowNum, PROD['visible_usuario_normal'] + 1).setValue(visibleNormal);
+    sheetProd.getRange(prodRowNum, PROD['visible_usuario_profesional'] + 1).setValue(visibleProfesional);
+    console.log('visible_usuario_normal="' + visibleNormal + '", visible_usuario_profesional="' + visibleProfesional + '" para', referencia);
+
+    // Vista rápida: parchea la caché de Drive al instante, igual que
+    // deshabilitar/habilitar catálogo — el producto sigue en la caché
+    // (nunca se añade ni se quita aquí), solo cambian estos dos campos;
+    // es obtener_productos quien decide, en cada petición, si lo
+    // incluye o no en la respuesta según el perfil de quien pregunta.
+    actualizarProductoEnCache_(referencia, { visible_usuario_normal: visibleNormal, visible_usuario_profesional: visibleProfesional });
+
+    return ContentService.createTextOutput(JSON.stringify({
+      success: true,
+      visible_usuario_normal: visibleNormal,
+      visible_usuario_profesional: visibleProfesional,
+    })).setMimeType(ContentService.MimeType.JSON);
+
+  } catch (err) {
+    console.error('Error al actualizar la visibilidad del producto:', err);
     return ContentService.createTextOutput(JSON.stringify({ success: false, error: err.message }))
       .setMimeType(ContentService.MimeType.JSON);
   }

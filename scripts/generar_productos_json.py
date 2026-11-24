@@ -135,6 +135,17 @@ def exportar_productos_json(productos, familias, subfamilias):
         if not es_si(p.get('incluir_en_catalogo', 'si')):
             continue
 
+        # Visibilidad por perfil (columnas visible_usuario_normal/
+        # visible_usuario_profesional — a petición de Eloy, 24/11/2026):
+        # hay productos orientados solo a un perfil u otro. Este JSON
+        # estático alimenta las páginas públicas de catálogo (sin perfil
+        # profesional, ver catalogo-preview.js), así que aquí solo importa
+        # la visibilidad "normal" — el perfil profesional se filtra en
+        # vivo, en obtener_productos (apps_script_trigger.js), y en
+        # generar_catalogos_mayor.py para el catálogo al por mayor.
+        if not es_si(p.get('visible_usuario_normal', 'si')):
+            continue
+
         ref = p.get('referencia', '').strip()
         if not ref:
             continue

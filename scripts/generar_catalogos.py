@@ -602,11 +602,16 @@ def generar_catalogo(area, productos, logo_png, familias={}, marca_agua=None, li
     # Excluye también los productos deshabilitados a propósito de la web
     # (incluir_en_catalogo = "no") — distinto de la baja: siguen de alta
     # y sincronizándose desde el CRM, solo que no deben mostrarse nunca.
+    # Y los que no son visibles para el perfil normal (visible_usuario_normal
+    # = "no", a petición de Eloy, 24/11/2026 — productos orientados solo
+    # al perfil profesional, ver generar_catalogos_mayor.py para el
+    # catálogo al por mayor con el criterio contrario).
     productos_area = [
         p for p in productos
         if p.get('area','').lower().strip() == area
         and not p.get('fecha_baja','').strip()
         and p.get('incluir_en_catalogo','si').strip().lower() not in ('no',)
+        and p.get('visible_usuario_normal','si').strip().lower() not in ('no',)
     ]
 
     if limite_productos:
