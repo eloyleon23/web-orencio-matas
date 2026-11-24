@@ -5590,6 +5590,9 @@ window.SOLUCIONES_DATA = (function () {
     reaf: 'reafirmante',
     cep: 'cepillo',
     liq: 'liquido',
+    poliuret: 'poliuretano',
+    acril: 'acrilico al agua',
+    sat: 'satinado',
   };
 
   // Añade al final la forma completa de cualquier abreviatura conocida
