@@ -11050,8 +11050,39 @@ if (window.OM_PREPRODUCCION) {
             input.focus();
             renderAutocompletado_('');
         });
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('#asistente-form') && !e.target.closest('#asistente-autocompletado')) cerrarAutocompletado_();
+        // Bug real reportado por Eloy: al clicar fuera (p. ej. el título
+        // de la modal) el desplegable se cerraba bien, pero al volver a
+        // clicar en el propio campo de texto para reabrirlo, las opciones
+        // "aparecían y desaparecían" en vez de quedarse abiertas. Causa:
+        // esta comprobación se hacía en el evento 'click', que se dispara
+        // DESPUÉS del 'focus' del input — el 'focus' ya había abierto el
+        // desplegable (renderAutocompletado_ añade las opciones, lo que
+        // aumenta la altura de la modal), así que para cuando llegaba el
+        // 'click' el campo ya se había desplazado hacia arriba y el punto
+        // donde terminó el clic caía sobre el fondo de la modal en vez de
+        // sobre el input — e.target.closest('#asistente-form') daba
+        // false y este propio clic (el que debía reabrirlo) lo volvía a
+        // cerrar al instante.
+        //
+        // No basta con mover la comprobación a 'mousedown': cerrar el
+        // desplegable AHÍ MISMO (antes del 'click') encoge la modal
+        // ANTES de que termine el propio clic con el que se cerró — y
+        // como la modal se centra con flexbox, encogerla desplaza verticalmente
+        // el resto de su contenido bajo el cursor, así que el 'click'
+        // final cae fuera de la caja de la modal y cierra la modal
+        // ENTERA en vez de solo el desplegable (comprobado con un test:
+        // overlayActivo pasaba a false al clicar el título). La única
+        // forma de que ningún clic se "pierda" por un cambio de layout a
+        // mitad de gesto es decidir en 'mousedown' (antes de que nada se
+        // mueva) pero NO tocar el DOM hasta el 'click' — así el propio
+        // evento 'click' ya tiene su objetivo fijado por el navegador
+        // antes de que cerremos nada.
+        let cerrarAutocompletadoEnEsteClic_ = false;
+        document.addEventListener('mousedown', (e) => {
+            cerrarAutocompletadoEnEsteClic_ = !e.target.closest('#asistente-form') && !e.target.closest('#asistente-autocompletado');
+        }, true);
+        document.addEventListener('click', () => {
+            if (cerrarAutocompletadoEnEsteClic_) cerrarAutocompletado_();
         });
 
         function renderEstado_(iconoHtml, texto) {
