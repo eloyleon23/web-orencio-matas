@@ -692,6 +692,23 @@
             /* Subir todo el contenido y ahorrar el hueco superior */
             .layout { padding-top: 10px; }
 
+            /* A petición de Eloy: en móvil, para ganar pantalla, la
+               cabecera del sitio (logo + menú, .navbar-wrapper, siempre
+               visible porque es position:sticky) se oculta al hacer
+               scroll hacia abajo y el bloque del buscador/filtros (fijo,
+               justo debajo) sube a ocupar su sitio — ver
+               actualizarVisibilidadNavbarMovil_ más abajo, que calcula el
+               "top" de #grupo-buscador-principal según corresponda. Al
+               subir en el scroll, llegar arriba del todo o pulsar
+               "subir arriba" vuelve a aparecer. OJO: esto NO es lo mismo
+               que ocultar el propio buscador al hacer scroll — eso se
+               probó antes (ver el comentario junto a
+               actualizarVisibilidadBotonSubir) y se descartó porque
+               obligaba a subir/bajar solo para poder buscar; aquí el
+               buscador se queda siempre visible, solo cambia de sitio. */
+            .navbar-wrapper { transition: transform .25s ease; }
+            .navbar-wrapper.navbar-wrapper--oculta { transform: translateY(-100%); }
+
             /* ── Filtros como panel modal lateral en móvil ──
                Por defecto en móvil solo se ve la fila compacta: botón
                "Filtros" + buscador + escáner — sin la tarjeta blanca, sin
@@ -5796,6 +5813,279 @@
             }
         }
 
+        /* Prueba de concepto (petición de Eloy): asistente visual del
+           Centro de Soluciones, accesible sin salir del buscador. Mismo
+           patrón que #btn-ayuda-flotante, apilado justo encima — ver
+           inicializarAsistenteSoluciones_ más abajo. */
+        #btn-asistente-flotante {
+            display: flex;
+            position: fixed;
+            right: 22px;
+            bottom: 138px;
+            z-index: 3990;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            border: none;
+            background: var(--peach);
+            color: #fff;
+            font-size: 1.15rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,.25);
+            transition: filter .15s, transform .1s;
+        }
+        #btn-asistente-flotante:hover { filter: brightness(1.08); }
+        #btn-asistente-flotante:active { transform: translateY(1px); }
+        #btn-asistente-flotante.oculto-por-modal { display: none !important; }
+        @media (max-width: 640px) {
+            #btn-asistente-flotante {
+                right: 14px;
+                bottom: 110px;
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+                box-shadow: 0 2px 8px rgba(0,0,0,.2);
+            }
+        }
+
+        .modal-asistente-box { max-width: 560px; padding: 28px 28px 24px; display: flex; flex-direction: column; gap: 16px; }
+        .asistente-subtitulo { color: var(--muted); font-size: 0.92rem; margin: -8px 0 0; }
+        .asistente-form { display: flex; gap: 8px; }
+        /* Envuelve solo el <input> (no el botón de enviar, que sigue
+           siendo "hermano" en el flex de .asistente-form) — necesario
+           para poder colocar el botón de limpiar (×) DENTRO del propio
+           campo de texto, en vez de como un botón más al lado. */
+        .asistente-input-wrap { position: relative; flex: 1 1 auto; min-width: 0; }
+        .asistente-form input {
+            width: 100%;
+            min-width: 0; /* si no, el ancho mínimo por defecto del <input> empuja el botón fuera de la modal en móvil */
+            padding: 11px 34px 11px 14px; /* hueco a la derecha para el botón de limpiar */
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 16px; /* evita el zoom automático de iOS al enfocar */
+        }
+        .asistente-input-limpiar {
+            display: none;
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            border: none;
+            border-radius: 50%;
+            background: #e2e8f0;
+            color: var(--muted);
+            font-size: 0.75rem;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+        }
+        .asistente-input-limpiar.visible { display: flex; }
+        .asistente-input-limpiar:hover { background: #cbd5e1; color: var(--dark); }
+        .asistente-form > button {
+            flex: 0 0 auto;
+            border: none;
+            background: var(--peach);
+            color: #fff;
+            padding: 0 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .asistente-form > button:disabled { opacity: .6; cursor: default; }
+        /* A petición de Eloy: en móvil, para ganar espacio para el
+           propio campo de texto, el botón de enviar se reduce a un
+           icono de flecha (sin el texto "Preguntar", que era lo que más
+           sitio ocupaba) — el icono y el texto para lectores de
+           pantalla siguen ahí (aria-label en el botón, ver HTML),
+           ningún cambio de comportamiento, solo de tamaño. */
+        .asistente-form__texto { display: inline; }
+        .asistente-form__icono { display: none; }
+        @media (max-width: 640px) {
+            .asistente-form > button {
+                width: 44px;
+                height: 44px;
+                padding: 0;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.05rem;
+            }
+            .asistente-form__texto { display: none; }
+            .asistente-form__icono { display: inline; }
+        }
+        /* Desplegable de autocompletado (petición de Eloy): al poner el
+           cursor en el campo aparecen soluciones ya definidas como
+           opciones, y se van filtrando conforme el usuario escribe. Se
+           coloca en el flujo normal (no position:absolute) justo debajo
+           del formulario — la modal que lo contiene tiene scroll propio
+           (overflow-y:auto, ver .modal-producto-box) y un desplegable
+           flotante se recortaría ahí en vez de superponerse de verdad.
+           A petición de Eloy: como chips (píldoras en una rejilla que
+           se ajusta sola), más fáciles de ver y de tocar de un vistazo
+           que la lista vertical de antes. */
+        .asistente-autocompletado {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 280px;
+            overflow-y: auto;
+            padding: 2px;
+            margin-top: -8px;
+        }
+        .asistente-autocompletado.activo { display: flex; }
+        /* Filtro por categoría/subcategoría (petición de Eloy, "facilitar
+           que se vean y el usuario lo pueda seleccionar mejor" extendida
+           a filtrar por área): mismas categorías que usa el propio
+           Centro de Soluciones (D.areas), solo se muestran las que
+           tienen alguna guía en la lista actual — si el usuario ya ha
+           escrito algo y ningún resultado es, p. ej., de piscinas, ese
+           chip ni aparece. La subcategoría solo se muestra tras elegir
+           una categoría, y solo si esa categoría tiene más de una. */
+        .asistente-filtros-categoria,
+        .asistente-filtros-subcategoria {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .asistente-filtros-subcategoria {
+            padding-left: 8px;
+            border-left: 2px solid var(--border);
+        }
+        .asistente-filtro-chip {
+            flex: 0 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 5px 11px;
+            background: #f8fafc;
+            color: var(--muted);
+            font-size: 0.76rem;
+            line-height: 1.3;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .asistente-filtro-chip--sub { font-size: 0.72rem; padding: 4px 10px; }
+        .asistente-filtro-chip:hover { border-color: var(--peach); color: var(--peach); }
+        .asistente-filtro-chip.activo {
+            background: var(--peach);
+            border-color: var(--peach);
+            color: #fff;
+            font-weight: 600;
+        }
+        .asistente-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .asistente-chips button {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 0 1 auto;
+            max-width: 100%; /* si no, los títulos largos se salen de la modal en móvil en vez de hacer wrap dentro del chip */
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 8px 14px;
+            background: #fff;
+            color: var(--dark);
+            font-size: 0.84rem;
+            line-height: 1.3;
+            text-align: left;
+            cursor: pointer;
+        }
+        .asistente-chip__icono {
+            flex: 0 0 auto;
+            font-size: 1rem;
+        }
+        .asistente-chip__texto {
+            flex: 0 1 auto;
+            min-width: 0;
+        }
+        .asistente-chips button:hover,
+        .asistente-chips button:focus {
+            background: #fff7ed;
+            border-color: var(--peach);
+            color: var(--peach);
+        }
+        .asistente-autocompletado__vacio {
+            padding: 10px 2px;
+            font-size: 0.84rem;
+            color: var(--muted);
+        }
+        /* Enlace final, a petición de Eloy, para fomentar el uso del
+           Centro de Soluciones también desde aquí — se abre en pestaña
+           nueva, igual que el resto de enlaces del asistente, porque el
+           buscador nunca debe navegar fuera de sí mismo. */
+        .asistente-ver-centro {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            align-self: flex-start;
+            padding: 4px 2px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--peach);
+            text-decoration: none;
+        }
+        .asistente-ver-centro:hover { text-decoration: underline; }
+        .asistente-ver-centro i { font-size: 0.74rem; }
+        /* Margen de verdad SOLO cuando hay contenido que mostrar — con
+           :empty en display:none no hace falta condicionar nada más: un
+           elemento oculto no deja ningún hueco igualmente. */
+        .asistente-resultado:not(:empty) { margin-top: 4px; }
+        .asistente-resultado:empty { display: none; }
+        .asistente-estado { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 0; text-align: center; color: var(--muted); }
+        .asistente-estado img.cs-icono-ia-asistente { width: 32px; height: 32px; border-radius: 8px; }
+        /* Bug real reportado por Eloy: el icono que se mostraba mientras
+           se preguntaba a la IA o se preparaba una guía era el logo
+           estático, sin ningún efecto — parecía que la página se había
+           quedado colgada en vez de estar cargando algo. Reutiliza la
+           misma animación "girar" que ya usa el spinner de la carga
+           inicial de la página (ver .cargando-inicial #icono-cargando). */
+        .asistente-spinner { font-size: 1.6rem; color: var(--peach); animation: girar 1s linear infinite; }
+        .asistente-aviso { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 12px 14px; border-radius: 8px; font-size: 0.88rem; }
+        .asistente-respuesta-ia { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; font-size: 0.9rem; line-height: 1.5; }
+        .asistente-respuesta-ia strong { color: #0369a1; }
+        .asistente-guia-cabecera { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .asistente-guia-cabecera h4 { margin: 0; font-size: 1.05rem; }
+        .asistente-guia-meta { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 0; font-size: 0.8rem; color: var(--muted); }
+        .asistente-guia-meta span { background: #f1f5f9; border-radius: 999px; padding: 3px 10px; }
+        .asistente-productos-titulo { font-size: 0.85rem; font-weight: 700; margin: 14px 0 8px; }
+        .asistente-productos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+        .asistente-producto-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            background: #fff;
+            text-align: left;
+            font-family: inherit;
+        }
+        .asistente-producto-card:hover { border-color: var(--peach); }
+        .asistente-producto-card img { width: 100%; aspect-ratio: 1; object-fit: contain; display: block; margin-bottom: 6px; }
+        .asistente-producto-card__nombre { font-size: 0.78rem; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .asistente-producto-card__precio { font-size: 0.8rem; font-weight: 700; margin-top: 4px; }
+        .asistente-ver-completa {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: var(--blue);
+            font-weight: 700;
+            font-size: 0.88rem;
+            cursor: pointer;
+            padding: 0;
+        }
+        .asistente-ver-completa:hover { text-decoration: underline; }
+
         /* Modal de Ayuda — mismo patrón visual que el resto de modales
            (.modal-overlay + .modal-producto-box, ver esa clase para el
            scroll/max-height ya resueltos), con un ancho algo más
@@ -6047,6 +6337,42 @@
                 <li>Recibirás un aviso si lleva tiempo creada, para que no se quede desactualizada.</li>
             </ul>
         </div>
+    </div>
+</div>
+
+<!-- Prueba de concepto (petición de Eloy): asistente visual enlazado al
+     Centro de Soluciones, accesible desde el propio buscador sin salir
+     de la página — ver inicializarAsistenteSoluciones_ más abajo. El
+     usuario escribe su problema, se consulta a la misma IA que ya usa
+     el Centro de Soluciones (assets/js/soluciones-data.js,
+     buscarSolucionIA) y la respuesta (guía encontrada, o solución
+     generada con productos reales) se muestra aquí mismo, en la modal —
+     los productos sugeridos abren su ficha con el modal de producto YA
+     existente del buscador (abrirModalProducto), nunca navegan fuera. -->
+<button type="button" id="btn-asistente-flotante" title="Asistente: pregúntanos qué necesitas resolver" aria-label="Abrir el asistente de soluciones">
+    <i class="fa-solid fa-wand-magic-sparkles"></i>
+</button>
+<div class="modal-overlay" id="modal-asistente-overlay">
+    <div class="modal-producto-box modal-asistente-box">
+        <button class="modal-producto-cerrar" id="modal-asistente-cerrar" aria-label="Cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Asistente de soluciones</h3>
+        <p class="asistente-subtitulo">Cuéntanos qué necesitas resolver (p. ej. "quitar manchas de grasa de un suelo de garaje") y te proponemos una solución con productos de nuestro catálogo.</p>
+        <form class="asistente-form" id="asistente-form">
+            <div class="asistente-input-wrap">
+                <input type="text" id="asistente-input" placeholder="¿Qué necesitas resolver?" autocomplete="off" maxlength="200">
+                <button type="button" class="asistente-input-limpiar" id="asistente-input-limpiar" aria-label="Limpiar">
+                    <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </div>
+            <button type="submit" id="asistente-enviar" aria-label="Preguntar">
+                <span class="asistente-form__texto">Preguntar</span>
+                <i class="fa-solid fa-arrow-right asistente-form__icono" aria-hidden="true"></i>
+            </button>
+        </form>
+        <div class="asistente-autocompletado" id="asistente-autocompletado"></div>
+        <div class="asistente-resultado" id="asistente-resultado"></div>
     </div>
 </div>
 
@@ -8990,6 +9316,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 })();
 </script>
 <script src="./assets/js/ia-disponibilidad.js?v=20261121a"></script>
+<!-- Prueba de concepto (petición de Eloy): reutiliza el MISMO módulo de
+     datos/lógica del Centro de Soluciones (buscarSolucionIA, catálogo
+     real, etc.) para el asistente del buscador — ver
+     #btn-asistente-flotante / inicializarAsistenteSoluciones_ más abajo.
+     No tiene efectos secundarios propios al cargarse (es un módulo de
+     datos puro, igual que en soluciones/*.html y centro-soluciones.html). -->
+<script src="./assets/js/soluciones-data.js?v=20261121a"></script>
 <script>
 // ── Configuración del buscador ──
 // Todos los flags de administración de aquí abajo derivan de la única
@@ -9664,6 +9997,9 @@ if (window.OM_PREPRODUCCION) {
         reaf: 'reafirmante',
         cep: 'cepillo',
         liq: 'liquido',
+        poliuret: 'poliuretano',
+        acril: 'acrilico al agua',
+        sat: 'satinado',
     };
 
     // Sinónimos reales del catálogo — distinto de ABREVIATURAS_CATALOGO
@@ -10551,11 +10887,13 @@ if (window.OM_PREPRODUCCION) {
             overlay.classList.add('activo');
             $('btn-subir-arriba').classList.add('oculto-por-modal');
             $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+            $('btn-asistente-flotante').classList.add('oculto-por-modal');
         };
         const cerrarAyuda_ = () => {
             overlay.classList.remove('activo');
             $('btn-subir-arriba').classList.remove('oculto-por-modal');
             $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+            $('btn-asistente-flotante').classList.remove('oculto-por-modal');
         };
         // A petición de Eloy: con la modal ya abierta, volver a pulsar el
         // propio icono de ayuda debe cerrarla (antes solo cerraban la X o
@@ -10570,6 +10908,511 @@ if (window.OM_PREPRODUCCION) {
         $('btn-ayuda-ver-demo').addEventListener('click', () => {
             cerrarAyuda_();
             arrancarTourAyuda_();
+        });
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // ASISTENTE DE SOLUCIONES (prueba de concepto, petición de Eloy)
+    // ══════════════════════════════════════════════════════════════════
+    // Reutiliza el MISMO backend que ya usa el Centro de Soluciones
+    // (window.SOLUCIONES_DATA.buscarSolucionIA, ver assets/js/
+    // soluciones-data.js) desde una modal propia del buscador — el
+    // usuario nunca sale de esta página: si la IA encuentra una guía
+    // escrita a mano o genera una solución con productos reales, todo
+    // se muestra aquí mismo. Los productos sugeridos abren su ficha con
+    // el MISMO modal de producto que ya usa el buscador
+    // (abrirModalProducto) en vez de un enlace que saque de la página —
+    // funciona directamente porque D.cargarCatalogoReal()/
+    // cargarProductosPorRefs() devuelven objetos con la misma forma que
+    // TODOS (vienen del mismo productos.json). Solo "ver la guía/
+    // solución completa" abre una pestaña nueva (soluciones/
+    // solucion.html o solucion-ia.html) — ahí sí hace falta la página
+    // completa (pasos detallados, exportar a PDF, etc.), pero sin cerrar
+    // ni navegar la pestaña del buscador.
+    function inicializarAsistenteSoluciones_() {
+        const overlay = $('modal-asistente-overlay');
+        const form = $('asistente-form');
+        const input = $('asistente-input');
+        const btnEnviar = $('asistente-enviar');
+        const resultado = $('asistente-resultado');
+        const autocompletado = $('asistente-autocompletado');
+        const btnLimpiar = $('asistente-input-limpiar');
+        if (!overlay || !form || !input || !resultado || !autocompletado || !btnLimpiar) return;
+
+        function escaparHtmlAsistente_(t) {
+            const div = document.createElement('div');
+            div.textContent = t || '';
+            return div.innerHTML;
+        }
+
+        const ICONO_IA_ASISTENTE_ = '<img src="assets/logos/apple-touch-icon.png" alt="" class="cs-icono-ia-asistente">';
+        const ICONO_CARGANDO_ASISTENTE_ = '<i class="fa-solid fa-spinner asistente-spinner" aria-hidden="true"></i>';
+
+        // Emoji por área (D.areas: coche, pintura, madera, metal, limpieza,
+        // pegado, suelos, piscinas, plagas, jardín, perfumería — mismas
+        // áreas que usa el propio Centro de Soluciones) para que cada chip
+        // del desplegable lleve un icono que ayude a identificar de un
+        // vistazo de qué ámbito es la guía, sin tener que leer el título
+        // completo. Se construye una sola vez (D.areas es estático, no se
+        // recarga como D.soluciones) y se cachea por slug de categoría.
+        let iconosPorCategoriaAsistente_ = null;
+        function iconoCategoriaAsistente_(categoria) {
+            if (!iconosPorCategoriaAsistente_) {
+                iconosPorCategoriaAsistente_ = new Map();
+                const D = window.SOLUCIONES_DATA;
+                (D && D.areas || []).forEach((a) => iconosPorCategoriaAsistente_.set(a.id, a.emoji));
+            }
+            return iconosPorCategoriaAsistente_.get(categoria) || '🧰';
+        }
+
+        let controladorActual_ = null;
+        let textoEnCurso_ = '';
+        let canceladoPorCierre_ = false;
+
+        function cancelarPeticionAsistente_() {
+            if (controladorActual_) {
+                canceladoPorCierre_ = true;
+                controladorActual_.abort();
+                controladorActual_ = null;
+            }
+        }
+
+        const abrirAsistente_ = () => {
+            overlay.classList.add('activo');
+            $('btn-subir-arriba').classList.add('oculto-por-modal');
+            $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
+            $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+            // Se adelanta la carga del catálogo real y de las guías YA
+            // publicadas en segundo plano, nada más abrir — igual que
+            // hace centro-soluciones.js al entrar en esa página — para
+            // que la primera pregunta no tenga que esperar también a
+            // esa descarga.
+            const D = window.SOLUCIONES_DATA;
+            if (D) { D.cargarCatalogoReal().catch(() => {}); D.cargarSolucionesReales().catch(() => {}); }
+            actualizarVisibilidadLimpiarAsistente_();
+            setTimeout(() => input.focus(), 60);
+        };
+        const cerrarAsistente_ = () => {
+            overlay.classList.remove('activo');
+            $('btn-subir-arriba').classList.remove('oculto-por-modal');
+            $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
+            $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+            cancelarPeticionAsistente_();
+            cerrarAutocompletado_();
+        };
+
+        $('btn-asistente-flotante').addEventListener('click', () => {
+            if (overlay.classList.contains('activo')) cerrarAsistente_(); else abrirAsistente_();
+        });
+        $('modal-asistente-cerrar').addEventListener('click', cerrarAsistente_);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarAsistente_(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && overlay.classList.contains('activo')) cerrarAsistente_(); });
+
+        // ── Autocompletado: "soluciones comunes como opciones" al poner
+        // el cursor en el campo, filtrando entre las guías YA DEFINIDAS
+        // (D.soluciones — las reales del Sheet en cuanto terminan de
+        // cargar, el respaldo estático mientras tanto) conforme el
+        // usuario escribe. Si ninguna encaja, se avisa de que la
+        // pregunta se puede mandar igualmente al asistente con IA (el
+        // envío normal, sin tocar: nunca bloquea preguntar algo que no
+        // sea una de estas guías). Petición de Eloy: "así fomentamos que
+        // el usuario utilice el centro de soluciones".
+        let listaAutocompletado_ = null; // null = todavía no construida
+
+        // Las "destacadas" (selección editorial, D.solucionesDestacadas)
+        // primero, el resto por orden alfabético — se reconstruye cada
+        // vez que hace falta (no una sola vez al abrir la modal): D.soluciones
+        // puede sustituirse de un momento a otro por las guías reales del
+        // Sheet mientras el usuario ya está escribiendo (cargarSolucionesReales,
+        // lanzada en segundo plano al abrir, ver abrirAsistente_).
+        function construirListaAutocompletado_() {
+            const D = window.SOLUCIONES_DATA;
+            if (!D) return [];
+            const soluciones = D.soluciones || {};
+            const ordenDestacadas = new Map((D.solucionesDestacadas || []).map((s, i) => [s.slug, i]));
+            return Object.keys(soluciones)
+                .map((slug) => ({ slug, title: soluciones[slug].title, category: soluciones[slug].category, subcategory: soluciones[slug].subcategory }))
+                .sort((a, b) => {
+                    const da = ordenDestacadas.has(a.slug) ? ordenDestacadas.get(a.slug) : Infinity;
+                    const db = ordenDestacadas.has(b.slug) ? ordenDestacadas.get(b.slug) : Infinity;
+                    if (da !== db) return da - db;
+                    return a.title.localeCompare(b.title, 'es');
+                });
+        }
+
+        // Filtro por categoría/subcategoría del desplegable (petición de
+        // Eloy). Se guarda fuera de renderAutocompletado_ para que
+        // sobreviva a sus re-renders (al escribir, al cambiar de chip de
+        // subcategoría, etc.) hasta que el propio usuario lo cambie o se
+        // cierre el desplegable.
+        let filtroCategoriaAsistente_ = null; // id de D.areas, o null = todas
+        let filtroSubcategoriaAsistente_ = null; // texto exacto de subcategory, o null = todas
+
+        // Solo las categorías/subcategorías que de verdad tienen alguna
+        // guía en "origen" (la lista completa o los resultados de la
+        // búsqueda actual) — si el usuario ya ha escrito algo y ningún
+        // resultado es de piscinas, ese chip ni aparece.
+        function categoriasDisponiblesAsistente_(origen) {
+            const D = window.SOLUCIONES_DATA;
+            const presentes = new Set(origen.map((e) => e.category).filter(Boolean));
+            return (D && D.areas || []).filter((a) => presentes.has(a.id));
+        }
+        function subcategoriasDisponiblesAsistente_(origen, categoria) {
+            const vistas = new Set();
+            const subs = [];
+            origen.forEach((e) => {
+                if (e.category === categoria && e.subcategory && !vistas.has(e.subcategory)) {
+                    vistas.add(e.subcategory);
+                    subs.push(e.subcategory);
+                }
+            });
+            return subs.sort((a, b) => a.localeCompare(b, 'es'));
+        }
+
+        function cerrarAutocompletado_() {
+            autocompletado.classList.remove('activo');
+            autocompletado.innerHTML = '';
+            filtroCategoriaAsistente_ = null;
+            filtroSubcategoriaAsistente_ = null;
+        }
+
+        function renderAutocompletado_(texto) {
+            // Se reconstruye la lista cada vez en vez de cachearla una
+            // sola vez: así, si las guías reales del Sheet todavía no
+            // habían llegado la primera vez que se mostró, en cuanto
+            // lleguen el desplegable las refleja sin más (próxima vez
+            // que se abra/escriba), nunca se queda congelado con el
+            // respaldo estático.
+            listaAutocompletado_ = construirListaAutocompletado_();
+            if (!listaAutocompletado_.length) { cerrarAutocompletado_(); return; }
+
+            const D = window.SOLUCIONES_DATA;
+            const normal = (texto || '').toString().trim();
+            // Campo vacío: las destacadas (construirListaAutocompletado_).
+            // Con texto: el MISMO motor de búsqueda que ya usa el propio
+            // Centro de Soluciones (buscarSolucionesCombinado — combina
+            // ~90 sinónimos/términos coloquiales curados a mano con la
+            // coincidencia literal en título/descripción/productos, ver
+            // su comentario en soluciones-data.js) — antes aquí solo se
+            // comparaba el texto escrito contra el TÍTULO de cada guía,
+            // mucho más limitado: "cloro" no encontraba la guía de
+            // piscinas aunque esa palabra nunca aparece en su título, y
+            // Eloy detectó que el asistente del buscador devolvía
+            // bastantes menos opciones que buscar lo mismo en el Centro
+            // de Soluciones.
+            const origen = !normal
+                ? listaAutocompletado_
+                : (D && D.buscarSolucionesCombinado ? D.buscarSolucionesCombinado(normal) : [])
+                    .map((s) => ({ slug: s.slug, title: s.title, category: s.category, subcategory: s.subcategory }));
+
+            // Si el filtro elegido deja de tener sentido con el origen
+            // actual (p. ej. el usuario cambia el texto escrito y ya no
+            // hay ninguna guía de esa categoría), se resetea solo —
+            // mejor eso que dejar al usuario mirando una lista vacía sin
+            // saber por qué.
+            if (filtroCategoriaAsistente_ && !origen.some((e) => e.category === filtroCategoriaAsistente_)) {
+                filtroCategoriaAsistente_ = null;
+                filtroSubcategoriaAsistente_ = null;
+            }
+            if (filtroSubcategoriaAsistente_ && !origen.some((e) => e.category === filtroCategoriaAsistente_ && e.subcategory === filtroSubcategoriaAsistente_)) {
+                filtroSubcategoriaAsistente_ = null;
+            }
+
+            const filtrados = origen.filter((e) =>
+                (!filtroCategoriaAsistente_ || e.category === filtroCategoriaAsistente_) &&
+                (!filtroSubcategoriaAsistente_ || e.subcategory === filtroSubcategoriaAsistente_)
+            );
+            const items = (!normal ? filtrados.slice(0, 8) : filtrados.slice(0, 12))
+                .map((e) => ({ slug: e.slug, title: e.title, category: e.category }));
+
+            // ── Filtro por categoría (a petición de Eloy, "facilitar la
+            // búsqueda filtrando por categoría o subcategoría") ──
+            let html = '';
+            const categorias = categoriasDisponiblesAsistente_(origen);
+            if (categorias.length > 1) {
+                html += '<div class="asistente-filtros-categoria">'
+                    + `<button type="button" class="asistente-filtro-chip${!filtroCategoriaAsistente_ ? ' activo' : ''}" data-categoria="">Todas las áreas</button>`
+                    + categorias.map((c) => `<button type="button" class="asistente-filtro-chip${filtroCategoriaAsistente_ === c.id ? ' activo' : ''}" data-categoria="${escaparHtmlAsistente_(c.id)}">${c.emoji} ${escaparHtmlAsistente_(c.label)}</button>`).join('')
+                    + '</div>';
+                if (filtroCategoriaAsistente_) {
+                    const subcategorias = subcategoriasDisponiblesAsistente_(origen, filtroCategoriaAsistente_);
+                    if (subcategorias.length > 1) {
+                        html += '<div class="asistente-filtros-subcategoria">'
+                            + `<button type="button" class="asistente-filtro-chip asistente-filtro-chip--sub${!filtroSubcategoriaAsistente_ ? ' activo' : ''}" data-subcategoria="">Todas</button>`
+                            + subcategorias.map((s) => `<button type="button" class="asistente-filtro-chip asistente-filtro-chip--sub${filtroSubcategoriaAsistente_ === s ? ' activo' : ''}" data-subcategoria="${escaparHtmlAsistente_(s)}">${escaparHtmlAsistente_(s)}</button>`).join('')
+                            + '</div>';
+                    }
+                }
+            }
+
+            if (!items.length) {
+                html += `<p class="asistente-autocompletado__vacio">No tenemos ninguna guía con ese texto${filtroCategoriaAsistente_ ? ' en esta categoría' : ''} — pulsa enviar para preguntárselo a nuestro asistente con IA.</p>`;
+            } else {
+                html += '<div class="asistente-chips">' + items.map((e) => `<button type="button" data-slug="${escaparHtmlAsistente_(e.slug)}"><span class="asistente-chip__icono" aria-hidden="true">${iconoCategoriaAsistente_(e.category)}</span><span class="asistente-chip__texto">${escaparHtmlAsistente_(e.title)}</span></button>`).join('') + '</div>';
+            }
+            // Enlace final a petición de Eloy, para fomentar también
+            // desde aquí el uso del Centro de Soluciones.
+            html += '<a href="centro-soluciones.html" target="_blank" rel="noopener" class="asistente-ver-centro">Ver más en nuestro Centro de Soluciones <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>';
+
+            autocompletado.innerHTML = html;
+
+            autocompletado.querySelectorAll('.asistente-filtros-categoria .asistente-filtro-chip').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    filtroCategoriaAsistente_ = btn.dataset.categoria || null;
+                    filtroSubcategoriaAsistente_ = null;
+                    renderAutocompletado_(input.value);
+                });
+            });
+            autocompletado.querySelectorAll('.asistente-filtros-subcategoria .asistente-filtro-chip').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    filtroSubcategoriaAsistente_ = btn.dataset.subcategoria || null;
+                    renderAutocompletado_(input.value);
+                });
+            });
+            autocompletado.querySelectorAll('button[data-slug]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const D = window.SOLUCIONES_DATA;
+                    const s = D && D.soluciones && D.soluciones[btn.dataset.slug];
+                    cerrarAutocompletado_();
+                    if (!s) { input.value = btn.textContent; actualizarVisibilidadLimpiarAsistente_(); preguntarAsistente_(input.value); return; }
+                    // Coincidencia exacta elegida de la lista: se
+                    // muestra DIRECTAMENTE, sin pasar por la IA — más
+                    // rápido, sin coste, y ya sabemos con certeza qué
+                    // guía es (nada que "adivinar").
+                    input.value = s.title;
+                    actualizarVisibilidadLimpiarAsistente_();
+                    mostrarGuiaEnAsistente_(s, s.title);
+                });
+            });
+            autocompletado.classList.add('activo');
+        }
+
+        // Botón de limpiar (×) DENTRO del propio campo — a petición de
+        // Eloy. Visible solo con algo escrito; al pulsarlo se vacía el
+        // campo, se quita también el resultado que hubiera (si el
+        // usuario limpia el formulario, lo normal es que quiera empezar
+        // de cero, no dejar la última respuesta ahí colgada) y se
+        // vuelve a enfocar el campo (reabre el desplegable con las
+        // soluciones comunes, como al abrir la modal).
+        function actualizarVisibilidadLimpiarAsistente_() {
+            btnLimpiar.classList.toggle('visible', input.value.trim().length > 0);
+        }
+        input.addEventListener('focus', () => renderAutocompletado_(input.value));
+        input.addEventListener('input', () => {
+            renderAutocompletado_(input.value);
+            actualizarVisibilidadLimpiarAsistente_();
+        });
+        btnLimpiar.addEventListener('click', () => {
+            input.value = '';
+            resultado.innerHTML = '';
+            actualizarVisibilidadLimpiarAsistente_();
+            input.focus();
+            renderAutocompletado_('');
+        });
+        // Bug real reportado por Eloy: al clicar fuera (p. ej. el título
+        // de la modal) el desplegable se cerraba bien, pero al volver a
+        // clicar en el propio campo de texto para reabrirlo, las opciones
+        // "aparecían y desaparecían" en vez de quedarse abiertas. Causa:
+        // esta comprobación se hacía en el evento 'click', que se dispara
+        // DESPUÉS del 'focus' del input — el 'focus' ya había abierto el
+        // desplegable (renderAutocompletado_ añade las opciones, lo que
+        // aumenta la altura de la modal), así que para cuando llegaba el
+        // 'click' el campo ya se había desplazado hacia arriba y el punto
+        // donde terminó el clic caía sobre el fondo de la modal en vez de
+        // sobre el input — e.target.closest('#asistente-form') daba
+        // false y este propio clic (el que debía reabrirlo) lo volvía a
+        // cerrar al instante.
+        //
+        // No basta con mover la comprobación a 'mousedown': cerrar el
+        // desplegable AHÍ MISMO (antes del 'click') encoge la modal
+        // ANTES de que termine el propio clic con el que se cerró — y
+        // como la modal se centra con flexbox, encogerla desplaza verticalmente
+        // el resto de su contenido bajo el cursor, así que el 'click'
+        // final cae fuera de la caja de la modal y cierra la modal
+        // ENTERA en vez de solo el desplegable (comprobado con un test:
+        // overlayActivo pasaba a false al clicar el título). La única
+        // forma de que ningún clic se "pierda" por un cambio de layout a
+        // mitad de gesto es decidir en 'mousedown' (antes de que nada se
+        // mueva) pero NO tocar el DOM hasta el 'click' — así el propio
+        // evento 'click' ya tiene su objetivo fijado por el navegador
+        // antes de que cerremos nada.
+        let cerrarAutocompletadoEnEsteClic_ = false;
+        document.addEventListener('mousedown', (e) => {
+            cerrarAutocompletadoEnEsteClic_ = !e.target.closest('#asistente-form') && !e.target.closest('#asistente-autocompletado');
+        }, true);
+        document.addEventListener('click', () => {
+            if (cerrarAutocompletadoEnEsteClic_) cerrarAutocompletado_();
+        });
+
+        function renderEstado_(iconoHtml, texto) {
+            resultado.innerHTML = `<div class="asistente-estado"><span aria-hidden="true">${iconoHtml}</span><p>${escaparHtmlAsistente_(texto)}</p></div>`;
+        }
+
+        // Tarjetas de producto propias (más compactas que las del Centro
+        // de Soluciones, pensadas para caber en esta modal) — al pulsar
+        // una, abre la ficha YA EXISTENTE del buscador sin salir de la
+        // página.
+        function renderProductosAsistente_(productos, titulo) {
+            if (!productos || !productos.length) return '';
+            return `
+                <p class="asistente-productos-titulo">${escaparHtmlAsistente_(titulo)}</p>
+                <div class="asistente-productos-grid">
+                    ${productos.slice(0, 6).map((p, i) => {
+                        const img = (typeof urlImagenProducto === 'function' ? urlImagenProducto(p, 300) : '') || '';
+                        const precio = (p.mostrar_precio && p.precio_con) ? `<div class="asistente-producto-card__precio">${escaparHtmlAsistente_(p.precio_con)} €</div>` : '';
+                        return `
+                            <button type="button" class="asistente-producto-card" data-idx="${i}">
+                                ${img ? `<img src="${img}" alt="" loading="lazy" onerror="this.remove()">` : ''}
+                                <div class="asistente-producto-card__nombre">${escaparHtmlAsistente_(p.nombre)}</div>
+                                ${precio}
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        function wireProductosAsistente_(productos) {
+            resultado.querySelectorAll('.asistente-producto-card').forEach((card) => {
+                card.addEventListener('click', () => {
+                    const p = productos[parseInt(card.dataset.idx, 10)];
+                    if (!p) return;
+                    cerrarAsistente_();
+                    abrirModalProducto(p);
+                });
+            });
+        }
+
+        // Guarda la respuesta ya obtenida para que solucion-ia.html la
+        // reutilice sin volver a preguntar a la IA — mismo mecanismo que
+        // ya usa el Centro de Soluciones (irASolucionCompletaConDatos),
+        // pero abriendo una pestaña nueva en vez de navegar esta misma
+        // página (petición de Eloy: el buscador no debe salir de aquí).
+        function verSolucionCompleta_(texto, datos) {
+            try { sessionStorage.setItem(`cs_ia_${texto}`, JSON.stringify(datos)); } catch (e) { /* no crítico */ }
+            window.open(`soluciones/solucion-ia.html?q=${encodeURIComponent(texto)}`, '_blank', 'noopener');
+        }
+
+        // Guía ya existente (escrita a mano) — resumen condensado aquí
+        // mismo, con enlace a la guía completa (pestaña nueva). Se usa
+        // tanto cuando la IA encuentra esta guía como cuando el usuario
+        // la elige DIRECTAMENTE del desplegable de autocompletado (sin
+        // pasar por la IA en ese caso — más rápido y sin coste).
+        function mostrarGuiaEnAsistente_(s, texto) {
+            cancelarPeticionAsistente_(); // por si había una pregunta a la IA en vuelo
+            canceladoPorCierre_ = false;
+            textoEnCurso_ = texto;
+            const refs = (s.recommendedProducts || []).map((x) => x.ref).filter(Boolean);
+            const D = window.SOLUCIONES_DATA;
+            renderEstado_(ICONO_CARGANDO_ASISTENTE_, 'Preparando la guía…');
+            D.cargarProductosPorRefs(refs).then((productos) => {
+                if (textoEnCurso_ !== texto) return;
+                resultado.innerHTML = `
+                    <div class="asistente-guia-cabecera">
+                        <h4>${escaparHtmlAsistente_(s.title)}</h4>
+                    </div>
+                    <p>${escaparHtmlAsistente_(s.description || '')}</p>
+                    <div class="asistente-guia-meta">
+                        ${s.difficulty ? `<span>Dificultad: ${escaparHtmlAsistente_(s.difficulty)}</span>` : ''}
+                        ${s.estimatedTime ? `<span>⏱ ${escaparHtmlAsistente_(s.estimatedTime)}</span>` : ''}
+                        ${s.result ? `<span>✓ ${escaparHtmlAsistente_(s.result)}</span>` : ''}
+                    </div>
+                    ${renderProductosAsistente_(productos, 'Productos recomendados:')}
+                    <button type="button" class="asistente-ver-completa" id="asistente-ver-guia">Ver la guía completa, paso a paso →</button>
+                `;
+                wireProductosAsistente_(productos);
+                const btnVer = $('asistente-ver-guia');
+                if (btnVer) btnVer.addEventListener('click', () => window.open(`soluciones/solucion.html?slug=${encodeURIComponent(s.slug)}`, '_blank', 'noopener'));
+            });
+        }
+
+        function preguntarAsistente_(textoOriginal) {
+            const texto = (textoOriginal || '').toString().trim();
+            if (!texto) return;
+            const D = window.SOLUCIONES_DATA;
+            if (!D) { renderEstado_('⚠️', 'El asistente no está disponible ahora mismo.'); return; }
+            if (window.IADisponibilidad && !window.IADisponibilidad.estaDisponible()) {
+                renderEstado_('⚠️', 'El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.');
+                return;
+            }
+
+            cerrarAutocompletado_();
+            cancelarPeticionAsistente_();
+            canceladoPorCierre_ = false;
+            const controlador = new AbortController();
+            controladorActual_ = controlador;
+            textoEnCurso_ = texto;
+            btnEnviar.disabled = true;
+            input.disabled = true;
+            renderEstado_(ICONO_CARGANDO_ASISTENTE_, 'Preguntando a la IA…');
+
+            D.buscarSolucionIA(texto, controlador.signal).then((r) => {
+                controladorActual_ = null;
+                btnEnviar.disabled = false;
+                input.disabled = false;
+                if (textoEnCurso_ !== texto) return; // el usuario ya cambió de pregunta
+
+                if (r.errorTecnico && canceladoPorCierre_) {
+                    renderEstado_('🤔', 'Pregunta cancelada. Puedes intentarlo de nuevo cuando quieras.');
+                    return;
+                }
+                if (r.errorTecnico) {
+                    resultado.innerHTML = `<div class="asistente-aviso">${r.cuotaAgotada
+                        ? 'El asistente de IA no está disponible en este momento. Vuelve a intentarlo más tarde.'
+                        : 'Ha habido un problema al consultar con el asistente — no es que no exista una solución, es un fallo puntual. Vuelve a intentarlo en unos segundos.'}</div>`;
+                    return;
+                }
+                if (r.fueraDeAlcance) {
+                    resultado.innerHTML = `<div class="asistente-aviso">${escaparHtmlAsistente_(r.mensaje || 'Este asistente solo puede ayudarte con productos y soluciones de droguería, perfumería, pintura, limpieza del hogar y talleres/carrocerías.')}</div>`;
+                    return;
+                }
+
+                // Guía ya existente (escrita a mano) que encaja con la
+                // pregunta — mismo resumen condensado que al elegirla
+                // directamente del desplegable (ver mostrarGuiaEnAsistente_).
+                if (r.solucion) {
+                    mostrarGuiaEnAsistente_(r.solucion, texto);
+                    return;
+                }
+
+                // Sin guía propia: solución generada por IA con productos
+                // reales del catálogo — mismo criterio que
+                // ejecutarBusquedaIA en centro-soluciones.js (coincidencia
+                // fuerte por código antes que búsqueda por términos).
+                const terminosBusqueda = (r.terminos && r.terminos.length) ? r.terminos.join(' ') : texto;
+                Promise.resolve(D.buscarProductosPorCoincidenciaFuerte(texto)).then((fuertes) =>
+                    fuertes || D.buscarProductosEnCatalogo(terminosBusqueda, r.familias)
+                ).then((productos) => {
+                    if (textoEnCurso_ !== texto) return;
+
+                    if (!productos.length && !r.respuesta) {
+                        resultado.innerHTML = `<p class="asistente-aviso">No hemos encontrado ninguna solución para "<strong>${escaparHtmlAsistente_(texto)}</strong>" — prueba a contárnoslo con otras palabras, o visita el <a href="centro-soluciones.html" target="_blank" rel="noopener">Centro de Soluciones</a>.</p>`;
+                        return;
+                    }
+
+                    const bloqueRespuesta = r.respuesta ? `
+                        <div class="asistente-respuesta-ia"><strong>${ICONO_IA_ASISTENTE_} Sugerencia de IA</strong> — no es una de nuestras guías, pero puede orientarte:<br>${escaparHtmlAsistente_(r.respuesta)}</div>
+                    ` : '';
+                    resultado.innerHTML = `
+                        ${bloqueRespuesta}
+                        ${renderProductosAsistente_(productos, productos.length ? 'Productos que podrían servirte:' : '')}
+                        <button type="button" class="asistente-ver-completa" id="asistente-ver-ia">Ver la solución completa, paso a paso →</button>
+                    `;
+                    wireProductosAsistente_(productos);
+                    const btnVer = $('asistente-ver-ia');
+                    if (btnVer) {
+                        btnVer.addEventListener('click', () => verSolucionCompleta_(texto, {
+                            tipoConsulta: r.tipoConsulta, titulo: r.titulo, respuesta: r.respuesta, pasos: r.pasos,
+                            dificultad: r.dificultad, tiempo: r.tiempo, resultado: r.resultado, terminos: r.terminos,
+                            familias: r.familias, fuentes: r.fuentes, searchEntryPointHtml: r.searchEntryPointHtml,
+                        }));
+                    }
+                });
+            });
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            preguntarAsistente_(input.value);
         });
     }
 
@@ -10683,6 +11526,7 @@ if (window.OM_PREPRODUCCION) {
         tourAyudaPasoActual_ = -1;
         $('tour-ayuda-overlay').classList.add('activo');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         mostrarPasoTourAyuda_(0);
@@ -10698,6 +11542,7 @@ if (window.OM_PREPRODUCCION) {
         $('tour-ayuda-overlay').classList.remove('activo');
         $('tour-ayuda-tooltip').classList.remove('tour-ayuda-tooltip--arriba');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
     }
@@ -10866,6 +11711,7 @@ if (window.OM_PREPRODUCCION) {
         inicializarAccesoProfesionalBuscador_();
         inicializarAyuda_();
         inicializarTourAyuda_();
+        inicializarAsistenteSoluciones_();
         // Si había filtros guardados de una visita anterior en esta misma
         // sesión del navegador, restaurarFiltrosDesdeSesion_() ya los
         // aplica (y llama a aplicarFiltros() por su cuenta) — si no había
@@ -13215,6 +14061,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
         const pinGuardado = (() => { try { return localStorage.getItem('omDestacadosPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
             destacadosValidarPinYArrancar_(pinGuardado);
@@ -13233,6 +14080,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-destacados')) {
@@ -13941,6 +14789,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
 
         // Deja también situada en pantalla la sección/bloque de esta
         // temporada (si ya está pintado) — a petición de Eloy: poder
@@ -14008,6 +14857,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -16933,6 +17783,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
         temporadaCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omTemporadasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -16952,6 +17803,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
     }
 
     // ── Listeners del modal público "ver todos" (siempre presentes) ──
@@ -18057,6 +18909,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
         bcCerrarEditor_();
         const pinGuardado = (() => { try { return localStorage.getItem('omBloquesCategoriasPin'); } catch (e) { return null; } })();
         if (pinGuardado) {
@@ -18073,6 +18926,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-gestionar-bloques-categorias')) {
@@ -18246,6 +19100,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
         $('pa-vista-pin').style.display = 'block';
         $('pa-vista-principal').style.display = 'none';
         $('pa-pin-input').value = '';
@@ -18263,6 +19118,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
     }
 
     if ($('btn-panel-analitica')) {
@@ -18846,6 +19702,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
 
         // Igual que al escribir en el buscador: más espacio libre, y el
         // icono del botón se invierte para indicar que el panel está abierto
@@ -18877,6 +19734,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
         $('btn-abrir-filtros-movil').classList.remove('activo');
         $('btn-limpiar-arriba').classList.remove('clicable');
     }
@@ -23388,6 +24246,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.add('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.add('oculto-por-modal');
         $('btn-ayuda-flotante').classList.add('oculto-por-modal');
+        $('btn-asistente-flotante').classList.add('oculto-por-modal');
 
         // A petición de Eloy: "si clico en un producto sugerido... si le
         // das atrás te saca del buscador. Debería ir al producto del que
@@ -27343,6 +28202,7 @@ if (window.OM_PREPRODUCCION) {
         $('btn-subir-arriba').classList.remove('oculto-por-modal');
         $('btn-lista-compra-flotante').classList.remove('oculto-por-modal');
         $('btn-ayuda-flotante').classList.remove('oculto-por-modal');
+        $('btn-asistente-flotante').classList.remove('oculto-por-modal');
         // Si se llegó aquí con un ?ref= en la URL (por haber navegado por
         // productos del listado o sugeridos dentro del modal), se limpia
         // sin crear ni quitar ninguna entrada de historial — un cierre
@@ -29426,6 +30286,11 @@ if (window.OM_PREPRODUCCION) {
     // porque cambia según el ancho de pantalla. Como al ser "fixed" sale
     // del flujo normal, también fijamos la altura del espaciador que
     // ocupa su hueco, para que el contenido de abajo no quede tapado.
+    // Si la cabecera del sitio (.navbar-wrapper) está oculta por scroll en
+    // móvil (ver actualizarVisibilidadNavbarMovil_ más abajo), el buscador
+    // fijo sube a ocupar su sitio (top:0) en vez de dejar su hueco en
+    // blanco.
+    let navbarMovilOculta_ = false;
     function ajustarPosicionBuscadorFijo() {
         const grupoBuscador = $('grupo-buscador-principal');
         const espaciador = $('espaciador-buscador-movil');
@@ -29449,7 +30314,7 @@ if (window.OM_PREPRODUCCION) {
             if (filtrosAside) filtrosAside.style.top = top;
             return;
         }
-        grupoBuscador.style.top = alturaNavbar + 'px';
+        grupoBuscador.style.top = (navbarMovilOculta_ ? 0 : alturaNavbar) + 'px';
         const alturaBuscadorFijo = grupoBuscador.getBoundingClientRect().height;
         if (espaciador) espaciador.style.height = alturaBuscadorFijo + 'px';
         // Limpia el "top" de escritorio por si se redimensiona desde una
@@ -29529,11 +30394,47 @@ if (window.OM_PREPRODUCCION) {
     // queda siempre visible (fija en móvil, sticky en escritorio); solo la
     // cabecera oscura (ver ocultarCabeceraBuscador, al enfocar el buscador)
     // sigue colapsándose como antes.
+    // A petición de Eloy: en móvil, para ganar pantalla, la cabecera del
+    // sitio (.navbar-wrapper, logo + menú) se oculta al bajar en el
+    // scroll y el buscador fijo de debajo sube a ocupar su sitio (ver
+    // navbarMovilOculta_/ajustarPosicionBuscadorFijo más arriba). Al
+    // subir en el scroll, llegar arriba del todo o pulsar "subir arriba"
+    // vuelve a aparecer. Un UMBRAL antes de empezar a ocultar evita que
+    // tiemble con el primer pixel de scroll, y exigir una bajada real
+    // (no solo estar por debajo del umbral) evita ocultarla de golpe al
+    // cargar la página ya con scroll restaurado por el navegador.
+    const navbarMovil_ = document.querySelector('.navbar-wrapper');
+    const UMBRAL_OCULTAR_NAVBAR_MOVIL_ = 80;
+    let ultimoScrollYNavbar_ = window.scrollY;
+    function ocultarNavbarMovil_() {
+        if (!navbarMovil_ || navbarMovilOculta_ || window.innerWidth > 768) return;
+        navbarMovil_.classList.add('navbar-wrapper--oculta');
+        navbarMovilOculta_ = true;
+        ajustarPosicionBuscadorFijo();
+    }
+    function mostrarNavbarMovil_() {
+        if (!navbarMovil_ || !navbarMovilOculta_) return;
+        navbarMovil_.classList.remove('navbar-wrapper--oculta');
+        navbarMovilOculta_ = false;
+        ajustarPosicionBuscadorFijo();
+    }
+    function actualizarVisibilidadNavbarMovil_(scrollActual) {
+        if (window.innerWidth > 768) { ultimoScrollYNavbar_ = scrollActual; return; }
+        const bajando = scrollActual > ultimoScrollYNavbar_;
+        if (scrollActual > UMBRAL_OCULTAR_NAVBAR_MOVIL_ && bajando) {
+            ocultarNavbarMovil_();
+        } else if (!bajando || scrollActual <= UMBRAL_OCULTAR_NAVBAR_MOVIL_) {
+            mostrarNavbarMovil_();
+        }
+        ultimoScrollYNavbar_ = scrollActual;
+    }
+
     function actualizarVisibilidadBotonSubir() {
         const scrollActual = window.scrollY;
         const visible = scrollActual > 400;
         btnSubirArriba.classList.toggle('visible', visible);
         if (scrollActual <= 0) mostrarCabeceraBuscador();
+        actualizarVisibilidadNavbarMovil_(scrollActual);
         scrollTicking = false;
     }
     window.addEventListener('scroll', () => {
@@ -29545,7 +30446,9 @@ if (window.OM_PREPRODUCCION) {
     btnSubirArriba.addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
         mostrarCabeceraBuscador();
+        mostrarNavbarMovil_();
     });
+    window.addEventListener('resize', debounce(() => { if (window.innerWidth > 768) mostrarNavbarMovil_(); }, 200));
     actualizarVisibilidadBotonSubir();
 
     $('btn-lista-compra-flotante').addEventListener('click', () => abrirModalListaCompra_());
