@@ -4411,6 +4411,70 @@
         .modal-editar-ficha-guardar { background: var(--blue); color: #fff; }
         .modal-editar-ficha-guardar:disabled { opacity: 0.6; cursor: default; }
 
+        /* Modal "Editar visibilidad" — dos interruptores (usuario normal/
+           profesional), reutiliza .modal-editar-ficha-box para el resto. */
+        .modal-editar-visibilidad-campo {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 14px;
+        }
+        .modal-editar-visibilidad-switch-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--dark);
+            cursor: pointer;
+        }
+        .modal-editar-visibilidad-switch {
+            position: relative;
+            display: inline-block;
+            flex: 0 0 auto;
+            width: 42px;
+            height: 24px;
+        }
+        .modal-editar-visibilidad-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .modal-editar-visibilidad-switch-slider {
+            position: absolute;
+            inset: 0;
+            background: #cbd5e1;
+            border-radius: 999px;
+            transition: background .15s;
+        }
+        .modal-editar-visibilidad-switch-slider::before {
+            content: '';
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            left: 3px;
+            top: 3px;
+            background: #fff;
+            border-radius: 50%;
+            transition: transform .15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        .modal-editar-visibilidad-switch input:checked + .modal-editar-visibilidad-switch-slider {
+            background: var(--blue);
+        }
+        .modal-editar-visibilidad-switch input:checked + .modal-editar-visibilidad-switch-slider::before {
+            transform: translateX(18px);
+        }
+        #modal-editar-visibilidad-aviso { color: #b45309; }
+        #modal-editar-visibilidad-cargando {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+        }
+        .modal-editar-visibilidad-campo.cargando { opacity: 0.45; pointer-events: none; }
+
         /* Modal "Imprimir etiqueta de precio" — reutiliza .modal-producto-box/
            .modal-editar-ficha-* para la caja y los campos; aquí solo lo
            específico de la vista previa y las acciones de descarga. */
@@ -7401,7 +7465,54 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     <i class="fa-solid fa-eye-slash"></i>
                     <span>Deshabilitar en el catálogo</span>
                 </button>
+
+                <!-- Editar visibilidad por perfil (usuario normal/
+                     profesional) — gestionada por
+                     window.MOSTRAR_BOTON_EDITAR_VISIBILIDAD. -->
+                <button type="button" class="modal-producto-baja-btn" id="modal-producto-editar-visibilidad" style="display:none;">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Editar visibilidad</span>
+                </button>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal "Editar visibilidad" (visible_usuario_normal/visible_usuario_profesional) — solo preproducción -->
+<div class="modal-overlay" id="modal-editar-visibilidad-overlay" style="z-index: 1600;">
+    <div class="modal-producto-box modal-editar-ficha-box">
+        <button class="modal-producto-cerrar" id="modal-editar-visibilidad-cerrar">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-users-gear"></i> Editar visibilidad</h3>
+        <p id="modal-editar-visibilidad-nombre" class="modal-editar-ficha-nombre"></p>
+        <p id="modal-editar-visibilidad-cargando" class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Confirmando la visibilidad actual del producto…
+        </p>
+        <div class="modal-editar-visibilidad-campo">
+            <label class="modal-editar-visibilidad-switch-label" for="modal-editar-visibilidad-normal">
+                <span>Visible para usuario normal</span>
+                <span class="modal-editar-visibilidad-switch">
+                    <input type="checkbox" id="modal-editar-visibilidad-normal" checked>
+                    <span class="modal-editar-visibilidad-switch-slider"></span>
+                </span>
+            </label>
+            <label class="modal-editar-visibilidad-switch-label" for="modal-editar-visibilidad-profesional">
+                <span>Visible para usuario profesional</span>
+                <span class="modal-editar-visibilidad-switch">
+                    <input type="checkbox" id="modal-editar-visibilidad-profesional" checked>
+                    <span class="modal-editar-visibilidad-switch-slider"></span>
+                </span>
+            </label>
+        </div>
+        <p class="modal-editar-ficha-nota" id="modal-editar-visibilidad-aviso" style="display:none;">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            Con los dos desactivados, este producto no se verá en ningún perfil (ni normal ni profesional).
+        </p>
+        <div class="modal-editar-ficha-acciones">
+            <button type="button" id="modal-editar-visibilidad-cancelar" class="modal-editar-ficha-cancelar">Cancelar</button>
+            <button type="button" id="modal-editar-visibilidad-guardar" class="modal-editar-ficha-guardar">Guardar</button>
         </div>
     </div>
 </div>
@@ -9351,6 +9462,14 @@ window.MOSTRAR_BOTON_GESTION_BAJA = window.OM_PREPRODUCCION;
 // pero que no queremos mostrar nunca al público. Solo en preproducción,
 // igual que el resto de acciones administrativas de esta ficha.
 window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO = window.OM_PREPRODUCCION;
+// Botón "Editar visibilidad" de la ficha de detalle (columnas
+// visible_usuario_normal/visible_usuario_profesional) — a petición de
+// Eloy, 24/11/2026: hay productos orientados solo a un perfil u otro
+// (usuario normal o profesional). Distinto de incluir_en_catalogo
+// (MOSTRAR_BOTON_DESHABILITAR_CATALOGO, oculto a TODOS): aquí se puede
+// ocultar solo para uno de los dos perfiles. Solo en preproducción,
+// igual que el resto de acciones administrativas de esta ficha.
+window.MOSTRAR_BOTON_EDITAR_VISIBILIDAD = window.OM_PREPRODUCCION;
 // Precio de venta a MAYOR (sin/con IVA) en la ficha de detalle, oculto
 // tras un botón — a petición de Eloy, 11/09/2026. INFORMACIÓN INTERNA,
 // nunca debe verse en producción/release.
@@ -9565,6 +9684,8 @@ if (window.OM_PREPRODUCCION) {
     eliminarSiRestringido_('modal-relacionados-overlay', window.MOSTRAR_GESTION_RELACIONADOS);
     eliminarSiRestringido_('modal-producto-baja-reactivar', window.MOSTRAR_BOTON_GESTION_BAJA);
     eliminarSiRestringido_('modal-producto-deshabilitar-catalogo', window.MOSTRAR_BOTON_DESHABILITAR_CATALOGO);
+    eliminarSiRestringido_('modal-producto-editar-visibilidad', window.MOSTRAR_BOTON_EDITAR_VISIBILIDAD);
+    eliminarSiRestringido_('modal-editar-visibilidad-overlay', window.MOSTRAR_BOTON_EDITAR_VISIBILIDAD);
     // Este botón es solo la herramienta interna de previsualización del
     // precio mayor para el perfil normal en preproducción (MOSTRAR_PRECIO_
     // MAYOR, nunca en producción/release) — el perfil profesional YA ve el
@@ -9781,7 +9902,7 @@ if (window.OM_PREPRODUCCION) {
     // profesional nunca llegó a validarse de verdad en el Web App en
     // vivo, sin ningún error visible: el precio de mayor simplemente no
     // aparecía, como si el profesional no tuviera sesión.
-    const VERSION_BACKEND_ESPERADA_ = '2026-11-23-resumen-crm-acumulado';
+    const VERSION_BACKEND_ESPERADA_ = '2026-11-24-diagnostico-catalogo';
 
     // Se llama una sola vez, justo tras la primera respuesta EN VIVO de
     // Apps Script (ver cargarProductosPrincipales) — comprueba dos cosas
@@ -9904,6 +10025,21 @@ if (window.OM_PREPRODUCCION) {
     function estaActivoEnCatalogo_(p) {
         if (p.fecha_baja && p.fecha_baja.toString().trim()) return false;
         if ((p.incluir_en_catalogo || '').toString().trim().toLowerCase() === 'no') return false;
+        // Visibilidad por perfil (visible_usuario_normal/visible_usuario_profesional,
+        // a petición de Eloy, 24/11/2026) — el servidor (obtener_productos)
+        // ya filtra por esto según quien pregunta, esto es una comprobación
+        // extra en el propio cliente (p. ej. por si el producto llegó por
+        // el respaldo estático de productos.json antes de que termine de
+        // llegar la respuesta en vivo). EXCEPCIÓN: en preproducción SIN
+        // sesión profesional (el admin navegando para gestionar el
+        // catálogo), el servidor deja pasar todo a propósito
+        // (vistaPreviaPreproduccionOk) para que pueda encontrar y editar
+        // también los productos ocultos — aquí se respeta esa misma
+        // excepción, o el admin nunca llegaría a verlos.
+        if (!(window.OM_PREPRODUCCION && !window.OM_SESION_PROFESIONAL_ACTIVA)) {
+            const campoVisibilidad_ = window.OM_SESION_PROFESIONAL_ACTIVA ? 'visible_usuario_profesional' : 'visible_usuario_normal';
+            if ((p[campoVisibilidad_] || 'si').toString().trim().toLowerCase() === 'no') return false;
+        }
         return true;
     }
 
@@ -24212,6 +24348,16 @@ if (window.OM_PREPRODUCCION) {
                 : deshabilitarProductoCatalogo(p);
         }
 
+        // Botón "Editar visibilidad" — abre la modal con los dos
+        // interruptores (usuario normal/profesional). Eliminado del DOM
+        // si el flag está desactivado.
+        const btnEditarVisibilidad = $('modal-producto-editar-visibilidad');
+        if (btnEditarVisibilidad) {
+            btnEditarVisibilidad.style.display = 'flex';
+            btnEditarVisibilidad.disabled = false;
+            btnEditarVisibilidad.onclick = () => abrirModalEditarVisibilidad(p);
+        }
+
 
         // Botón de ficha técnica: solo para productos de pinturas que no sean
         // herramientas (brochas, lijas...). Enlaza a la búsqueda del
@@ -25162,6 +25308,153 @@ if (window.OM_PREPRODUCCION) {
         if (!boton) return; // eliminado del DOM en producción
         boton.style.display = 'inline-flex';
         boton.onclick = () => abrirModalEditarFichaTecnica(p);
+    }
+
+    // ══════════════════════════════════════════════════════════════════
+    // Editar visibilidad por perfil (visible_usuario_normal/
+    // visible_usuario_profesional) — a petición de Eloy, 24/11/2026.
+    // Dos interruptores independientes; si se guardan los dos
+    // desactivados, el producto deja de verse en cualquier perfil (no
+    // hace falta ningún caso especial aquí: lo decide el servidor en
+    // obtener_productos, según qué perfil pregunta).
+    let productoEditarVisibilidadActual = null;
+
+    // Bug real reportado por Eloy: al abrir la modal con un producto que
+    // TODOS todavía tenía con los valores del respaldo estático/caché ya
+    // desactualizada (antes de que termine de llegar la respuesta EN VIVO
+    // de obtener_productos), los interruptores se veían un instante con
+    // un valor y luego "saltaban" solos al valor real — p.ej. mostraba
+    // los dos en "sí" y pasaban a "usuario sí, profesional no" sin que
+    // el usuario tocara nada. Ahora, al abrir, se muestran esos valores
+    // SOLO como provisionales (interruptores atenuados, sin poder
+    // tocarlos) con un spinner "Confirmando..." mientras se repregunta
+    // este producto EN CONCRETO al servidor (?refs=<ref>, mismo truco que
+    // ya usa Escaparate OM para no pedir el catálogo entero) — hasta que
+    // esa respuesta llega no se puede guardar, así nunca se guarda sobre
+    // un valor que podía no ser el real.
+    function abrirModalEditarVisibilidad(p) {
+        // Red de seguridad además del botón ya eliminado del DOM en
+        // producción: aunque algo llame a esta función directamente,
+        // nunca debe abrirse fuera de preproducción.
+        if (!window.MOSTRAR_BOTON_EDITAR_VISIBILIDAD) return;
+        productoEditarVisibilidadActual = p;
+        $('modal-editar-visibilidad-nombre').textContent = p.nombre;
+        $('modal-editar-visibilidad-normal').checked = (p.visible_usuario_normal || 'si').toString().trim().toLowerCase() !== 'no';
+        $('modal-editar-visibilidad-profesional').checked = (p.visible_usuario_profesional || 'si').toString().trim().toLowerCase() !== 'no';
+        actualizarAvisoEditarVisibilidad_();
+        $('modal-editar-visibilidad-guardar').textContent = 'Guardar';
+        mostrarCargandoEditarVisibilidad_(true);
+        $('modal-editar-visibilidad-overlay').classList.add('activo');
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarCargandoEditarVisibilidad_(false);
+            return;
+        }
+        fetch(`${PRODUCTOS_REMOTO_URL_()}&refs=${encodeURIComponent(p.ref)}`, { cache: 'no-store' })
+            .then(res => res.json())
+            .then(datos => {
+                // La modal pudo cerrarse, o abrirse para OTRO producto,
+                // mientras esta petición seguía en vuelo — no pisar nada
+                // en ese caso.
+                if (productoEditarVisibilidadActual !== p) return;
+                const fresco = (datos.productos || [])[0];
+                if (!fresco) throw new Error('No se ha podido confirmar este producto.');
+                p.visible_usuario_normal = fresco.visible_usuario_normal;
+                p.visible_usuario_profesional = fresco.visible_usuario_profesional;
+                const idx = TODOS.findIndex(x => x.ref === p.ref);
+                if (idx !== -1) {
+                    TODOS[idx].visible_usuario_normal = fresco.visible_usuario_normal;
+                    TODOS[idx].visible_usuario_profesional = fresco.visible_usuario_profesional;
+                }
+                $('modal-editar-visibilidad-normal').checked = (fresco.visible_usuario_normal || 'si').toString().trim().toLowerCase() !== 'no';
+                $('modal-editar-visibilidad-profesional').checked = (fresco.visible_usuario_profesional || 'si').toString().trim().toLowerCase() !== 'no';
+                actualizarAvisoEditarVisibilidad_();
+            })
+            .catch(err => {
+                console.error('Error al confirmar la visibilidad actual del producto:', err);
+                mostrarToast('No se ha podido confirmar la visibilidad actual. Cierra y vuelve a intentarlo.', 'error');
+                cerrarModalEditarVisibilidad();
+            })
+            .finally(() => {
+                if (productoEditarVisibilidadActual !== p) return;
+                mostrarCargandoEditarVisibilidad_(false);
+            });
+    }
+
+    function mostrarCargandoEditarVisibilidad_(cargando) {
+        $('modal-editar-visibilidad-cargando').style.display = cargando ? 'flex' : 'none';
+        document.querySelector('.modal-editar-visibilidad-campo').classList.toggle('cargando', cargando);
+        $('modal-editar-visibilidad-guardar').disabled = cargando;
+    }
+
+    function cerrarModalEditarVisibilidad() {
+        $('modal-editar-visibilidad-overlay').classList.remove('activo');
+        productoEditarVisibilidadActual = null;
+    }
+
+    // Muestra el aviso "no se verá en ningún perfil" en cuanto los dos
+    // interruptores quedan desactivados a la vez, sin esperar a guardar.
+    function actualizarAvisoEditarVisibilidad_() {
+        const ningunoVisible = !$('modal-editar-visibilidad-normal').checked && !$('modal-editar-visibilidad-profesional').checked;
+        $('modal-editar-visibilidad-aviso').style.display = ningunoVisible ? 'block' : 'none';
+    }
+
+    function ejecutarGuardarVisibilidad() {
+        const p = productoEditarVisibilidadActual;
+        if (!p) return;
+
+        const visibleNormal = $('modal-editar-visibilidad-normal').checked ? 'si' : 'no';
+        const visibleProfesional = $('modal-editar-visibilidad-profesional').checked ? 'si' : 'no';
+        const btn = $('modal-editar-visibilidad-guardar');
+
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarToast('Error: No se ha configurado la URL del web app de Google Apps Script.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+            return;
+        }
+
+        fetch(scriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+                accion: 'actualizar_visibilidad_producto',
+                referencia: p.ref,
+                visible_usuario_normal: visibleNormal,
+                visible_usuario_profesional: visibleProfesional,
+            }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.error || 'Error desconocido');
+
+            // Reflejar el cambio al instante en la propia sesión, sin
+            // esperar a la siguiente carga de productos.
+            p.visible_usuario_normal = visibleNormal;
+            p.visible_usuario_profesional = visibleProfesional;
+            const idx = TODOS.findIndex(x => x.ref === p.ref);
+            if (idx !== -1) {
+                TODOS[idx].visible_usuario_normal = visibleNormal;
+                TODOS[idx].visible_usuario_profesional = visibleProfesional;
+            }
+
+            mostrarToast('✓ Visibilidad actualizada correctamente.');
+            cerrarModalEditarVisibilidad();
+            resincronizarVersionConocida(); // evita que el banner salte por este mismo cambio
+        })
+        .catch(err => {
+            console.error('Error al actualizar la visibilidad del producto:', err);
+            mostrarToast(err.message || 'Error al guardar. Verifica la conexión y los logs.', 'error');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.textContent = 'Guardar';
+        });
     }
 
     // ══════════════════════════════════════════════════════════════════
@@ -28987,6 +29280,17 @@ if (window.OM_PREPRODUCCION) {
     // Event listeners de la modal "Editar ficha técnica" — el modal se
     // elimina del DOM si MOSTRAR_EDITAR_FICHA_TECNICA está desactivado
     // (producción), igual que el resto de modales de administración.
+    if ($('modal-editar-visibilidad-overlay')) {
+    $('modal-editar-visibilidad-cerrar').addEventListener('click', cerrarModalEditarVisibilidad);
+    $('modal-editar-visibilidad-cancelar').addEventListener('click', cerrarModalEditarVisibilidad);
+    $('modal-editar-visibilidad-overlay').addEventListener('click', (e) => {
+        if (e.target.id === 'modal-editar-visibilidad-overlay') cerrarModalEditarVisibilidad();
+    });
+    $('modal-editar-visibilidad-guardar').addEventListener('click', ejecutarGuardarVisibilidad);
+    $('modal-editar-visibilidad-normal').addEventListener('change', actualizarAvisoEditarVisibilidad_);
+    $('modal-editar-visibilidad-profesional').addEventListener('change', actualizarAvisoEditarVisibilidad_);
+    }
+
     if ($('modal-editar-ficha-overlay')) {
     $('modal-editar-ficha-cerrar').addEventListener('click', cerrarModalEditarFichaTecnica);
     $('modal-editar-ficha-cancelar').addEventListener('click', cerrarModalEditarFichaTecnica);
@@ -29379,6 +29683,11 @@ if (window.OM_PREPRODUCCION) {
         colaAsistente = TODOS.filter(p => {
             if (p._catalogoProveedorEstatico) return false; // catálogos estáticos de proveedor: no gestionados aquí
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
+            // A petición de Eloy: tampoco los deshabilitados del catálogo
+            // (incluir_en_catalogo = "no") — igual que los dados de baja,
+            // siguen de alta y sincronizándose con el CRM pero nunca se
+            // muestran al público, así que no tiene sentido buscarles foto.
+            if ((p.incluir_en_catalogo || '').toString().trim().toLowerCase() === 'no') return false;
             if (!productoCoincideConAreas(p, areasSelAsistente)) return false;
             if (familiaFiltro && p.familia !== familiaFiltro) return false;
             // A petición de Eloy: además de por nombre, permitir buscar
