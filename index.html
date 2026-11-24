@@ -5932,15 +5932,58 @@
            que la lista vertical de antes. */
         .asistente-autocompletado {
             display: none;
-            flex-wrap: wrap;
-            gap: 8px;
-            max-height: 240px;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 280px;
             overflow-y: auto;
             padding: 2px;
             margin-top: -8px;
         }
         .asistente-autocompletado.activo { display: flex; }
-        .asistente-autocompletado button {
+        /* Filtro por categoría/subcategoría (petición de Eloy, "facilitar
+           que se vean y el usuario lo pueda seleccionar mejor" extendida
+           a filtrar por área): mismas categorías que usa el propio
+           Centro de Soluciones (D.areas), solo se muestran las que
+           tienen alguna guía en la lista actual — si el usuario ya ha
+           escrito algo y ningún resultado es, p. ej., de piscinas, ese
+           chip ni aparece. La subcategoría solo se muestra tras elegir
+           una categoría, y solo si esa categoría tiene más de una. */
+        .asistente-filtros-categoria,
+        .asistente-filtros-subcategoria {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .asistente-filtros-subcategoria {
+            padding-left: 8px;
+            border-left: 2px solid var(--border);
+        }
+        .asistente-filtro-chip {
+            flex: 0 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 5px 11px;
+            background: #f8fafc;
+            color: var(--muted);
+            font-size: 0.76rem;
+            line-height: 1.3;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .asistente-filtro-chip--sub { font-size: 0.72rem; padding: 4px 10px; }
+        .asistente-filtro-chip:hover { border-color: var(--peach); color: var(--peach); }
+        .asistente-filtro-chip.activo {
+            background: var(--peach);
+            border-color: var(--peach);
+            color: #fff;
+            font-weight: 600;
+        }
+        .asistente-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .asistente-chips button {
             display: flex;
             align-items: center;
             gap: 6px;
@@ -5964,18 +6007,34 @@
             flex: 0 1 auto;
             min-width: 0;
         }
-        .asistente-autocompletado button:hover,
-        .asistente-autocompletado button:focus {
+        .asistente-chips button:hover,
+        .asistente-chips button:focus {
             background: #fff7ed;
             border-color: var(--peach);
             color: var(--peach);
         }
         .asistente-autocompletado__vacio {
-            flex: 1 1 100%;
             padding: 10px 2px;
             font-size: 0.84rem;
             color: var(--muted);
         }
+        /* Enlace final, a petición de Eloy, para fomentar el uso del
+           Centro de Soluciones también desde aquí — se abre en pestaña
+           nueva, igual que el resto de enlaces del asistente, porque el
+           buscador nunca debe navegar fuera de sí mismo. */
+        .asistente-ver-centro {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            align-self: flex-start;
+            padding: 4px 2px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: var(--peach);
+            text-decoration: none;
+        }
+        .asistente-ver-centro:hover { text-decoration: underline; }
+        .asistente-ver-centro i { font-size: 0.74rem; }
         /* Margen de verdad SOLO cuando hay contenido que mostrar — con
            :empty en display:none no hace falta condicionar nada más: un
            elemento oculto no deja ningún hueco igualmente. */
@@ -5983,6 +6042,13 @@
         .asistente-resultado:empty { display: none; }
         .asistente-estado { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 18px 0; text-align: center; color: var(--muted); }
         .asistente-estado img.cs-icono-ia-asistente { width: 32px; height: 32px; border-radius: 8px; }
+        /* Bug real reportado por Eloy: el icono que se mostraba mientras
+           se preguntaba a la IA o se preparaba una guía era el logo
+           estático, sin ningún efecto — parecía que la página se había
+           quedado colgada en vez de estar cargando algo. Reutiliza la
+           misma animación "girar" que ya usa el spinner de la carga
+           inicial de la página (ver .cargando-inicial #icono-cargando). */
+        .asistente-spinner { font-size: 1.6rem; color: var(--peach); animation: girar 1s linear infinite; }
         .asistente-aviso { background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; padding: 12px 14px; border-radius: 8px; font-size: 0.88rem; }
         .asistente-respuesta-ia { background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 14px; font-size: 0.9rem; line-height: 1.5; }
         .asistente-respuesta-ia strong { color: #0369a1; }
@@ -10877,6 +10943,7 @@ if (window.OM_PREPRODUCCION) {
         }
 
         const ICONO_IA_ASISTENTE_ = '<img src="assets/logos/apple-touch-icon.png" alt="" class="cs-icono-ia-asistente">';
+        const ICONO_CARGANDO_ASISTENTE_ = '<i class="fa-solid fa-spinner asistente-spinner" aria-hidden="true"></i>';
 
         // Emoji por área (D.areas: coche, pintura, madera, metal, limpieza,
         // pegado, suelos, piscinas, plagas, jardín, perfumería — mismas
@@ -10961,7 +11028,7 @@ if (window.OM_PREPRODUCCION) {
             const soluciones = D.soluciones || {};
             const ordenDestacadas = new Map((D.solucionesDestacadas || []).map((s, i) => [s.slug, i]));
             return Object.keys(soluciones)
-                .map((slug) => ({ slug, title: soluciones[slug].title, category: soluciones[slug].category }))
+                .map((slug) => ({ slug, title: soluciones[slug].title, category: soluciones[slug].category, subcategory: soluciones[slug].subcategory }))
                 .sort((a, b) => {
                     const da = ordenDestacadas.has(a.slug) ? ordenDestacadas.get(a.slug) : Infinity;
                     const db = ordenDestacadas.has(b.slug) ? ordenDestacadas.get(b.slug) : Infinity;
@@ -10970,9 +11037,40 @@ if (window.OM_PREPRODUCCION) {
                 });
         }
 
+        // Filtro por categoría/subcategoría del desplegable (petición de
+        // Eloy). Se guarda fuera de renderAutocompletado_ para que
+        // sobreviva a sus re-renders (al escribir, al cambiar de chip de
+        // subcategoría, etc.) hasta que el propio usuario lo cambie o se
+        // cierre el desplegable.
+        let filtroCategoriaAsistente_ = null; // id de D.areas, o null = todas
+        let filtroSubcategoriaAsistente_ = null; // texto exacto de subcategory, o null = todas
+
+        // Solo las categorías/subcategorías que de verdad tienen alguna
+        // guía en "origen" (la lista completa o los resultados de la
+        // búsqueda actual) — si el usuario ya ha escrito algo y ningún
+        // resultado es de piscinas, ese chip ni aparece.
+        function categoriasDisponiblesAsistente_(origen) {
+            const D = window.SOLUCIONES_DATA;
+            const presentes = new Set(origen.map((e) => e.category).filter(Boolean));
+            return (D && D.areas || []).filter((a) => presentes.has(a.id));
+        }
+        function subcategoriasDisponiblesAsistente_(origen, categoria) {
+            const vistas = new Set();
+            const subs = [];
+            origen.forEach((e) => {
+                if (e.category === categoria && e.subcategory && !vistas.has(e.subcategory)) {
+                    vistas.add(e.subcategory);
+                    subs.push(e.subcategory);
+                }
+            });
+            return subs.sort((a, b) => a.localeCompare(b, 'es'));
+        }
+
         function cerrarAutocompletado_() {
             autocompletado.classList.remove('activo');
             autocompletado.innerHTML = '';
+            filtroCategoriaAsistente_ = null;
+            filtroSubcategoriaAsistente_ = null;
         }
 
         function renderAutocompletado_(texto) {
@@ -10992,39 +11090,97 @@ if (window.OM_PREPRODUCCION) {
             // Centro de Soluciones (buscarSolucionesCombinado — combina
             // ~90 sinónimos/términos coloquiales curados a mano con la
             // coincidencia literal en título/descripción/productos, ver
-            // su comentario en soluciones-data.js), con el mismo tope de
-            // 12 resultados — antes aquí solo se comparaba el texto
-            // escrito contra el TÍTULO de cada guía, mucho más limitado:
-            // "cloro" no encontraba la guía de piscinas aunque esa
-            // palabra nunca aparece en su título, y Eloy detectó que el
-            // asistente del buscador devolvía bastantes menos opciones
-            // que buscar lo mismo en el Centro de Soluciones.
-            const items = !normal
-                ? listaAutocompletado_.slice(0, 8)
+            // su comentario en soluciones-data.js) — antes aquí solo se
+            // comparaba el texto escrito contra el TÍTULO de cada guía,
+            // mucho más limitado: "cloro" no encontraba la guía de
+            // piscinas aunque esa palabra nunca aparece en su título, y
+            // Eloy detectó que el asistente del buscador devolvía
+            // bastantes menos opciones que buscar lo mismo en el Centro
+            // de Soluciones.
+            const origen = !normal
+                ? listaAutocompletado_
                 : (D && D.buscarSolucionesCombinado ? D.buscarSolucionesCombinado(normal) : [])
-                    .slice(0, 12)
-                    .map((s) => ({ slug: s.slug, title: s.title, category: s.category }));
+                    .map((s) => ({ slug: s.slug, title: s.title, category: s.category, subcategory: s.subcategory }));
+
+            // Si el filtro elegido deja de tener sentido con el origen
+            // actual (p. ej. el usuario cambia el texto escrito y ya no
+            // hay ninguna guía de esa categoría), se resetea solo —
+            // mejor eso que dejar al usuario mirando una lista vacía sin
+            // saber por qué.
+            if (filtroCategoriaAsistente_ && !origen.some((e) => e.category === filtroCategoriaAsistente_)) {
+                filtroCategoriaAsistente_ = null;
+                filtroSubcategoriaAsistente_ = null;
+            }
+            if (filtroSubcategoriaAsistente_ && !origen.some((e) => e.category === filtroCategoriaAsistente_ && e.subcategory === filtroSubcategoriaAsistente_)) {
+                filtroSubcategoriaAsistente_ = null;
+            }
+
+            const filtrados = origen.filter((e) =>
+                (!filtroCategoriaAsistente_ || e.category === filtroCategoriaAsistente_) &&
+                (!filtroSubcategoriaAsistente_ || e.subcategory === filtroSubcategoriaAsistente_)
+            );
+            const items = (!normal ? filtrados.slice(0, 8) : filtrados.slice(0, 12))
+                .map((e) => ({ slug: e.slug, title: e.title, category: e.category }));
+
+            // ── Filtro por categoría (a petición de Eloy, "facilitar la
+            // búsqueda filtrando por categoría o subcategoría") ──
+            let html = '';
+            const categorias = categoriasDisponiblesAsistente_(origen);
+            if (categorias.length > 1) {
+                html += '<div class="asistente-filtros-categoria">'
+                    + `<button type="button" class="asistente-filtro-chip${!filtroCategoriaAsistente_ ? ' activo' : ''}" data-categoria="">Todas las áreas</button>`
+                    + categorias.map((c) => `<button type="button" class="asistente-filtro-chip${filtroCategoriaAsistente_ === c.id ? ' activo' : ''}" data-categoria="${escaparHtmlAsistente_(c.id)}">${c.emoji} ${escaparHtmlAsistente_(c.label)}</button>`).join('')
+                    + '</div>';
+                if (filtroCategoriaAsistente_) {
+                    const subcategorias = subcategoriasDisponiblesAsistente_(origen, filtroCategoriaAsistente_);
+                    if (subcategorias.length > 1) {
+                        html += '<div class="asistente-filtros-subcategoria">'
+                            + `<button type="button" class="asistente-filtro-chip asistente-filtro-chip--sub${!filtroSubcategoriaAsistente_ ? ' activo' : ''}" data-subcategoria="">Todas</button>`
+                            + subcategorias.map((s) => `<button type="button" class="asistente-filtro-chip asistente-filtro-chip--sub${filtroSubcategoriaAsistente_ === s ? ' activo' : ''}" data-subcategoria="${escaparHtmlAsistente_(s)}">${escaparHtmlAsistente_(s)}</button>`).join('')
+                            + '</div>';
+                    }
+                }
+            }
 
             if (!items.length) {
-                autocompletado.innerHTML = '<p class="asistente-autocompletado__vacio">No tenemos ninguna guía con ese texto — pulsa enviar para preguntárselo a nuestro asistente con IA.</p>';
+                html += `<p class="asistente-autocompletado__vacio">No tenemos ninguna guía con ese texto${filtroCategoriaAsistente_ ? ' en esta categoría' : ''} — pulsa enviar para preguntárselo a nuestro asistente con IA.</p>`;
             } else {
-                autocompletado.innerHTML = items.map((e) => `<button type="button" data-slug="${escaparHtmlAsistente_(e.slug)}"><span class="asistente-chip__icono" aria-hidden="true">${iconoCategoriaAsistente_(e.category)}</span><span class="asistente-chip__texto">${escaparHtmlAsistente_(e.title)}</span></button>`).join('');
-                autocompletado.querySelectorAll('button[data-slug]').forEach((btn) => {
-                    btn.addEventListener('click', () => {
-                        const D = window.SOLUCIONES_DATA;
-                        const s = D && D.soluciones && D.soluciones[btn.dataset.slug];
-                        cerrarAutocompletado_();
-                        if (!s) { input.value = btn.textContent; actualizarVisibilidadLimpiarAsistente_(); preguntarAsistente_(input.value); return; }
-                        // Coincidencia exacta elegida de la lista: se
-                        // muestra DIRECTAMENTE, sin pasar por la IA — más
-                        // rápido, sin coste, y ya sabemos con certeza qué
-                        // guía es (nada que "adivinar").
-                        input.value = s.title;
-                        actualizarVisibilidadLimpiarAsistente_();
-                        mostrarGuiaEnAsistente_(s, s.title);
-                    });
-                });
+                html += '<div class="asistente-chips">' + items.map((e) => `<button type="button" data-slug="${escaparHtmlAsistente_(e.slug)}"><span class="asistente-chip__icono" aria-hidden="true">${iconoCategoriaAsistente_(e.category)}</span><span class="asistente-chip__texto">${escaparHtmlAsistente_(e.title)}</span></button>`).join('') + '</div>';
             }
+            // Enlace final a petición de Eloy, para fomentar también
+            // desde aquí el uso del Centro de Soluciones.
+            html += '<a href="centro-soluciones.html" target="_blank" rel="noopener" class="asistente-ver-centro">Ver más en nuestro Centro de Soluciones <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>';
+
+            autocompletado.innerHTML = html;
+
+            autocompletado.querySelectorAll('.asistente-filtros-categoria .asistente-filtro-chip').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    filtroCategoriaAsistente_ = btn.dataset.categoria || null;
+                    filtroSubcategoriaAsistente_ = null;
+                    renderAutocompletado_(input.value);
+                });
+            });
+            autocompletado.querySelectorAll('.asistente-filtros-subcategoria .asistente-filtro-chip').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    filtroSubcategoriaAsistente_ = btn.dataset.subcategoria || null;
+                    renderAutocompletado_(input.value);
+                });
+            });
+            autocompletado.querySelectorAll('button[data-slug]').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    const D = window.SOLUCIONES_DATA;
+                    const s = D && D.soluciones && D.soluciones[btn.dataset.slug];
+                    cerrarAutocompletado_();
+                    if (!s) { input.value = btn.textContent; actualizarVisibilidadLimpiarAsistente_(); preguntarAsistente_(input.value); return; }
+                    // Coincidencia exacta elegida de la lista: se
+                    // muestra DIRECTAMENTE, sin pasar por la IA — más
+                    // rápido, sin coste, y ya sabemos con certeza qué
+                    // guía es (nada que "adivinar").
+                    input.value = s.title;
+                    actualizarVisibilidadLimpiarAsistente_();
+                    mostrarGuiaEnAsistente_(s, s.title);
+                });
+            });
             autocompletado.classList.add('activo');
         }
 
@@ -11144,7 +11300,7 @@ if (window.OM_PREPRODUCCION) {
             textoEnCurso_ = texto;
             const refs = (s.recommendedProducts || []).map((x) => x.ref).filter(Boolean);
             const D = window.SOLUCIONES_DATA;
-            renderEstado_(ICONO_IA_ASISTENTE_, 'Preparando la guía…');
+            renderEstado_(ICONO_CARGANDO_ASISTENTE_, 'Preparando la guía…');
             D.cargarProductosPorRefs(refs).then((productos) => {
                 if (textoEnCurso_ !== texto) return;
                 resultado.innerHTML = `
@@ -11184,7 +11340,7 @@ if (window.OM_PREPRODUCCION) {
             textoEnCurso_ = texto;
             btnEnviar.disabled = true;
             input.disabled = true;
-            renderEstado_(ICONO_IA_ASISTENTE_, 'Preguntando a la IA…');
+            renderEstado_(ICONO_CARGANDO_ASISTENTE_, 'Preguntando a la IA…');
 
             D.buscarSolucionIA(texto, controlador.signal).then((r) => {
                 controladorActual_ = null;
