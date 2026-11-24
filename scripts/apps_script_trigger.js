@@ -11,7 +11,7 @@
 // Viaja en la respuesta de obtener_productos (ver version_backend) para
 // que buscador.html pueda avisar si lo que ve en vivo no es lo último
 // que se desplegó — ver comprobarVersionBackend_ en buscador.html.
-const VERSION_BACKEND = '2026-11-23-resumen-crm-acumulado';
+const VERSION_BACKEND = '2026-11-24-diagnostico-catalogo';
 
 // ── Configuración ──────────────────────────────────────────────────────────
 const GITHUB_TOKEN        = 'TU_GITHUB_TOKEN_AQUI';
@@ -3582,6 +3582,39 @@ function regenerarCacheCompletaDesdeSheet_() {
     });
   }
 
+  // Incidente real del 24/11/2026: esta función leyó la hoja "Productos"
+  // prácticamente vacía (coincidiendo con una sincronización del CRM en
+  // curso — la hoja pasa por un estado transitorio mientras se borra e
+  // importa de nuevo) y, sin ninguna comprobación, SOBRESCRIBIÓ la caché
+  // de Drive que lee el buscador en vivo con ese resultado casi vacío —
+  // nada lanzó una excepción, así que el try/catch de
+  // completarPostprocesoSincronizacionCRM_ no lo detectó, y el trigger
+  // horario tampoco: la web cargaba el respaldo estático un instante y
+  // se quedaba sin productos en cuanto llegaba esa respuesta real vacía.
+  // Ahora se compara contra la caché YA guardada (no un número fijo
+  // arbitrario, para que siga funcionando si el catálogo crece o
+  // decrece de forma legítima con el tiempo): si el resultado nuevo es
+  // sospechosamente pequeño, se rechaza el guardado, se avisa por
+  // correo de inmediato (en vez de esperar al diagnóstico diario, ver
+  // diagnosticoDiarioCatalogoProgramado más abajo) y se lanza una
+  // excepción para que quien llamó a esta función se entere también.
+  const cacheActual_ = leerCacheProductos_();
+  const totalActual_ = (cacheActual_.productos || []).length;
+  const UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_ = 50; // el catálogo real tiene miles; por debajo de esto nunca es una lectura completa
+  const resultadoSospechoso_ = exportados.length < UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_
+    || (totalActual_ > 0 && exportados.length < totalActual_ * 0.5);
+  if (resultadoSospechoso_) {
+    const mensaje = 'regenerarCacheCompletaDesdeSheet_ ha leído solo ' + exportados.length +
+      ' producto(s) de la hoja "Productos" (la caché actual en Drive tiene ' + totalActual_ +
+      ') — parece una lectura incompleta de la hoja (por ejemplo, en mitad de una sincronización ' +
+      'del CRM). NO se ha sobrescrito la caché, para no dejar el catálogo vacío en el buscador.\n\n' +
+      'Si la hoja "Productos" está realmente bien y el catálogo de verdad ha bajado tanto, ejecuta ' +
+      'regenerarCacheCompletaManual() a mano desde el editor para confirmarlo.';
+    console.error(mensaje);
+    notificarErrorCriticoCRM_('Regeneración de caché de productos RECHAZADA (resultado sospechoso)', mensaje);
+    throw new Error('regenerarCacheCompletaDesdeSheet_: resultado sospechosamente pequeño (' + exportados.length + ' productos), no se ha guardado — ver correo de alerta.');
+  }
+
   const payload = {
     generado: new Date().toISOString(),
     total: exportados.length,
@@ -3614,6 +3647,74 @@ function regenerarCacheCompletaManual() {
   } catch (err) {
     avisar_('Error', 'No se pudo regenerar la caché: ' + err.message);
     throw err;
+  }
+}
+
+// ── Diagnóstico diario de salud del catálogo en vivo ──────────────────────
+// A petición de Eloy tras el incidente real del 24/11/2026 (ver el aviso
+// junto a regenerarCacheCompletaDesdeSheet_ más arriba): esa función ya
+// rechaza guardar un resultado sospechosamente pequeño, pero esta es la
+// red de seguridad aparte, para detectar rápido si pasara de nuevo por
+// cualquier otra vía (o si el trigger horario de regeneración llevara
+// tiempo sin ejecutarse) — revisa la caché YA guardada en Drive, sin
+// depender de que la próxima regeneración vaya a detectarlo por sí sola.
+const DIAGNOSTICO_CATALOGO_HORA_ = 7; // franja horaria local en la que se revisa cada día
+const DIAGNOSTICO_CATALOGO_MIN_PRODUCTOS_ = 50; // igual que en regenerarCacheCompletaDesdeSheet_
+const DIAGNOSTICO_CATALOGO_MAX_HORAS_SIN_REGENERAR_ = 6; // el trigger horario debería refrescarla cada hora
+
+// Ejecutar UNA VEZ desde el editor para crear el disparador diario —
+// mismo patrón que configurarTriggerAvisoSincronizacionCRM().
+function configurarTriggerDiagnosticoCatalogo() {
+  ScriptApp.getProjectTriggers()
+    .filter(t => t.getHandlerFunction() === 'diagnosticoDiarioCatalogoProgramado')
+    .forEach(t => ScriptApp.deleteTrigger(t));
+
+  ScriptApp.newTrigger('diagnosticoDiarioCatalogoProgramado')
+    .timeBased()
+    .everyDays(1)
+    .atHour(DIAGNOSTICO_CATALOGO_HORA_)
+    .create();
+  console.log('Trigger creado: diagnosticoDiarioCatalogoProgramado se ejecutará una vez al día, en la franja de las ' + DIAGNOSTICO_CATALOGO_HORA_ + 'h.');
+}
+
+// Función que ejecuta el disparador diario. Comprueba dos cosas, cada una
+// con su propio aviso si falla, para que el correo diga exactamente qué
+// ha encontrado:
+//   1. La caché tiene un número de productos razonable (no vacía/casi
+//      vacía) — el síntoma real que tuvo el sitio en producción: cargaba
+//      productos un instante y luego desaparecían todos.
+//   2. La caché se ha regenerado hace poco — si el trigger horario de
+//      regenerarCacheCompletaDesdeSheet_ se desactivara o empezara a
+//      fallar siempre, esto lo detecta sin más tardar que un día.
+// Nunca deja de avisar por un fallo propio: envuelta en try/catch igual
+// que revisarAvisoSincronizacionCRMProgramado.
+function diagnosticoDiarioCatalogoProgramado() {
+  try {
+    const avisos = [];
+    const datos = leerCacheProductos_();
+    const total = (datos.productos || []).length;
+    if (total < DIAGNOSTICO_CATALOGO_MIN_PRODUCTOS_) {
+      avisos.push('La caché de productos en Drive tiene solo ' + total + ' producto(s) — el catálogo real tiene miles. ' +
+        'Algo ha sobrescrito la caché con un resultado casi vacío. Solución rápida: ejecuta regenerarCacheCompletaManual() desde el editor.');
+    }
+    const generado = datos.generado ? new Date(datos.generado) : null;
+    const horasSinRegenerar = generado ? (Date.now() - generado.getTime()) / 3600000 : Infinity;
+    if (horasSinRegenerar > DIAGNOSTICO_CATALOGO_MAX_HORAS_SIN_REGENERAR_) {
+      avisos.push('La caché de productos no se regenera desde hace ' + horasSinRegenerar.toFixed(1) +
+        ' horas (debería refrescarse cada hora) — revisa si el disparador programado de regenerarCacheCompletaDesdeSheet_ sigue activo ' +
+        '(ScriptApp.getProjectTriggers() desde el editor, o vuelve a ejecutar configurarTriggerRegeneracionCacheCompleta()).');
+    }
+
+    if (avisos.length) {
+      notificarErrorCriticoCRM_('Diagnóstico diario del catálogo — ' + avisos.length + ' aviso(s)', avisos.join('\n\n'));
+    } else {
+      console.log('Diagnóstico diario del catálogo: todo correcto (' + total + ' productos, caché regenerada hace ' + horasSinRegenerar.toFixed(1) + 'h).');
+    }
+  } catch (err) {
+    notificarErrorCriticoCRM_(
+      'Diagnóstico diario del catálogo — fallo al ejecutarse',
+      'diagnosticoDiarioCatalogoProgramado() ha fallado con una excepción:\n\n' + err.message + (err.stack ? '\n\n' + err.stack : '')
+    );
   }
 }
 
