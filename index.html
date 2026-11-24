@@ -4467,6 +4467,13 @@
             transform: translateX(18px);
         }
         #modal-editar-visibilidad-aviso { color: #b45309; }
+        #modal-editar-visibilidad-cargando {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+        }
+        .modal-editar-visibilidad-campo.cargando { opacity: 0.45; pointer-events: none; }
 
         /* Modal "Imprimir etiqueta de precio" — reutiliza .modal-producto-box/
            .modal-editar-ficha-* para la caja y los campos; aquí solo lo
@@ -7479,6 +7486,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </button>
         <h3 class="modal-editar-ficha-titulo"><i class="fa-solid fa-users-gear"></i> Editar visibilidad</h3>
         <p id="modal-editar-visibilidad-nombre" class="modal-editar-ficha-nombre"></p>
+        <p id="modal-editar-visibilidad-cargando" class="modal-editar-ficha-nota">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            Confirmando la visibilidad actual del producto…
+        </p>
         <div class="modal-editar-visibilidad-campo">
             <label class="modal-editar-visibilidad-switch-label" for="modal-editar-visibilidad-normal">
                 <span>Visible para usuario normal</span>
@@ -25308,6 +25319,19 @@ if (window.OM_PREPRODUCCION) {
     // obtener_productos, según qué perfil pregunta).
     let productoEditarVisibilidadActual = null;
 
+    // Bug real reportado por Eloy: al abrir la modal con un producto que
+    // TODOS todavía tenía con los valores del respaldo estático/caché ya
+    // desactualizada (antes de que termine de llegar la respuesta EN VIVO
+    // de obtener_productos), los interruptores se veían un instante con
+    // un valor y luego "saltaban" solos al valor real — p.ej. mostraba
+    // los dos en "sí" y pasaban a "usuario sí, profesional no" sin que
+    // el usuario tocara nada. Ahora, al abrir, se muestran esos valores
+    // SOLO como provisionales (interruptores atenuados, sin poder
+    // tocarlos) con un spinner "Confirmando..." mientras se repregunta
+    // este producto EN CONCRETO al servidor (?refs=<ref>, mismo truco que
+    // ya usa Escaparate OM para no pedir el catálogo entero) — hasta que
+    // esa respuesta llega no se puede guardar, así nunca se guarda sobre
+    // un valor que podía no ser el real.
     function abrirModalEditarVisibilidad(p) {
         // Red de seguridad además del botón ya eliminado del DOM en
         // producción: aunque algo llame a esta función directamente,
@@ -25318,9 +25342,50 @@ if (window.OM_PREPRODUCCION) {
         $('modal-editar-visibilidad-normal').checked = (p.visible_usuario_normal || 'si').toString().trim().toLowerCase() !== 'no';
         $('modal-editar-visibilidad-profesional').checked = (p.visible_usuario_profesional || 'si').toString().trim().toLowerCase() !== 'no';
         actualizarAvisoEditarVisibilidad_();
-        $('modal-editar-visibilidad-guardar').disabled = false;
         $('modal-editar-visibilidad-guardar').textContent = 'Guardar';
+        mostrarCargandoEditarVisibilidad_(true);
         $('modal-editar-visibilidad-overlay').classList.add('activo');
+
+        const scriptUrl = window.GOOGLE_APPS_SCRIPT_URL;
+        if (!scriptUrl) {
+            mostrarCargandoEditarVisibilidad_(false);
+            return;
+        }
+        fetch(`${PRODUCTOS_REMOTO_URL_()}&refs=${encodeURIComponent(p.ref)}`, { cache: 'no-store' })
+            .then(res => res.json())
+            .then(datos => {
+                // La modal pudo cerrarse, o abrirse para OTRO producto,
+                // mientras esta petición seguía en vuelo — no pisar nada
+                // en ese caso.
+                if (productoEditarVisibilidadActual !== p) return;
+                const fresco = (datos.productos || [])[0];
+                if (!fresco) throw new Error('No se ha podido confirmar este producto.');
+                p.visible_usuario_normal = fresco.visible_usuario_normal;
+                p.visible_usuario_profesional = fresco.visible_usuario_profesional;
+                const idx = TODOS.findIndex(x => x.ref === p.ref);
+                if (idx !== -1) {
+                    TODOS[idx].visible_usuario_normal = fresco.visible_usuario_normal;
+                    TODOS[idx].visible_usuario_profesional = fresco.visible_usuario_profesional;
+                }
+                $('modal-editar-visibilidad-normal').checked = (fresco.visible_usuario_normal || 'si').toString().trim().toLowerCase() !== 'no';
+                $('modal-editar-visibilidad-profesional').checked = (fresco.visible_usuario_profesional || 'si').toString().trim().toLowerCase() !== 'no';
+                actualizarAvisoEditarVisibilidad_();
+            })
+            .catch(err => {
+                console.error('Error al confirmar la visibilidad actual del producto:', err);
+                mostrarToast('No se ha podido confirmar la visibilidad actual. Cierra y vuelve a intentarlo.', 'error');
+                cerrarModalEditarVisibilidad();
+            })
+            .finally(() => {
+                if (productoEditarVisibilidadActual !== p) return;
+                mostrarCargandoEditarVisibilidad_(false);
+            });
+    }
+
+    function mostrarCargandoEditarVisibilidad_(cargando) {
+        $('modal-editar-visibilidad-cargando').style.display = cargando ? 'flex' : 'none';
+        document.querySelector('.modal-editar-visibilidad-campo').classList.toggle('cargando', cargando);
+        $('modal-editar-visibilidad-guardar').disabled = cargando;
     }
 
     function cerrarModalEditarVisibilidad() {
