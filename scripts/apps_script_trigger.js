@@ -11,7 +11,7 @@
 // Viaja en la respuesta de obtener_productos (ver version_backend) para
 // que buscador.html pueda avisar si lo que ve en vivo no es lo último
 // que se desplegó — ver comprobarVersionBackend_ en buscador.html.
-const VERSION_BACKEND = '2026-11-19-aviso-interno-por-correo';
+const VERSION_BACKEND = '2026-11-23-resumen-crm-acumulado';
 
 // ── Configuración ──────────────────────────────────────────────────────────
 const GITHUB_TOKEN        = 'TU_GITHUB_TOKEN_AQUI';
@@ -11254,13 +11254,48 @@ function enviarResumenSincronizacionCRM_(resultado) {
 // al principio del script, con el resto de configuración) y volver a
 // ejecutar esa función.
 
+// Bug real detectado por Eloy: cuando una sincronización se hace en DOS
+// ejecuciones (p.ej. el Excel del CRM es tan grande que la primera pasada
+// no llega a procesar todas las filas de RegistroProductos antes de
+// volver a ejecutarse — las ya marcadas "Procesado=si" se saltan solas,
+// así que una segunda ejecución continúa donde quedó la primera), cada
+// llamada aquí SOBRESCRIBÍA crm_sync_ultimo_resumen con solo los números
+// de ESA ejecución, perdiendo los de la anterior — el correo de aviso
+// mostró "5204 actualizados" cuando el total real del día era 7204.
+// Para evitarlo, se acumulan los contadores de todas las ejecuciones
+// CORRECTAS del mismo día (crm_sync_sesion_*) y el resumen que se
+// muestra siempre es el acumulado del día, no el de la última ejecución
+// suelta. Un día nuevo (u otra sincronización tras un error) arranca el
+// acumulador de cero con sus propios números.
 function registrarResultadoSincronizacionCRM_(resultado, fechaTexto) {
-  const resumen = resultado.error
-    ? '⚠️ Sincronización fallida — ' + resultado.error
-    : ('✓ Sincronización correcta — ' + resultado.nuevos + ' nuevos, ' + resultado.actualizados +
-       ' actualizados' + (resultado.errores ? ', ' + resultado.errores + ' con error' : ''));
+  if (resultado.error) {
+    const resumen = '⚠️ Sincronización fallida — ' + resultado.error;
+    escribirConfiguracion_('crm_sync_ultima_fecha', fechaTexto, 'Fecha y hora del último intento real de sincronización de productos desde el CRM');
+    escribirConfiguracion_('crm_sync_ultimo_resumen', resumen, 'Resultado de esa última sincronización (nuevos/actualizados/errores, o el error)');
+    return;
+  }
+
+  const diaActual = (fechaTexto || '').toString().split(' ')[0]; // "dd/MM/yyyy HH:mm" → "dd/MM/yyyy"
+  const diaSesionPrevia = (leerConfiguracion_('crm_sync_sesion_dia', '') || '').toString().trim();
+  const mismoDia = diaActual && diaActual === diaSesionPrevia;
+
+  const numPrevio = (clave) => mismoDia ? (parseInt(leerConfiguracion_(clave, '0'), 10) || 0) : 0;
+  const totalNuevos       = numPrevio('crm_sync_sesion_nuevos')       + (resultado.nuevos       || 0);
+  const totalActualizados = numPrevio('crm_sync_sesion_actualizados') + (resultado.actualizados || 0);
+  const totalReactivados  = numPrevio('crm_sync_sesion_reactivados')  + (resultado.reactivados  || 0);
+  const totalErrores      = numPrevio('crm_sync_sesion_errores')      + (resultado.errores      || 0);
+
+  escribirConfiguracion_('crm_sync_sesion_dia', diaActual, 'Día (dd/MM/yyyy) de la sincronización cuyos contadores están acumulados en crm_sync_sesion_* — se reinicia solo al cambiar de día');
+  escribirConfiguracion_('crm_sync_sesion_nuevos', String(totalNuevos), 'Nuevos acumulados en todas las ejecuciones correctas de hoy (puede haber más de una si el Excel se procesó en varias pasadas)');
+  escribirConfiguracion_('crm_sync_sesion_actualizados', String(totalActualizados), 'Actualizados acumulados en todas las ejecuciones correctas de hoy');
+  escribirConfiguracion_('crm_sync_sesion_reactivados', String(totalReactivados), 'Reactivados acumulados en todas las ejecuciones correctas de hoy');
+  escribirConfiguracion_('crm_sync_sesion_errores', String(totalErrores), 'Con error acumulados en todas las ejecuciones correctas de hoy');
+
+  const resumen = '✓ Sincronización correcta — ' + totalNuevos + ' nuevos, ' + totalActualizados +
+    ' actualizados' + (totalReactivados ? ', ' + totalReactivados + ' reactivados' : '') +
+    (totalErrores ? ', ' + totalErrores + ' con error' : '');
   escribirConfiguracion_('crm_sync_ultima_fecha', fechaTexto, 'Fecha y hora del último intento real de sincronización de productos desde el CRM');
-  escribirConfiguracion_('crm_sync_ultimo_resumen', resumen, 'Resultado de esa última sincronización (nuevos/actualizados/errores, o el error)');
+  escribirConfiguracion_('crm_sync_ultimo_resumen', resumen, 'Resultado acumulado de la sincronización de hoy (todas las ejecuciones correctas del mismo día, nuevos/actualizados/errores) — o el error de la última, si falló');
 }
 
 // Lee el estado actual de la hoja Configuracion — usado tanto por el
