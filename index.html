@@ -29379,6 +29379,11 @@ if (window.OM_PREPRODUCCION) {
         colaAsistente = TODOS.filter(p => {
             if (p._catalogoProveedorEstatico) return false; // catálogos estáticos de proveedor: no gestionados aquí
             if (p.fecha_baja) return false; // productos dados de baja: no tiene sentido buscarles foto
+            // A petición de Eloy: tampoco los deshabilitados del catálogo
+            // (incluir_en_catalogo = "no") — igual que los dados de baja,
+            // siguen de alta y sincronizándose con el CRM pero nunca se
+            // muestran al público, así que no tiene sentido buscarles foto.
+            if ((p.incluir_en_catalogo || '').toString().trim().toLowerCase() === 'no') return false;
             if (!productoCoincideConAreas(p, areasSelAsistente)) return false;
             if (familiaFiltro && p.familia !== familiaFiltro) return false;
             // A petición de Eloy: además de por nombre, permitir buscar
