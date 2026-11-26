@@ -3398,18 +3398,43 @@ function guardarCacheProductos_(datos) {
 // sospechosamente pequeña frente a lo que YA hay guardado en Drive.
 // Devuelve true si se ha rechazado (y ya se ha avisado por correo);
 // quien llama decide si lanzar excepción o devolver un error limpio.
+// Incidente del 26/11/2026 (segunda recurrencia, ya con el guard de
+// abajo activo): un resultado parcial pasó la comprobación porque caía
+// justo por ENCIMA del 50% (3913 de 7207, ~54%) — y, peor aún, al
+// aceptarse, ese 3913 pasó a ser la nueva "caché actual" contra la que
+// se compara la SIGUIENTE regeneración: un fallo parcial que se cuela
+// una vez rebaja el listón para el siguiente intento ("efecto trinquete",
+// puede quedarse atascado en un recuento parcial indefinidamente, sin
+// que vuelva a saltar ningún aviso). Por eso NO se compara ya solo
+// contra lo que haya ahora mismo en Drive, sino contra el máximo
+// histórico conocido (guardado aparte, en las Propiedades del script,
+// y que nunca baja solo porque una regeneración haya aceptado menos).
+function totalMaximoConocidoCacheProductos_() {
+  const guardado = parseInt(PropertiesService.getScriptProperties().getProperty('CACHE_PRODUCTOS_TOTAL_MAXIMO') || '0', 10);
+  return isNaN(guardado) ? 0 : guardado;
+}
+
+function registrarTotalCacheAceptado_(cantidad) {
+  if (cantidad > totalMaximoConocidoCacheProductos_()) {
+    PropertiesService.getScriptProperties().setProperty('CACHE_PRODUCTOS_TOTAL_MAXIMO', String(cantidad));
+  }
+}
+
 function cacheProductosDemasiadoPequena_(cantidadNueva, origen) {
   const cacheActual_ = leerCacheProductos_();
   const totalActual_ = (cacheActual_.productos || []).length;
+  const totalReferencia_ = Math.max(totalActual_, totalMaximoConocidoCacheProductos_());
   const UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_ = 50; // el catálogo real tiene miles; por debajo de esto nunca es una lectura completa
   const sospechoso = cantidadNueva < UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_
-    || (totalActual_ > 0 && cantidadNueva < totalActual_ * 0.5);
+    || (totalReferencia_ > 0 && cantidadNueva < totalReferencia_ * 0.5);
   if (!sospechoso) return false;
 
   const mensaje = origen + ' ha recibido solo ' + cantidadNueva +
     ' producto(s) (la caché actual en Drive tiene ' + totalActual_ +
+    ', el máximo histórico conocido es ' + totalReferencia_ +
     ') — parece una lectura incompleta (por ejemplo, en mitad de una sincronización ' +
-    'del CRM). NO se ha sobrescrito la caché, para no dejar el catálogo vacío en el buscador.\n\n' +
+    'del CRM, o solapada con otra regeneración en curso). NO se ha sobrescrito la caché, ' +
+    'para no dejar el catálogo vacío ni degradado en el buscador.\n\n' +
     'Si de verdad el catálogo ha bajado tanto, ejecuta regenerarCacheCompletaManual() a mano ' +
     'desde el editor para confirmarlo.';
   console.error(mensaje);
@@ -3694,12 +3719,24 @@ function regenerarCacheCompletaDesdeSheet_() {
   // regeneración completa (que sobrescribe el archivo entero) puede
   // solaparse con un parcheo puntual de un solo producto en curso al
   // mismo tiempo, y perder ese cambio si termina de escribir después.
+  // Incidente del 26/11/2026: el resultado de tryLock() se ignoraba
+  // aquí — si no se conseguía el bloqueo (otra regeneración ya en
+  // marcha), se escribía IGUAL, sin ninguna protección real. Ahora, si
+  // no se consigue, se aborta sin escribir — la siguiente ejecución
+  // programada (o la del disparador) ya lo intentará de nuevo.
   const lock = LockService.getScriptLock();
+  let conseguidoElBloqueo = false;
   try {
-    lock.tryLock(15000);
+    conseguidoElBloqueo = lock.tryLock(15000);
+    if (!conseguidoElBloqueo) {
+      const mensaje = 'regenerarCacheCompletaDesdeSheet_: no se ha conseguido el bloqueo en 15s (otra regeneración ya en marcha) — no se ha escrito nada, se reintentará en la próxima ejecución programada.';
+      console.error(mensaje);
+      throw new Error(mensaje);
+    }
     guardarCacheProductos_(payload);
+    registrarTotalCacheAceptado_(exportados.length);
   } finally {
-    lock.releaseLock();
+    if (conseguidoElBloqueo) lock.releaseLock();
   }
   console.log(`regenerarCacheCompletaDesdeSheet_: ${exportados.length} productos regenerados y guardados en la caché de Drive.`);
   return payload;
@@ -3763,6 +3800,18 @@ function diagnosticoDiarioCatalogoProgramado() {
     if (total < DIAGNOSTICO_CATALOGO_MIN_PRODUCTOS_) {
       avisos.push('La caché de productos en Drive tiene solo ' + total + ' producto(s) — el catálogo real tiene miles. ' +
         'Algo ha sobrescrito la caché con un resultado casi vacío. Solución rápida: ejecuta regenerarCacheCompletaManual() desde el editor.');
+    }
+    // Red de seguridad aparte del guard de escritura (cacheProductosDemasiadoPequena_):
+    // un resultado parcial que cayera justo por encima del 50% del momento
+    // (incidente real del 26/11/2026: 3913 de 7207, ~54%) pasaría ese guard
+    // sin problema, pero sigue siendo muchísimo menos que el máximo
+    // histórico conocido — este chequeo diario sí lo detecta, aunque el de
+    // escritura no lo hubiera hecho.
+    const maximoConocido = totalMaximoConocidoCacheProductos_();
+    if (maximoConocido > 0 && total < maximoConocido * 0.8) {
+      avisos.push('La caché de productos tiene ' + total + ' producto(s), bastante por debajo del máximo histórico conocido (' +
+        maximoConocido + '). Puede que una regeneración reciente se haya quedado con un resultado parcial. Revisa y, si hace falta, ' +
+        'ejecuta regenerarCacheCompletaManual() desde el editor.');
     }
     const generado = datos.generado ? new Date(datos.generado) : null;
     const horasSinRegenerar = generado ? (Date.now() - generado.getTime()) / 3600000 : Infinity;
@@ -3966,12 +4015,19 @@ function procesarSincronizarCacheCompleto(data) {
     // Mismo motivo que en actualizarProductoEnCache_ y
     // regenerarCacheCompletaDesdeSheet_: sin bloqueo, esta sobrescritura
     // completa podría solaparse con un parcheo puntual en curso.
+    // Mismo fix del 26/11/2026 que en regenerarCacheCompletaDesdeSheet_:
+    // antes se ignoraba el resultado de tryLock() y se escribía igual.
     const lock = LockService.getScriptLock();
+    let conseguidoElBloqueo = false;
     try {
-      lock.tryLock(15000);
+      conseguidoElBloqueo = lock.tryLock(15000);
+      if (!conseguidoElBloqueo) {
+        throw new Error('procesarSincronizarCacheCompleto: no se ha conseguido el bloqueo en 15s (otra regeneración ya en marcha) — no se ha escrito nada.');
+      }
       guardarCacheProductos_(datos);
+      registrarTotalCacheAceptado_(total);
     } finally {
-      lock.releaseLock();
+      if (conseguidoElBloqueo) lock.releaseLock();
     }
     console.log('Caché de Drive sincronizada con la regeneración completa —', total, 'productos');
     return ContentService.createTextOutput(JSON.stringify({ success: true, total: total }))
