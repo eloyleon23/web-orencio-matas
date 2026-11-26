@@ -4,11 +4,41 @@ Generador de productos.json para el buscador web de Orencio Matas y Hermanos, S.
 Lee productos de Google Sheets y genera productos.json para el buscador.
 """
 
-import os, json, requests
+import os, json, sys, requests
 
 # ── Configuración ───────────────────────────────────────────────────────────
 SHEET_ID   = os.environ.get('SHEET_ID', '')
 OUTPUT_DIR = 'data'
+MAXIMO_HISTORICO_PATH = os.path.join(OUTPUT_DIR, 'productos_maximo_historico.json')
+UMBRAL_MINIMO_ABSOLUTO = 50
+
+# Incidente real (24-26/11/2026): este script lee el Sheet vía
+# exportación CSV de Google (gviz), que puede devolver un resultado
+# incompleto o casi vacío de forma transitoria (p. ej. mientras una
+# sincronización del CRM está borrando e importando filas, o un fallo
+# puntual de Google) — y, sin ninguna comprobación, lo escribía IGUAL
+# en data/productos.json, el archivo que carga primero tanto la web
+# pública como el área de clientes. Ese es el origen real de "solo
+# aparecen 2 productos": no es un problema de Apps Script ni de la
+# caché de Drive (que SÍ tenía esta protección, ver
+# cacheProductosDemasiadoPequena_ en apps_script_trigger.js), sino que
+# este script, el que de verdad genera el archivo público, no tenía
+# ninguna. Mismo criterio aquí: se guarda aparte (en un archivo propio,
+# no en el propio productos.json, para que no se pueda rebajar por
+# accidente) el máximo de productos exportados hasta la fecha, y se
+# compara siempre contra ESE máximo — nunca contra el resultado de la
+# ejecución anterior — así un fallo parcial no puede convertirse en la
+# nueva referencia para la siguiente vez ("efecto trinquete").
+def leer_maximo_historico():
+    try:
+        with open(MAXIMO_HISTORICO_PATH, encoding='utf-8') as f:
+            return int(json.load(f).get('maximo', 0))
+    except Exception:
+        return 0
+
+def guardar_maximo_historico(valor):
+    with open(MAXIMO_HISTORICO_PATH, 'w', encoding='utf-8') as f:
+        json.dump({'maximo': valor}, f)
 
 # ── Leer familias del Sheet ─────────────────────────────────────────────────
 def leer_familias():
@@ -255,6 +285,20 @@ def exportar_productos_json(productos, familias, subfamilias):
             'fabricante': fabricante,
         })
 
+    maximo_historico = leer_maximo_historico()
+    sospechoso = len(exportados) < UMBRAL_MINIMO_ABSOLUTO or (
+        maximo_historico > 0 and len(exportados) < maximo_historico * 0.5
+    )
+    if sospechoso:
+        print(
+            f"✗ ABORTADO: solo {len(exportados)} producto(s) leído(s) del Sheet "
+            f"(máximo histórico conocido: {maximo_historico}). Esto indica una lectura "
+            "incompleta/transitoria del Sheet, no una bajada real del catálogo — no se "
+            "sobrescribe data/productos.json ni se sincroniza la caché de Drive. "
+            "Se reintentará en la próxima ejecución programada."
+        )
+        sys.exit(1)
+
     payload = {
         'generado': __import__('datetime').datetime.utcnow().isoformat() + 'Z',
         'total': len(exportados),
@@ -267,6 +311,9 @@ def exportar_productos_json(productos, familias, subfamilias):
     out_path = os.path.join(OUTPUT_DIR, 'productos.json')
     with open(out_path, 'w', encoding='utf-8') as f:
         json.dump(payload, f, ensure_ascii=False, separators=(',', ':'))
+
+    if len(exportados) > maximo_historico:
+        guardar_maximo_historico(len(exportados))
 
     size_kb = os.path.getsize(out_path) // 1024
     print(f"  ✓ {len(exportados)} productos exportados → {out_path} ({size_kb} KB)")
