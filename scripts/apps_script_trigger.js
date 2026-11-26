@@ -3383,6 +3383,40 @@ function guardarCacheProductos_(datos) {
   archivo.setContent(JSON.stringify(datos));
 }
 
+// Guard compartido contra el incidente real del 24/11/2026 (ver el
+// aviso detallado en regenerarCacheCompletaDesdeSheet_ más abajo).
+// Incidente del 26/11/2026: existía ESTE MISMO problema en una SEGUNDA
+// vía que sobrescribe la caché — procesarSincronizarCacheCompleto
+// (acción "sincronizar_cache_completo", llamada por
+// scripts_ci/sincronizar_cache_drive.py tras cada ejecución de
+// generar_productos_json.yml) — que nunca tuvo este guard, solo lo
+// tenía regenerarCacheCompletaDesdeSheet_. Si ese workflow de GitHub
+// generaba un productos.json casi vacío (mismo motivo: coincidir con
+// una sincronización del CRM en curso), se sobrescribía la caché de
+// Drive sin ningún aviso ni comprobación. Ahora ambas vías comparten
+// la misma comprobación — cantidadNueva se rechaza si es
+// sospechosamente pequeña frente a lo que YA hay guardado en Drive.
+// Devuelve true si se ha rechazado (y ya se ha avisado por correo);
+// quien llama decide si lanzar excepción o devolver un error limpio.
+function cacheProductosDemasiadoPequena_(cantidadNueva, origen) {
+  const cacheActual_ = leerCacheProductos_();
+  const totalActual_ = (cacheActual_.productos || []).length;
+  const UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_ = 50; // el catálogo real tiene miles; por debajo de esto nunca es una lectura completa
+  const sospechoso = cantidadNueva < UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_
+    || (totalActual_ > 0 && cantidadNueva < totalActual_ * 0.5);
+  if (!sospechoso) return false;
+
+  const mensaje = origen + ' ha recibido solo ' + cantidadNueva +
+    ' producto(s) (la caché actual en Drive tiene ' + totalActual_ +
+    ') — parece una lectura incompleta (por ejemplo, en mitad de una sincronización ' +
+    'del CRM). NO se ha sobrescrito la caché, para no dejar el catálogo vacío en el buscador.\n\n' +
+    'Si de verdad el catálogo ha bajado tanto, ejecuta regenerarCacheCompletaManual() a mano ' +
+    'desde el editor para confirmarlo.';
+  console.error(mensaje);
+  notificarErrorCriticoCRM_('Regeneración de caché de productos RECHAZADA (resultado sospechoso) — ' + origen, mensaje);
+  return true;
+}
+
 // ── Regeneración completa de la caché, directamente desde el Sheet ────────
 // Réplica exacta de la lógica de scripts/generar_productos_json.py — pero
 // sin pasar por Python ni GitHub Actions en absoluto. Antes esta
@@ -3641,20 +3675,10 @@ function regenerarCacheCompletaDesdeSheet_() {
   // correo de inmediato (en vez de esperar al diagnóstico diario, ver
   // diagnosticoDiarioCatalogoProgramado más abajo) y se lanza una
   // excepción para que quien llamó a esta función se entere también.
-  const cacheActual_ = leerCacheProductos_();
-  const totalActual_ = (cacheActual_.productos || []).length;
-  const UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_ = 50; // el catálogo real tiene miles; por debajo de esto nunca es una lectura completa
-  const resultadoSospechoso_ = exportados.length < UMBRAL_MINIMO_ABSOLUTO_CACHE_PRODUCTOS_
-    || (totalActual_ > 0 && exportados.length < totalActual_ * 0.5);
-  if (resultadoSospechoso_) {
-    const mensaje = 'regenerarCacheCompletaDesdeSheet_ ha leído solo ' + exportados.length +
-      ' producto(s) de la hoja "Productos" (la caché actual en Drive tiene ' + totalActual_ +
-      ') — parece una lectura incompleta de la hoja (por ejemplo, en mitad de una sincronización ' +
-      'del CRM). NO se ha sobrescrito la caché, para no dejar el catálogo vacío en el buscador.\n\n' +
-      'Si la hoja "Productos" está realmente bien y el catálogo de verdad ha bajado tanto, ejecuta ' +
-      'regenerarCacheCompletaManual() a mano desde el editor para confirmarlo.';
-    console.error(mensaje);
-    notificarErrorCriticoCRM_('Regeneración de caché de productos RECHAZADA (resultado sospechoso)', mensaje);
+  // Ver cacheProductosDemasiadoPequena_ — mismo guard compartido con
+  // procesarSincronizarCacheCompleto, tras el incidente del 26/11/2026
+  // en esa otra vía (nunca había tenido esta comprobación).
+  if (cacheProductosDemasiadoPequena_(exportados.length, 'regenerarCacheCompletaDesdeSheet_ (lectura del Sheet)')) {
     throw new Error('regenerarCacheCompletaDesdeSheet_: resultado sospechosamente pequeño (' + exportados.length + ' productos), no se ha guardado — ver correo de alerta.');
   }
 
@@ -3927,6 +3951,18 @@ function procesarSincronizarCacheCompleto(data) {
   try {
     if (!data.contenido) throw new Error('Falta el contenido a sincronizar');
     const datos = JSON.parse(data.contenido);
+    const total = (datos.productos || []).length;
+
+    // Incidente real del 26/11/2026: esta vía nunca tuvo el guard que
+    // sí tiene regenerarCacheCompletaDesdeSheet_ — si
+    // generar_productos_json.py generaba un productos.json casi vacío
+    // (mismo motivo de siempre: coincidir con una sincronización del
+    // CRM en curso), se sobrescribía la caché de Drive sin ningún
+    // aviso. Ver cacheProductosDemasiadoPequena_.
+    if (cacheProductosDemasiadoPequena_(total, 'procesarSincronizarCacheCompleto (sincronizar_cache_completo, desde GitHub Actions)')) {
+      throw new Error('procesarSincronizarCacheCompleto: resultado sospechosamente pequeño (' + total + ' productos), no se ha guardado — ver correo de alerta.');
+    }
+
     // Mismo motivo que en actualizarProductoEnCache_ y
     // regenerarCacheCompletaDesdeSheet_: sin bloqueo, esta sobrescritura
     // completa podría solaparse con un parcheo puntual en curso.
@@ -3937,7 +3973,6 @@ function procesarSincronizarCacheCompleto(data) {
     } finally {
       lock.releaseLock();
     }
-    const total = (datos.productos || []).length;
     console.log('Caché de Drive sincronizada con la regeneración completa —', total, 'productos');
     return ContentService.createTextOutput(JSON.stringify({ success: true, total: total }))
       .setMimeType(ContentService.MimeType.JSON);
