@@ -97,8 +97,8 @@
                 '">' + (activo ? 'Activo' : 'Desactivado') + '</span></td>' +
             '<td style="white-space:nowrap;">' +
             '<a class="boton-fila" style="text-decoration:none; display:inline-block; margin-right:6px;" href="personalizar-cliente.html?id=' + c.id + '">Personalizar</a>' +
-            '<button class="boton-fila" data-id="' + c.id + '" style="margin-right:6px;">Simular acceso</button>' +
-            '<button class="boton-fila boton-estado" data-id="' + c.id + '" data-activo="' + activo + '">' + (activo ? 'Bloquear acceso' : 'Reactivar') + '</button>' +
+            '<button class="boton-fila" data-id="' + c.id + '" style="margin-right:6px;">Simular</button>' +
+            '<button class="boton-fila boton-estado" data-id="' + c.id + '" data-activo="' + activo + '">' + (activo ? 'Bloquear' : 'Reactivar') + '</button>' +
             '</td>';
         cuerpo.appendChild(fila);
     });
@@ -133,7 +133,7 @@
             badge.textContent = nuevoActivo ? 'Activo' : 'Desactivado';
             badge.style.color = nuevoActivo ? 'var(--ok)' : 'var(--danger)';
             badge.style.background = nuevoActivo ? 'var(--ok-soft)' : 'var(--danger-soft)';
-            botonEstado.textContent = nuevoActivo ? 'Bloquear acceso' : 'Reactivar';
+            botonEstado.textContent = nuevoActivo ? 'Bloquear' : 'Reactivar';
             botonEstado.dataset.activo = String(nuevoActivo);
             return;
         }
@@ -159,18 +159,18 @@
                 avisoError.textContent = json.error || 'No se ha podido generar el acceso de simulación.';
                 avisoError.classList.add('activo');
                 boton.disabled = false;
-                boton.textContent = 'Simular acceso';
+                boton.textContent = 'Simular';
                 return;
             }
 
             window.open('../simular.html?token=' + encodeURIComponent(json.token_hash), '_blank');
             boton.disabled = false;
-            boton.textContent = 'Simular acceso';
+            boton.textContent = 'Simular';
         } catch (e) {
             avisoError.textContent = 'Error de red al generar la simulación.';
             avisoError.classList.add('activo');
             boton.disabled = false;
-            boton.textContent = 'Simular acceso';
+            boton.textContent = 'Simular';
         }
     });
 })();

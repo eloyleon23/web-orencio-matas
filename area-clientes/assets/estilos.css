@@ -275,7 +275,11 @@ a.enlace-discreto:hover { text-decoration: underline; }
 .panel-contenido {
     flex: 1;
     padding: 32px;
-    max-width: 920px;
+    /* 1200px, no 920px: con la columna de Estado + los tres botones de
+       acción, el listado de clientes necesitaba más ancho real del
+       que había — en vez de usar el hueco libre de la pantalla,
+       terminaba haciendo scroll horizontal sin necesidad. */
+    max-width: 1200px;
     min-width: 0; /* para que una tabla ancha dentro pueda hacer su propio scroll en vez de ensanchar la columna */
 }
 
