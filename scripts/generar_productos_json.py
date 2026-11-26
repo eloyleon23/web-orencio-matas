@@ -162,7 +162,26 @@ def exportar_productos_json(productos, familias, subfamilias):
         # sigue de alta y sincronizándose con normalidad desde el CRM,
         # solo que no queremos que se muestre nunca al público. Ver
         # procesarDeshabilitarProductoCatalogo_ en apps_script_trigger.js.
-        if not es_si(p.get('incluir_en_catalogo', 'si')):
+        #
+        # BUG REAL ENCONTRADO Y CORREGIDO (26/11/2026): `p.get(clave, 'si')`
+        # solo usa el valor por defecto 'si' cuando la CLAVE no existe en
+        # absoluto en el diccionario — pero como estas filas vienen de un
+        # CSV (csv.DictReader), la columna SIEMPRE existe como clave,
+        # aunque la celda esté vacía (devuelve ''). Así que para
+        # cualquier producto con esta celda en blanco, p.get(...) nunca
+        # llegaba a devolver 'si': devolvía '', es_si('') daba False, y
+        # el producto se excluía — justo lo contrario de lo pretendido
+        # ("en blanco = incluido por defecto"). Mismo bug, más grave
+        # todavía, en visible_usuario_normal un poco más abajo: esa
+        # columna se añadió el 24/11/2026 y la inmensa mayoría del
+        # catálogo la tiene en blanco — así que prácticamente todo el
+        # catálogo se estaba excluyendo de data/productos.json desde esa
+        # fecha (la causa real de "solo cargan 2 productos"). apps_script_
+        # trigger.js no tiene este bug (usa su propia valorCelda_ con una
+        # comparación explícita contra 'no', no contra el valor por
+        # defecto de un .get()) — por eso el diagnóstico directo contra
+        # el Sheet sí daba el número correcto.
+        if (p.get('incluir_en_catalogo', '') or '').strip().lower() == 'no':
             continue
 
         # Visibilidad por perfil (columnas visible_usuario_normal/
@@ -173,7 +192,7 @@ def exportar_productos_json(productos, familias, subfamilias):
         # la visibilidad "normal" — el perfil profesional se filtra en
         # vivo, en obtener_productos (apps_script_trigger.js), y en
         # generar_catalogos_mayor.py para el catálogo al por mayor.
-        if not es_si(p.get('visible_usuario_normal', 'si')):
+        if (p.get('visible_usuario_normal', '') or '').strip().lower() == 'no':
             continue
 
         ref = p.get('referencia', '').strip()
