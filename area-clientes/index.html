@@ -7,31 +7,36 @@
 <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body>
-<nav class="navbar-om">
-    <div class="navbar-om__marca">
-        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
-        <span class="navbar-om__etiqueta">Área de Clientes</span>
+<div class="login-pagina">
+    <div class="login-marca">
+        <div class="login-marca__etiqueta">Área de Clientes</div>
+        <h1 class="login-marca__titulo">Tu catálogo,<br>tus condiciones,<br>un solo sitio.</h1>
+        <p class="login-marca__texto">
+            Accede a tu catálogo personalizado, sigue tus pedidos y gestiona
+            tu cuenta con Orencio Matas desde cualquier dispositivo.
+        </p>
     </div>
-</nav>
-<div class="envoltorio-centrado">
-<div class="tarjeta">
-    <h1>Iniciar sesión</h1>
-    <p class="ayuda">Accede con el email y la contraseña de tu cuenta.</p>
+    <div class="login-formulario">
+    <div class="tarjeta">
+        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <h1>Iniciar sesión</h1>
+        <p class="ayuda">Accede con el email y la contraseña de tu cuenta.</p>
 
-    <form id="formLogin">
-        <label for="email">Email</label>
-        <input id="email" type="email" autocomplete="username" required>
+        <form id="formLogin">
+            <label for="email">Email</label>
+            <input id="email" type="email" autocomplete="username" required>
 
-        <label for="password">Contraseña</label>
-        <input id="password" type="password" autocomplete="current-password" required>
+            <label for="password">Contraseña</label>
+            <input id="password" type="password" autocomplete="current-password" required>
 
-        <button type="submit" class="boton-principal" id="botonEntrar">Entrar</button>
-    </form>
+            <button type="submit" class="boton-principal" id="botonEntrar">Entrar</button>
+        </form>
 
-    <div class="aviso aviso--error" id="avisoError"></div>
+        <div class="aviso aviso--error" id="avisoError"></div>
 
-    <a class="enlace-discreto" href="solicitar-acceso.html">¿No tienes acceso todavía? Solicítalo aquí</a>
-</div>
+        <a class="enlace-discreto" href="solicitar-acceso.html">¿No tienes acceso todavía? Solicítalo aquí</a>
+    </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>

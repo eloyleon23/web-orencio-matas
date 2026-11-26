@@ -29,10 +29,12 @@
             <h1>Clientes</h1>
             <p class="ayuda" id="ayuda">Cargando…</p>
 
-            <table id="tablaClientes" style="display:none;">
+            <div id="tablaClientes" class="tabla-scroll" style="display:none;">
+            <table>
                 <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th></th></tr></thead>
                 <tbody id="cuerpoTabla"></tbody>
             </table>
+            </div>
 
             <div class="aviso aviso--error" id="avisoError"></div>
         </div>
@@ -96,7 +98,7 @@
         cuerpo.appendChild(fila);
     });
 
-    document.getElementById('tablaClientes').style.display = 'table';
+    document.getElementById('tablaClientes').style.display = 'block';
 
     cuerpo.addEventListener('click', async function (ev) {
         const boton = ev.target.closest('button.boton-fila');

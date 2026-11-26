@@ -57,19 +57,23 @@
 
             <div id="vistaPrevia" style="display:none;">
                 <p class="ayuda" id="resumenPrevia"></p>
+                <div class="tabla-scroll">
                 <table>
                     <thead><tr><th>Fila</th><th>Nombre</th><th>Email</th><th>Empresa</th></tr></thead>
                     <tbody id="cuerpoPrevia"></tbody>
                 </table>
+                </div>
                 <button class="boton-principal" id="botonImportar" style="max-width: 260px;">Importar estas filas</button>
             </div>
 
             <div id="resultados" style="display:none; margin-top: 24px;">
                 <h2 style="font-size:1.05rem;">Resultado</h2>
+                <div class="tabla-scroll">
                 <table>
                     <thead><tr><th>Fila</th><th>Email</th><th>Estado</th><th>Detalle</th></tr></thead>
                     <tbody id="cuerpoResultados"></tbody>
                 </table>
+                </div>
             </div>
 
             <div class="aviso aviso--error" id="avisoError"></div>
