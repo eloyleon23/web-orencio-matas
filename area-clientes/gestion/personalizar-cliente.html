@@ -5,6 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Personalizar catálogo — Panel de gestión · Orencio Matas</title>
 <link rel="stylesheet" href="../assets/estilos.css">
+<style>
+    .selector-multiple { border: 1px solid var(--border); border-radius: 8px; margin-top: 6px; }
+    .selector-multiple__filtro {
+        margin: 0; border: none; border-bottom: 1px solid var(--border); border-radius: 8px 8px 0 0;
+    }
+    .selector-multiple__sin-filtro { border-radius: 8px; }
+    .selector-multiple__lista { max-height: 190px; overflow-y: auto; padding: 4px 0; }
+    .selector-multiple__opcion {
+        display: flex; align-items: center; gap: 8px; padding: 7px 12px;
+        font-size: 0.85rem; font-weight: 500; cursor: pointer; margin: 0;
+    }
+    .selector-multiple__opcion:hover { background: var(--light); }
+    .selector-multiple__opcion input { width: auto; margin: 0; }
+    .selector-multiple__vacio { padding: 10px 12px; font-size: 0.82rem; color: var(--muted); }
+    .selector-multiple__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .chip-seleccion {
+        background: var(--blue-soft); color: var(--blue-dark); font-size: 0.78rem; font-weight: 600;
+        border-radius: 999px; padding: 4px 8px 4px 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .chip-seleccion button {
+        border: none; background: none; color: inherit; cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0;
+    }
+</style>
 </head>
 <body>
 <nav class="navbar-om">
@@ -30,22 +53,22 @@
             <p class="ayuda" id="ayuda">Cargando…</p>
 
             <form id="formPersonalizar" style="display:none;">
-                <label for="descuento">Descuento sobre el precio con IVA (%)</label>
-                <input id="descuento" type="number" min="0" max="100" step="0.5" value="0">
+                <label for="descuento">Descuento general sobre el precio de mayor (%)</label>
+                <input id="descuento" type="number" min="0" max="100" step="0.5" value="0" style="max-width:160px;">
 
-                <label for="familias">Familias visibles (separadas por comas — vacío = todas)</label>
-                <input id="familias" placeholder="p. ej. BOLSAS BASURA, DETERGENTES">
+                <label>Áreas visibles (vacío = todas)</label>
+                <div id="selectorAreas"></div>
 
-                <label for="areas">Áreas visibles (separadas por comas — vacío = todas)</label>
-                <input id="areas" placeholder="p. ej. drogueria, perfumeria">
+                <label style="margin-top:18px;">Familias visibles — se acotan a las áreas de arriba (vacío = todas)</label>
+                <div id="selectorFamilias"></div>
 
-                <label for="productos">Referencias concretas siempre visibles (separadas por comas)</label>
-                <input id="productos" placeholder="p. ej. 8435094836396, 8412345678901">
+                <label style="margin-top:18px;">Referencias concretas siempre visibles — se acotan a área/familia de arriba</label>
+                <div id="selectorProductos"></div>
 
-                <p class="ayuda" style="margin-top:10px;">
-                    Si las tres listas están vacías, el cliente ve el catálogo
-                    completo. Si rellenas alguna, verá lo que caiga en
-                    CUALQUIERA de ellas (no hace falta cumplir todas a la vez).
+                <p class="ayuda" style="margin-top:14px;">
+                    Si las tres están vacías, el cliente ve el catálogo completo.
+                    Si rellenas alguna, verá lo que caiga en CUALQUIERA de ellas
+                    (no hace falta cumplir las tres a la vez).
                 </p>
 
                 <button type="submit" class="boton-principal" id="botonGuardar" style="max-width:220px;">Guardar</button>
@@ -60,6 +83,92 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="../assets/supabase-client.js"></script>
 <script>
+const CATALOGO_URL_ = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+
+const AREAS_CATALOGO_ = [
+    { valor: 'drogueria', etiqueta: 'Droguería' },
+    { valor: 'perfumeria', etiqueta: 'Perfumería' },
+    { valor: 'pinturas', etiqueta: 'Pinturas' },
+    { valor: 'talleres', etiqueta: 'Talleres y Carrocerías' },
+];
+
+// Componente genérico: lista con checkboxes, filtro de texto opcional
+// y chips de lo seleccionado. Nada de librerías — las opciones de
+// "familias" y "productos" se recalculan según el área/familia ya
+// elegidos (ver actualizar_()), así que conviene tenerlo en una sola
+// pieza reutilizable en vez de triplicar la misma lógica.
+function crearSelectorMultiple_(contenedor, opciones, seleccionInicial, conFiltro) {
+    const seleccion = new Set(seleccionInicial || []);
+    let opcionesActuales = opciones;
+
+    contenedor.innerHTML =
+        (conFiltro ? '<input type="text" class="selector-multiple__filtro" placeholder="Filtrar…">' : '') +
+        '<div class="selector-multiple ' + (conFiltro ? '' : 'selector-multiple__sin-filtro') + '">' +
+            '<div class="selector-multiple__lista"></div>' +
+        '</div>' +
+        '<div class="selector-multiple__chips"></div>';
+
+    const lista = contenedor.querySelector('.selector-multiple__lista');
+    const chips = contenedor.querySelector('.selector-multiple__chips');
+    const filtro = conFiltro ? contenedor.querySelector('.selector-multiple__filtro') : null;
+
+    function pintarChips_() {
+        chips.innerHTML = '';
+        Array.from(seleccion).forEach(function (valor) {
+            const op = opcionesActuales.find(function (o) { return o.valor === valor; }) || { etiqueta: valor };
+            const chip = document.createElement('span');
+            chip.className = 'chip-seleccion';
+            chip.innerHTML = '<span>' + op.etiqueta + '</span><button type="button">✕</button>';
+            chip.querySelector('button').addEventListener('click', function () {
+                seleccion.delete(valor);
+                pintarLista_();
+                pintarChips_();
+            });
+            chips.appendChild(chip);
+        });
+    }
+
+    function pintarLista_() {
+        const termino = filtro ? filtro.value.trim().toLowerCase() : '';
+        const visibles = termino
+            ? opcionesActuales.filter(function (o) { return o.etiqueta.toLowerCase().includes(termino) || o.valor.toLowerCase().includes(termino); })
+            : opcionesActuales;
+
+        lista.innerHTML = '';
+        if (visibles.length === 0) {
+            lista.innerHTML = '<div class="selector-multiple__vacio">Sin resultados.</div>';
+            return;
+        }
+        visibles.slice(0, 300).forEach(function (o) {
+            const fila = document.createElement('label');
+            fila.className = 'selector-multiple__opcion';
+            fila.innerHTML = '<input type="checkbox" value="' + o.valor + '"' + (seleccion.has(o.valor) ? ' checked' : '') + '> <span>' + o.etiqueta + '</span>';
+            fila.querySelector('input').addEventListener('change', function (ev) {
+                if (ev.target.checked) seleccion.add(o.valor); else seleccion.delete(o.valor);
+                pintarChips_();
+            });
+            lista.appendChild(fila);
+        });
+    }
+
+    if (filtro) filtro.addEventListener('input', pintarLista_);
+    pintarLista_();
+    pintarChips_();
+
+    return {
+        obtenerSeleccion: function () { return Array.from(seleccion); },
+        // Cambia las opciones disponibles (p. ej. al cambiar de área)
+        // SIN tocar lo ya seleccionado, aunque alguna opción elegida ya
+        // no aparezca en la lista — así no se pierde un dato por haber
+        // estrechado el filtro después.
+        actualizarOpciones: function (nuevasOpciones) {
+            opcionesActuales = nuevasOpciones;
+            pintarLista_();
+            pintarChips_();
+        },
+    };
+}
+
 (async function () {
     const resultado = await window.exigirRolAreaClientes_(
         ['comercial', 'administrador'], '../index.html', '../app.html'
@@ -86,11 +195,14 @@
 
     const cliente = window.obtenerClienteSupabase_();
 
-    const { data: fila, error } = await cliente
-        .from('clientes')
-        .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct, profiles!clientes_id_fkey(nombre, apellidos, email)')
-        .eq('id', idCliente)
-        .single();
+    const [{ data: fila, error }, respCatalogo] = await Promise.all([
+        cliente
+            .from('clientes')
+            .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct, profiles!clientes_id_fkey(nombre, apellidos, email)')
+            .eq('id', idCliente)
+            .single(),
+        fetch(CATALOGO_URL_, { cache: 'no-store' }).catch(function () { return null; }),
+    ]);
 
     if (error || !fila) {
         ayuda.textContent = '';
@@ -99,20 +211,63 @@
         return;
     }
 
+    let productosCatalogo = [];
+    try {
+        const datosCatalogo = respCatalogo ? await respCatalogo.json() : null;
+        productosCatalogo = (datosCatalogo && datosCatalogo.productos) || [];
+    } catch (e) { /* si falla, los selectores de familia/producto salen vacíos — el de área sigue funcionando */ }
+
     const nombreCliente = [fila.profiles.nombre, fila.profiles.apellidos].filter(Boolean).join(' ') || fila.profiles.email;
     document.getElementById('titulo').textContent = 'Personalizar catálogo — ' + nombreCliente;
     ayuda.textContent = fila.profiles.email;
-
     document.getElementById('descuento').value = fila.descuento_pct || 0;
-    document.getElementById('familias').value = (fila.familias_visibles || []).join(', ');
-    document.getElementById('areas').value = (fila.areas_visibles || []).join(', ');
-    document.getElementById('productos').value = (fila.productos_visibles || []).join(', ');
+
+    function familiasDisponibles_(areasElegidas) {
+        const base = areasElegidas.length ? productosCatalogo.filter(function (p) { return areasElegidas.includes(p.area); }) : productosCatalogo;
+        const unicas = Array.from(new Set(base.map(function (p) { return p.familia; }).filter(Boolean))).sort();
+        return unicas.map(function (f) { return { valor: f, etiqueta: f }; });
+    }
+
+    function productosDisponibles_(areasElegidas, familiasElegidas) {
+        let base = productosCatalogo;
+        if (areasElegidas.length) base = base.filter(function (p) { return areasElegidas.includes(p.area); });
+        if (familiasElegidas.length) base = base.filter(function (p) { return familiasElegidas.includes(p.familia); });
+        return base.map(function (p) { return { valor: p.ref, etiqueta: p.nombre + '  ·  ' + p.ref }; });
+    }
+
+    const selectorAreas = crearSelectorMultiple_(
+        document.getElementById('selectorAreas'), AREAS_CATALOGO_, fila.areas_visibles || [], false
+    );
+
+    const selectorFamilias = crearSelectorMultiple_(
+        document.getElementById('selectorFamilias'),
+        familiasDisponibles_(fila.areas_visibles || []),
+        fila.familias_visibles || [],
+        true
+    );
+
+    const selectorProductos = crearSelectorMultiple_(
+        document.getElementById('selectorProductos'),
+        productosDisponibles_(fila.areas_visibles || [], fila.familias_visibles || []),
+        fila.productos_visibles || [],
+        true
+    );
+
+    // Cambiar el área recalcula las familias disponibles; cambiar
+    // cualquiera de las dos recalcula las referencias disponibles —
+    // vía "change" delegado en los checkboxes ya pintados, así que se
+    // enganchan sobre el contenedor (captura también los que se
+    // repinten luego).
+    document.getElementById('selectorAreas').addEventListener('change', function () {
+        const areas = selectorAreas.obtenerSeleccion();
+        selectorFamilias.actualizarOpciones(familiasDisponibles_(areas));
+        selectorProductos.actualizarOpciones(productosDisponibles_(areas, selectorFamilias.obtenerSeleccion()));
+    });
+    document.getElementById('selectorFamilias').addEventListener('change', function () {
+        selectorProductos.actualizarOpciones(productosDisponibles_(selectorAreas.obtenerSeleccion(), selectorFamilias.obtenerSeleccion()));
+    });
 
     document.getElementById('formPersonalizar').style.display = 'block';
-
-    function listaDesde_(valor) {
-        return valor.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
-    }
 
     document.getElementById('formPersonalizar').addEventListener('submit', async function (ev) {
         ev.preventDefault();
@@ -126,9 +281,9 @@
             .from('clientes')
             .update({
                 descuento_pct: parseFloat(document.getElementById('descuento').value) || 0,
-                familias_visibles: listaDesde_(document.getElementById('familias').value),
-                areas_visibles: listaDesde_(document.getElementById('areas').value),
-                productos_visibles: listaDesde_(document.getElementById('productos').value),
+                areas_visibles: selectorAreas.obtenerSeleccion(),
+                familias_visibles: selectorFamilias.obtenerSeleccion(),
+                productos_visibles: selectorProductos.obtenerSeleccion(),
             })
             .eq('id', idCliente);
 
