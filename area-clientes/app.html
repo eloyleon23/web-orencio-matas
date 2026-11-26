@@ -18,11 +18,11 @@
 
     <h1 id="saludo">Hola</h1>
     <p class="ayuda" id="aviso">
-        Fase 1 en construcción: por ahora esta pantalla solo confirma que
-        el inicio de sesión funciona. El catálogo personalizado, las
-        propuestas de pedido y el panel de gestión llegan en las fases
-        siguientes del plan.
+        En construcción: el catálogo personalizado y las propuestas de
+        pedido llegan en las fases siguientes del plan.
     </p>
+
+    <a class="enlace-discreto" id="enlaceGestionAlta" href="gestion/alta-cliente.html" style="display:none;">Dar de alta un cliente</a>
 
     <button class="boton-secundario" id="botonSalir">Cerrar sesión</button>
 </div>
@@ -51,6 +51,9 @@
         if (perfil.nombre) {
             document.getElementById('saludo').textContent =
                 'Hola, ' + perfil.nombre + (perfil.apellidos ? ' ' + perfil.apellidos : '');
+        }
+        if (['comercial', 'administrador'].includes(perfil.rol)) {
+            document.getElementById('enlaceGestionAlta').style.display = 'block';
         }
     }
 

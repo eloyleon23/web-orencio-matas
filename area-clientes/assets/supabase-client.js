@@ -20,12 +20,35 @@ window.obtenerClienteSupabase_ = function () {
 
 // Comprueba que haya una sesión activa; si no, redirige al login.
 // Usarlo al principio de cualquier página que requiera estar logueado.
-window.exigirSesionAreaClientes_ = async function () {
+// "rutaLogin" varía según la profundidad de la página (p. ej.
+// '../index.html' desde dentro de gestion/).
+window.exigirSesionAreaClientes_ = async function (rutaLogin) {
     const cliente = window.obtenerClienteSupabase_();
     const { data } = await cliente.auth.getSession();
     if (!data.session) {
-        window.location.href = 'index.html';
+        window.location.href = rutaLogin || 'index.html';
         return null;
     }
     return data.session;
+};
+
+// Exige además que el rol del usuario sea uno de los permitidos — para
+// las páginas del panel de gestión. Si no hay sesión o el rol no
+// cuadra, redirige y no deja seguir.
+window.exigirRolAreaClientes_ = async function (rolesPermitidos, rutaLogin, rutaSinPermiso) {
+    const sesion = await window.exigirSesionAreaClientes_(rutaLogin);
+    if (!sesion) return null;
+
+    const cliente = window.obtenerClienteSupabase_();
+    const { data: perfil, error } = await cliente
+        .from('profiles')
+        .select('rol, nombre, apellidos')
+        .eq('id', sesion.user.id)
+        .single();
+
+    if (error || !perfil || !rolesPermitidos.includes(perfil.rol)) {
+        window.location.href = rutaSinPermiso || rutaLogin || 'index.html';
+        return null;
+    }
+    return { sesion, perfil };
 };

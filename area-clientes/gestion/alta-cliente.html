@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alta de cliente — Panel de gestión · Orencio Matas</title>
+<link rel="stylesheet" href="../assets/estilos.css">
+</head>
+<body>
+<div class="tarjeta tarjeta--ancha">
+    <div class="cabecera-app">
+        <div class="marca">
+            <span class="marca__nombre">Orencio Matas</span>
+            <span class="marca__etiqueta">Panel de gestión</span>
+        </div>
+        <span class="insignia-rol" id="insigniaRol">…</span>
+    </div>
+
+    <h1>Dar de alta un cliente</h1>
+    <p class="ayuda">
+        Se comprueba que no exista ya una cuenta con ese email. El cliente
+        recibe un correo de Supabase para fijar su contraseña — el ID de
+        CRM puede quedar vacío si todavía no está informado.
+    </p>
+
+    <form id="formAlta">
+        <label for="nombre">Nombre *</label>
+        <input id="nombre" required>
+
+        <label for="apellidos">Apellidos *</label>
+        <input id="apellidos" required>
+
+        <label for="email">Email *</label>
+        <input id="email" type="email" required>
+
+        <label for="empresa">Empresa</label>
+        <input id="empresa">
+
+        <label for="telefono">Teléfono</label>
+        <input id="telefono" type="tel">
+
+        <label for="crmId">ID en el CRM (opcional)</label>
+        <input id="crmId">
+
+        <label for="calle">Dirección — calle</label>
+        <input id="calle">
+
+        <label for="cp">Código postal</label>
+        <input id="cp">
+
+        <label for="poblacion">Población</label>
+        <input id="poblacion">
+
+        <button type="submit" class="boton-principal" id="botonAlta">Dar de alta</button>
+    </form>
+
+    <div class="aviso aviso--error" id="avisoError"></div>
+    <div class="aviso aviso--ok" id="avisoOk"></div>
+
+    <a class="enlace-discreto" href="../app.html">← Volver</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const resultado = await window.exigirRolAreaClientes_(
+        ['comercial', 'administrador'], '../index.html', '../app.html'
+    );
+    if (!resultado) return;
+    document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
+
+    const form = document.getElementById('formAlta');
+    const avisoError = document.getElementById('avisoError');
+    const avisoOk = document.getElementById('avisoOk');
+    const boton = document.getElementById('botonAlta');
+
+    form.addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        avisoError.classList.remove('activo');
+        avisoOk.classList.remove('activo');
+        boton.disabled = true;
+        boton.innerHTML = '<span class="cargando-spinner"></span>Creando…';
+
+        const cuerpo = {
+            nombre: document.getElementById('nombre').value.trim(),
+            apellidos: document.getElementById('apellidos').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            empresa: document.getElementById('empresa').value.trim() || null,
+            telefono: document.getElementById('telefono').value.trim() || null,
+            crm_id: document.getElementById('crmId').value.trim() || null,
+            direccion_calle: document.getElementById('calle').value.trim() || null,
+            direccion_cp: document.getElementById('cp').value.trim() || null,
+            direccion_poblacion: document.getElementById('poblacion').value.trim() || null,
+        };
+
+        try {
+            const resp = await fetch(window.SUPABASE_URL + '/functions/v1/alta-cliente', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + resultado.sesion.access_token,
+                },
+                body: JSON.stringify(cuerpo),
+            });
+            const json = await resp.json();
+
+            if (!resp.ok) {
+                avisoError.textContent = json.error || 'No se ha podido dar de alta al cliente.';
+                avisoError.classList.add('activo');
+                boton.disabled = false;
+                boton.textContent = 'Dar de alta';
+                return;
+            }
+
+            form.reset();
+            avisoOk.textContent = 'Cliente creado. Se le ha enviado un correo para fijar su contraseña.';
+            avisoOk.classList.add('activo');
+            boton.disabled = false;
+            boton.textContent = 'Dar de alta';
+        } catch (e) {
+            avisoError.textContent = 'Error de red al dar de alta al cliente.';
+            avisoError.classList.add('activo');
+            boton.disabled = false;
+            boton.textContent = 'Dar de alta';
+        }
+    });
+})();
+</script>
+</body>
+</html>
