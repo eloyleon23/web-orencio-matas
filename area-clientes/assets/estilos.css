@@ -1,0 +1,181 @@
+/* Área de Clientes — tokens básicos, alineados con los colores de
+   marca ya usados en el sitio principal (--blue/--dark/--light de
+   index.html) para que no se note como "otra web" al pasar de una a
+   otra. Fase 1: solo login/sesión, sin personalización todavía. */
+:root {
+    --blue: #1976D2;
+    --blue-dark: #115293;
+    --dark: #1e293b;
+    --muted: #475569;
+    --light: #f8fafc;
+    --white: #ffffff;
+    --border: #e2e8f0;
+    --danger: #D32F2F;
+    --danger-soft: #fdecea;
+    --ok: #388E3C;
+    --ok-soft: #eaf5ec;
+    --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    background: var(--light);
+    color: var(--dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.tarjeta {
+    width: 100%;
+    max-width: 420px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 28px;
+    box-shadow: 0 4px 24px rgba(30, 41, 59, 0.06);
+}
+
+.tarjeta--ancha { max-width: 620px; }
+
+.marca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.marca__nombre {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--dark);
+}
+
+.marca__etiqueta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--blue);
+    background: #e8f1fb;
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+
+h1 {
+    font-size: 1.3rem;
+    margin: 0 0 6px;
+}
+
+p.ayuda {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin: 0 0 22px;
+}
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 14px 0 6px;
+}
+
+input, textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+input:focus, textarea:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+}
+
+button.boton-principal {
+    width: 100%;
+    margin-top: 20px;
+    padding: 11px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+button.boton-principal:hover { background: var(--blue-dark); }
+button.boton-principal:disabled { opacity: 0.6; cursor: wait; }
+
+button.boton-secundario {
+    width: 100%;
+    margin-top: 10px;
+    padding: 10px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+a.enlace-discreto {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.85rem;
+    color: var(--blue);
+    text-decoration: none;
+}
+
+.aviso {
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    display: none;
+}
+
+.aviso--error { background: var(--danger-soft); color: var(--danger); }
+.aviso--ok { background: var(--ok-soft); color: var(--ok); }
+.aviso.activo { display: block; }
+
+.cargando-spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.5);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: girar 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+@keyframes girar { to { transform: rotate(360deg); } }
+
+.cabecera-app {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.insignia-rol {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--blue);
+    background: #e8f1fb;
+    border-radius: 999px;
+    padding: 4px 10px;
+}

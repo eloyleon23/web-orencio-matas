@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solicitar acceso — Área de Clientes · Orencio Matas</title>
+<link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+<div class="tarjeta tarjeta--ancha">
+    <div class="marca">
+        <span class="marca__nombre">Orencio Matas</span>
+        <span class="marca__etiqueta">Área de Clientes</span>
+    </div>
+    <h1>Solicitar acceso</h1>
+    <p class="ayuda">
+        Rellena tus datos y nos pondremos en contacto contigo para dar de
+        alta tu cuenta. Esto no crea una cuenta de forma automática.
+    </p>
+
+    <form id="formSolicitud">
+        <label for="nombre">Nombre *</label>
+        <input id="nombre" required>
+
+        <label for="apellidos">Apellidos *</label>
+        <input id="apellidos" required>
+
+        <label for="empresa">Empresa</label>
+        <input id="empresa">
+
+        <label for="email">Email *</label>
+        <input id="email" type="email" required>
+
+        <label for="telefono">Teléfono</label>
+        <input id="telefono" type="tel">
+
+        <label for="calle">Dirección — calle</label>
+        <input id="calle">
+
+        <label for="cp">Código postal</label>
+        <input id="cp">
+
+        <label for="poblacion">Población</label>
+        <input id="poblacion">
+
+        <label for="comentario">Comentario (opcional)</label>
+        <textarea id="comentario" rows="3"></textarea>
+
+        <button type="submit" class="boton-principal" id="botonEnviar">Enviar solicitud</button>
+    </form>
+
+    <div class="aviso aviso--error" id="avisoError"></div>
+    <div class="aviso aviso--ok" id="avisoOk"></div>
+
+    <a class="enlace-discreto" href="index.html">Ya tengo cuenta — iniciar sesión</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(function () {
+    const form = document.getElementById('formSolicitud');
+    const avisoError = document.getElementById('avisoError');
+    const avisoOk = document.getElementById('avisoOk');
+    const boton = document.getElementById('botonEnviar');
+
+    form.addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        avisoError.classList.remove('activo');
+        avisoOk.classList.remove('activo');
+        boton.disabled = true;
+        boton.innerHTML = '<span class="cargando-spinner"></span>Enviando…';
+
+        const cliente = window.obtenerClienteSupabase_();
+        const { error } = await cliente.from('solicitudes_acceso').insert({
+            nombre: document.getElementById('nombre').value.trim(),
+            apellidos: document.getElementById('apellidos').value.trim(),
+            empresa: document.getElementById('empresa').value.trim() || null,
+            email: document.getElementById('email').value.trim(),
+            telefono: document.getElementById('telefono').value.trim() || null,
+            direccion_calle: document.getElementById('calle').value.trim() || null,
+            direccion_cp: document.getElementById('cp').value.trim() || null,
+            direccion_poblacion: document.getElementById('poblacion').value.trim() || null,
+            comentario: document.getElementById('comentario').value.trim() || null,
+        });
+
+        if (error) {
+            avisoError.textContent = 'No se ha podido enviar la solicitud. Inténtalo de nuevo en unos minutos.';
+            avisoError.classList.add('activo');
+            boton.disabled = false;
+            boton.textContent = 'Enviar solicitud';
+            return;
+        }
+
+        form.style.display = 'none';
+        avisoOk.textContent = 'Solicitud enviada. Nos pondremos en contacto contigo en breve.';
+        avisoOk.classList.add('activo');
+    });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acceso — Área de Clientes · Orencio Matas</title>
+<link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+<div class="tarjeta">
+    <div class="marca">
+        <span class="marca__nombre">Orencio Matas</span>
+        <span class="marca__etiqueta">Área de Clientes</span>
+    </div>
+    <h1>Iniciar sesión</h1>
+    <p class="ayuda">Accede con el email y la contraseña de tu cuenta.</p>
+
+    <form id="formLogin">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="username" required>
+
+        <label for="password">Contraseña</label>
+        <input id="password" type="password" autocomplete="current-password" required>
+
+        <button type="submit" class="boton-principal" id="botonEntrar">Entrar</button>
+    </form>
+
+    <div class="aviso aviso--error" id="avisoError"></div>
+
+    <a class="enlace-discreto" href="solicitar-acceso.html">¿No tienes acceso todavía? Solicítalo aquí</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(function () {
+    const form = document.getElementById('formLogin');
+    const aviso = document.getElementById('avisoError');
+    const boton = document.getElementById('botonEntrar');
+
+    function mostrarError_(mensaje) {
+        aviso.textContent = mensaje;
+        aviso.classList.add('activo');
+    }
+
+    // Si ya hay sesión activa, no tiene sentido mostrar el login.
+    (async function comprobarSesionExistente_() {
+        const cliente = window.obtenerClienteSupabase_();
+        const { data } = await cliente.auth.getSession();
+        if (data.session) window.location.href = 'app.html';
+    })();
+
+    form.addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        aviso.classList.remove('activo');
+        boton.disabled = true;
+        boton.innerHTML = '<span class="cargando-spinner"></span>Entrando…';
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const cliente = window.obtenerClienteSupabase_();
+        const { error } = await cliente.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            mostrarError_('Email o contraseña incorrectos.');
+            boton.disabled = false;
+            boton.textContent = 'Entrar';
+            return;
+        }
+        window.location.href = 'app.html';
+    });
+})();
+</script>
+</body>
+</html>
