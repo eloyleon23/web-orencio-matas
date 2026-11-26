@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Importar clientes — Panel de gestión · Orencio Matas</title>
+<link rel="stylesheet" href="../assets/estilos.css">
+<style>
+    .estado-creado { color: var(--ok); font-weight: 700; }
+    .estado-actualizado { color: var(--blue); font-weight: 700; }
+    .estado-error { color: var(--danger); font-weight: 700; }
+    .zona-archivo {
+        border: 2px dashed var(--border); border-radius: 10px;
+        padding: 24px; text-align: center; color: var(--muted);
+        margin: 10px 0 20px;
+    }
+</style>
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="../assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Panel de gestión</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="layout-panel">
+    <aside class="panel-lateral">
+        <div class="panel-lateral__titulo">Gestión</div>
+        <a href="clientes.html">Clientes</a>
+        <a href="alta-cliente.html">Dar de alta</a>
+        <a href="importar-clientes.html" class="activo">Importar (CSV)</a>
+    </aside>
+    <main class="panel-contenido">
+        <div class="panel-tarjeta">
+            <h1>Importar clientes desde CSV</h1>
+            <p class="ayuda">
+                El archivo debe tener cabecera con estas columnas (el orden da
+                igual, las que no reconozcamos se ignoran):
+                <code>nombre, apellidos, email, empresa, telefono, crm_id, direccion_calle, direccion_cp, direccion_poblacion</code>.
+                Los clientes nuevos reciben el correo de acceso de siempre; a
+                los que ya tienen cuenta solo se les completan los datos que
+                les faltaran — nunca se les reenvía ningún correo.
+            </p>
+
+            <div class="zona-archivo">
+                <input type="file" id="archivoCsv" accept=".csv">
+            </div>
+
+            <div id="vistaPrevia" style="display:none;">
+                <p class="ayuda" id="resumenPrevia"></p>
+                <table>
+                    <thead><tr><th>Fila</th><th>Nombre</th><th>Email</th><th>Empresa</th></tr></thead>
+                    <tbody id="cuerpoPrevia"></tbody>
+                </table>
+                <button class="boton-principal" id="botonImportar" style="max-width: 260px;">Importar estas filas</button>
+            </div>
+
+            <div id="resultados" style="display:none; margin-top: 24px;">
+                <h2 style="font-size:1.05rem;">Resultado</h2>
+                <table>
+                    <thead><tr><th>Fila</th><th>Email</th><th>Estado</th><th>Detalle</th></tr></thead>
+                    <tbody id="cuerpoResultados"></tbody>
+                </table>
+            </div>
+
+            <div class="aviso aviso--error" id="avisoError"></div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="../assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const resultado = await window.exigirRolAreaClientes_(
+        ['comercial', 'administrador'], '../index.html', '../app.html'
+    );
+    if (!resultado) return;
+    document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await window.obtenerClienteSupabase_().auth.signOut();
+        window.location.href = '../index.html';
+    });
+
+    const avisoError = document.getElementById('avisoError');
+    let filasValidas = [];
+
+    document.getElementById('archivoCsv').addEventListener('change', function (ev) {
+        const archivo = ev.target.files[0];
+        if (!archivo) return;
+        avisoError.classList.remove('activo');
+
+        Papa.parse(archivo, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function (res) {
+                filasValidas = res.data.filter(function (f) { return f.email && f.nombre && f.apellidos; });
+                const invalidas = res.data.length - filasValidas.length;
+
+                document.getElementById('resumenPrevia').textContent =
+                    filasValidas.length + ' fila(s) con email, nombre y apellidos.' +
+                    (invalidas > 0 ? ' ' + invalidas + ' fila(s) se ignorarán por faltarles alguno de esos tres campos.' : '');
+
+                const cuerpo = document.getElementById('cuerpoPrevia');
+                cuerpo.innerHTML = '';
+                filasValidas.slice(0, 20).forEach(function (f, i) {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = '<td>' + (i + 2) + '</td><td>' + f.nombre + ' ' + f.apellidos + '</td><td>' + f.email + '</td><td>' + (f.empresa || '—') + '</td>';
+                    cuerpo.appendChild(fila);
+                });
+                if (filasValidas.length > 20) {
+                    const fila = document.createElement('tr');
+                    fila.innerHTML = '<td colspan="4">… y ' + (filasValidas.length - 20) + ' más.</td>';
+                    cuerpo.appendChild(fila);
+                }
+
+                document.getElementById('vistaPrevia').style.display = filasValidas.length ? 'block' : 'none';
+                document.getElementById('resultados').style.display = 'none';
+            },
+            error: function (err) {
+                avisoError.textContent = 'No se ha podido leer el CSV: ' + err.message;
+                avisoError.classList.add('activo');
+            },
+        });
+    });
+
+    document.getElementById('botonImportar').addEventListener('click', async function () {
+        if (!filasValidas.length) return;
+        const boton = this;
+        boton.disabled = true;
+        boton.innerHTML = '<span class="cargando-spinner"></span>Importando ' + filasValidas.length + ' fila(s)…';
+        avisoError.classList.remove('activo');
+
+        try {
+            const resp = await fetch(window.SUPABASE_URL + '/functions/v1/importar-clientes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + resultado.sesion.access_token,
+                },
+                body: JSON.stringify({
+                    filas: filasValidas,
+                    redirect_to: new URL('../establecer-contrasena.html', window.location.href).href,
+                }),
+            });
+            const json = await resp.json();
+
+            if (!resp.ok) {
+                avisoError.textContent = json.error || 'No se ha podido importar.';
+                avisoError.classList.add('activo');
+                boton.disabled = false;
+                boton.textContent = 'Importar estas filas';
+                return;
+            }
+
+            const cuerpoRes = document.getElementById('cuerpoResultados');
+            cuerpoRes.innerHTML = '';
+            json.resultados.forEach(function (r) {
+                const fila = document.createElement('tr');
+                fila.innerHTML =
+                    '<td>' + r.fila + '</td><td>' + r.email + '</td>' +
+                    '<td class="estado-' + r.estado + '">' + r.estado + '</td>' +
+                    '<td>' + (r.detalle || '—') + '</td>';
+                cuerpoRes.appendChild(fila);
+            });
+            document.getElementById('resultados').style.display = 'block';
+            document.getElementById('vistaPrevia').style.display = 'none';
+            boton.disabled = false;
+            boton.textContent = 'Importar estas filas';
+        } catch (e) {
+            avisoError.textContent = 'Error de red al importar.';
+            avisoError.classList.add('activo');
+            boton.disabled = false;
+            boton.textContent = 'Importar estas filas';
+        }
+    });
+})();
+</script>
+</body>
+</html>
