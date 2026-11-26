@@ -256,7 +256,19 @@ window.reintentarImagenProducto_ = function (img) {
     if (img.dataset.reintentado) { img.onerror = null; img.src = PLACEHOLDER_IMG_; return; }
     img.dataset.reintentado = '1';
     const srcOriginal = img.src;
-    setTimeout(function () { img.src = srcOriginal + '&_r=' + Date.now(); }, 1100);
+    // Nada de "cache-buster" en la URL (?_r=... o &_r=...): la de
+    // googleusercontent.com no lleva "?", es "=w300" al final como
+    // parte de la sintaxis propia de Google — añadirle algo detrás
+    // puede romperla y hacer que el reintento falle siempre. Vaciar el
+    // src y volver a ponerlo fuerza una carga nueva de todas formas.
+    // La espera lleva un margen aleatorio para no concentrar todos los
+    // reintentos de la rejilla en el mismo instante (si no, el segundo
+    // intento puede volver a toparse con el límite de peticiones).
+    const espera = 900 + Math.random() * 1300;
+    setTimeout(function () {
+        img.src = '';
+        img.src = srcOriginal;
+    }, espera);
 };
 
 function numeroDesdePrecio_(texto) {
@@ -275,8 +287,10 @@ function productoVisibleParaCliente_(p, personalizacion) {
 // de precio de mayor + descuento que la rejilla, así que si cambia una
 // cosa, cambia la otra (no hay dos sitios distintos calculando precios).
 window.abrirDetalleProducto_ = function (p, descuentoPct) {
-    document.getElementById('modalDetalleImg').src = urlImagenProducto_(p);
-    document.getElementById('modalDetalleImg').onerror = function () { window.reintentarImagenProducto_(this); };
+    const imgModal = document.getElementById('modalDetalleImg');
+    delete imgModal.dataset.reintentado; // es un <img> compartido entre aperturas — sin esto, el segundo producto que falle no reintentaría
+    imgModal.src = urlImagenProducto_(p);
+    imgModal.onerror = function () { window.reintentarImagenProducto_(this); };
     document.getElementById('modalDetalleRef').textContent = 'Ref. ' + p.ref;
     document.getElementById('modalDetalleNombre').textContent = p.nombre;
 
