@@ -41,6 +41,8 @@
         flex-wrap: wrap; position: sticky; top: 0; z-index: 5;
         background: var(--light); padding: 10px 0;
     }
+    .barra-filtros__toggle { display: none; }
+    .barra-filtros__contenido { display: contents; }
     .barra-buscador { position: relative; flex: 1 1 220px; max-width: 280px; }
     .barra-buscador input { margin: 0; padding-left: 36px; }
     .barra-buscador::before {
@@ -147,8 +149,26 @@
     @media (max-width: 600px) {
         .catalogo-cabecera, .catalogo-cuerpo { padding-left: 16px; padding-right: 16px; }
         .rejilla-productos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+
+        /* En móvil, filtros y buscador recogidos detrás de un botón —
+           antes ocupaban buena parte de la pantalla nada más entrar.
+           La búsqueda (lo que más se usa) se queda siempre visible. */
+        .barra-filtros { flex-direction: column; align-items: stretch; gap: 8px; }
+        .barra-filtros__toggle {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; background: var(--white); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 14px; font-size: 0.85rem; font-weight: 700;
+            color: var(--dark); cursor: pointer;
+        }
+        .barra-filtros__toggle-flecha { transition: transform 0.15s ease; }
+        .barra-filtros.filtros-abiertos .barra-filtros__toggle-flecha { transform: rotate(180deg); }
+        .barra-filtros__contenido {
+            display: none; flex-direction: column; align-items: stretch; gap: 10px; width: 100%;
+        }
+        .barra-filtros.filtros-abiertos .barra-filtros__contenido { display: flex; }
         .barra-buscador { max-width: none; flex: 1 1 100%; }
-        .barra-filtros select { max-width: none; flex: 1 1 100%; }
+        .barra-filtros select { max-width: none; width: 100%; }
+        #chipsAreas { display: flex; flex-wrap: wrap; gap: 8px; }
     }
 </style>
 </head>
@@ -185,16 +205,23 @@
             <div class="barra-buscador">
                 <input type="search" id="buscador" placeholder="Buscar por nombre…">
             </div>
-            <select id="orden">
-                <option value="nombre_asc">Nombre (A-Z)</option>
-                <option value="nombre_desc">Nombre (Z-A)</option>
-                <option value="precio_asc">Precio (menor a mayor)</option>
-                <option value="precio_desc">Precio (mayor a menor)</option>
-                <option value="familia">Agrupar por familia</option>
-            </select>
-            <select id="filtroFamilia"><option value="">Todas las familias</option></select>
-            <select id="filtroSubfamilia"><option value="">Todas las subfamilias</option></select>
-            <div id="chipsAreas"></div>
+            <button type="button" class="barra-filtros__toggle" id="botonToggleFiltros">
+                <span>Filtros y orden</span>
+                <span class="barra-filtros__toggle-flecha">▾</span>
+            </button>
+            <div class="barra-filtros__contenido">
+                <select id="orden">
+                    <option value="nombre_asc">Nombre (A-Z)</option>
+                    <option value="nombre_desc">Nombre (Z-A)</option>
+                    <option value="precio_asc">Precio (menor a mayor)</option>
+                    <option value="precio_desc">Precio (mayor a menor)</option>
+                    <option value="familia_orden">Ordenar por familia</option>
+                    <option value="familia" selected>Agrupar por familia</option>
+                </select>
+                <select id="filtroFamilia"><option value="">Todas las familias</option></select>
+                <select id="filtroSubfamilia"><option value="">Todas las subfamilias</option></select>
+                <div id="chipsAreas"></div>
+            </div>
         </div>
 
         <div class="rejilla-productos" id="rejilla"></div>
@@ -239,7 +266,10 @@ const CATALOGO_URL_ = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2
 // hace index.html con el buscador público.
 const CATALOGO_ESTATICO_URL_ = '../data/productos.json';
 
-const PLACEHOLDER_IMG_ = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="120"%3E%3Crect width="200" height="120" fill="%23f1f5f9"/%3E%3C/svg%3E';
+// Nuestro propio logo como imagen de reserva — a petición de Eloy,
+// igual que hace el sitio público (sin-imagen-fabricante en
+// index.html): nunca dejar un hueco en blanco, siempre algo de marca.
+const PLACEHOLDER_IMG_ = 'assets/logo-orencio.png';
 
 function urlImagenProducto_(p) {
     if (!p.img) return PLACEHOLDER_IMG_;
@@ -538,6 +568,15 @@ document.getElementById('modalDetalleOverlay').addEventListener('click', functio
         if (orden === 'nombre_desc') lista.sort(function (a, b) { return b.nombre.localeCompare(a.nombre); });
         else if (orden === 'precio_asc') lista.sort(function (a, b) { return precioOrdenable_(a) - precioOrdenable_(b); });
         else if (orden === 'precio_desc') lista.sort(function (a, b) { return precioOrdenable_(b) - precioOrdenable_(a); });
+        else if (orden === 'familia_orden') {
+            // Igual que "Agrupar por familia" pero en lista continua,
+            // sin títulos de sección — mismo orden de familia (y de
+            // nombre dentro de cada una).
+            lista.sort(function (a, b) {
+                const diferenciaFamilia = ordenFamilia_(a.familia || '(sin familia)') - ordenFamilia_(b.familia || '(sin familia)');
+                return diferenciaFamilia !== 0 ? diferenciaFamilia : a.nombre.localeCompare(b.nombre);
+            });
+        }
         else if (orden !== 'familia') lista.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }); // nombre_asc, por defecto
 
         pintar_(lista, orden);
@@ -581,6 +620,13 @@ document.getElementById('modalDetalleOverlay').addEventListener('click', functio
             document.getElementById('filtroSubfamilia').addEventListener('change', aplicarFiltros_);
             document.getElementById('buscador').addEventListener('input', aplicarFiltros_);
             document.getElementById('orden').addEventListener('change', aplicarFiltros_);
+
+            // Solo tiene efecto visual en móvil (ver @media en el
+            // <style>) — en escritorio el botón ni se muestra.
+            document.getElementById('botonToggleFiltros').addEventListener('click', function () {
+                document.getElementById('barraFiltros').classList.toggle('filtros-abiertos');
+            });
+
             huboPintadoInicial = true;
         }
 
