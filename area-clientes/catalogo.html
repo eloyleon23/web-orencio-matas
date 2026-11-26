@@ -58,6 +58,7 @@
         display: flex; flex-direction: column;
     }
     .producto-tarjeta:hover { box-shadow: var(--sombra); transform: translateY(-2px); }
+    .producto-tarjeta { cursor: pointer; }
     .producto-tarjeta__img-envoltorio {
         position: relative; background: var(--light); padding: 18px;
         border-bottom: 1px solid var(--border);
@@ -76,12 +77,46 @@
         overflow: hidden; min-height: 2.6em; margin-bottom: 10px;
     }
     .producto-tarjeta__precios { margin-top: auto; }
+    .producto-tarjeta__etiqueta-precio {
+        font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+        color: var(--muted); margin-bottom: 2px;
+    }
     .producto-tarjeta__precio-fila { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
     .producto-tarjeta__precio-original { font-size: 0.8rem; color: var(--muted); text-decoration: line-through; }
     .producto-tarjeta__precio { font-size: 1.1rem; font-weight: 800; color: var(--blue); }
+    .producto-tarjeta__precio-sin { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
     .insignia-ahorro {
         display: inline-block; margin-top: 4px; font-size: 0.68rem; font-weight: 800;
         color: var(--ok); background: var(--ok-soft); border-radius: 5px; padding: 2px 6px;
+    }
+
+    /* ── Modal de detalle de producto ──────────────────────────────── */
+    .modal-detalle-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55);
+        align-items: center; justify-content: center; padding: 20px; z-index: 50;
+    }
+    .modal-detalle-overlay.activo { display: flex; }
+    .modal-detalle {
+        background: var(--white); border-radius: var(--radius); max-width: 640px; width: 100%;
+        max-height: 90vh; overflow-y: auto; padding: 28px; position: relative;
+    }
+    .modal-detalle__cerrar {
+        position: absolute; top: 14px; right: 14px; border: none; background: var(--light);
+        width: 32px; height: 32px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; color: var(--muted);
+    }
+    .modal-detalle__cuerpo { display: flex; gap: 24px; flex-wrap: wrap; }
+    .modal-detalle__img { flex: 1 1 220px; background: var(--light); border-radius: 10px; padding: 20px; text-align: center; }
+    .modal-detalle__img img { max-width: 100%; max-height: 220px; object-fit: contain; }
+    .modal-detalle__info { flex: 1 1 260px; }
+    .modal-detalle__ref { font-size: 0.75rem; color: var(--muted); margin: 0 0 6px; }
+    .modal-detalle__nombre { font-size: 1.15rem; font-weight: 800; margin: 0 0 10px; }
+    .modal-detalle__meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 14px; }
+    .modal-detalle__meta span { display: inline-block; background: var(--light); border-radius: 5px; padding: 3px 8px; margin: 0 6px 6px 0; }
+    .modal-detalle__precio-bloque { background: var(--blue-soft); border-radius: 10px; padding: 14px 16px; margin-top: 10px; }
+
+    @media (max-width: 480px) {
+        .modal-detalle { padding: 20px; }
+        .modal-detalle__cuerpo { gap: 16px; }
     }
 
     .spinner-pagina {
@@ -133,6 +168,12 @@
             <div class="barra-buscador">
                 <input type="search" id="buscador" placeholder="Buscar por nombre…">
             </div>
+            <select id="orden" style="width:auto; margin:0; max-width:220px;">
+                <option value="nombre_asc">Nombre (A-Z)</option>
+                <option value="nombre_desc">Nombre (Z-A)</option>
+                <option value="precio_asc">Precio (menor a mayor)</option>
+                <option value="precio_desc">Precio (mayor a menor)</option>
+            </select>
             <div id="chipsAreas"></div>
         </div>
 
@@ -143,6 +184,21 @@
     </div>
 
     <div class="aviso aviso--error" id="avisoError"></div>
+</div>
+
+<div class="modal-detalle-overlay" id="modalDetalleOverlay">
+    <div class="modal-detalle">
+        <button class="modal-detalle__cerrar" id="modalDetalleCerrar" aria-label="Cerrar">✕</button>
+        <div class="modal-detalle__cuerpo">
+            <div class="modal-detalle__img"><img id="modalDetalleImg" src="" alt=""></div>
+            <div class="modal-detalle__info">
+                <p class="modal-detalle__ref" id="modalDetalleRef"></p>
+                <h2 class="modal-detalle__nombre" id="modalDetalleNombre"></h2>
+                <div class="modal-detalle__meta" id="modalDetalleMeta"></div>
+                <div class="modal-detalle__precio-bloque" id="modalDetallePrecio"></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -172,6 +228,50 @@ function productoVisibleParaCliente_(p, personalizacion) {
     if (sinRestriccion) return true;
     return familias.includes(p.familia) || areas.includes(p.area) || productos.includes(p.ref);
 }
+
+// Vista de detalle — se abre al pulsar cualquier tarjeta. Misma lógica
+// de precio de mayor + descuento que la rejilla, así que si cambia una
+// cosa, cambia la otra (no hay dos sitios distintos calculando precios).
+window.abrirDetalleProducto_ = function (p, descuentoPct) {
+    document.getElementById('modalDetalleImg').src = urlImagenProducto_(p);
+    document.getElementById('modalDetalleRef').textContent = 'Ref. ' + p.ref;
+    document.getElementById('modalDetalleNombre').textContent = p.nombre;
+
+    const meta = [];
+    if (p.area) meta.push('<span>' + p.area + '</span>');
+    if (p.familia) meta.push('<span>' + p.familia + '</span>');
+    if (p.subfamilia) meta.push('<span>' + p.subfamilia + '</span>');
+    if (p.fabricante) meta.push('<span>' + p.fabricante + '</span>');
+    if (p.oferta) meta.push('<span style="background:var(--danger-soft); color:var(--danger); font-weight:700;">Oferta</span>');
+    document.getElementById('modalDetalleMeta').innerHTML = meta.join(' ');
+
+    const bloquePrecio = document.getElementById('modalDetallePrecio');
+    const hayPrecioMayor = p.precio_mayor_con !== undefined && p.precio_mayor_con !== null && p.precio_mayor_con !== '';
+    if (p.mostrar_precio === false) {
+        bloquePrecio.innerHTML = '<strong>Consultar precio</strong>';
+    } else if (!hayPrecioMayor) {
+        bloquePrecio.innerHTML = '<span style="color:var(--muted);">Precio de mayor no disponible</span>';
+    } else {
+        const conBase = numeroDesdePrecio_(p.precio_mayor_con);
+        const sinBase = numeroDesdePrecio_(p.precio_mayor_sin);
+        const conFinal = descuentoPct > 0 ? conBase * (1 - descuentoPct / 100) : conBase;
+        const sinFinal = (sinBase !== null && descuentoPct > 0) ? sinBase * (1 - descuentoPct / 100) : sinBase;
+        bloquePrecio.innerHTML =
+            '<div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Precio de mayor' + (descuentoPct > 0 ? ' (con tu ' + descuentoPct + '% de descuento)' : '') + '</div>' +
+            '<div style="font-size:1.4rem; font-weight:800; color:var(--blue);">' + conFinal.toFixed(2).replace('.', ',') + ' € <span style="font-size:0.8rem; font-weight:600; color:var(--muted);">con IVA</span></div>' +
+            (sinFinal !== null ? '<div style="font-size:0.85rem; color:var(--muted);">' + sinFinal.toFixed(2).replace('.', ',') + ' € sin IVA</div>' : '') +
+            (descuentoPct > 0 ? '<div style="font-size:0.78rem; color:var(--muted); text-decoration:line-through; margin-top:4px;">' + p.precio_mayor_con + ' € antes del descuento</div>' : '');
+    }
+
+    document.getElementById('modalDetalleOverlay').classList.add('activo');
+};
+
+document.getElementById('modalDetalleCerrar').addEventListener('click', function () {
+    document.getElementById('modalDetalleOverlay').classList.remove('activo');
+});
+document.getElementById('modalDetalleOverlay').addEventListener('click', function (ev) {
+    if (ev.target === this) this.classList.remove('activo');
+});
 
 (async function () {
     // ?simulacion=1 — abierto desde simular.html: usamos la sesión
@@ -246,7 +346,11 @@ function productoVisibleParaCliente_(p, personalizacion) {
 
     let productos;
     try {
-        const resp = await fetch(CATALOGO_URL_, { cache: 'no-store' });
+        // token_cliente: el backend lo valida de verdad contra Supabase
+        // (ver verificarTokenAreaClientes_ en apps_script_trigger.js)
+        // antes de conceder precio_mayor_sin/con — sin esto, el propio
+        // servidor los habría quitado ya de la respuesta.
+        const resp = await fetch(CATALOGO_URL_ + '&token_cliente=' + encodeURIComponent(sesion.access_token), { cache: 'no-store' });
         const datos = await resp.json();
         productos = (datos.productos || []).filter(function (p) {
             return !p.fecha_baja && productoVisibleParaCliente_(p, personalizacion);
@@ -275,23 +379,34 @@ function productoVisibleParaCliente_(p, personalizacion) {
         rejilla.innerHTML = '';
         sinResultados.style.display = lista.length ? 'none' : 'block';
         lista.forEach(function (p) {
-            const precioBase = numeroDesdePrecio_(p.precio_con);
+            // El catálogo de clientes siempre parte del precio de
+            // mayor (a petición de Eloy) — nunca del precio normal.
+            // Si por lo que sea no llegara (token_cliente no validado,
+            // producto sin precio de mayor informado...), se avisa en
+            // vez de mostrar silenciosamente el precio normal, que
+            // sería un precio distinto al que corresponde.
+            const hayPrecioMayor = p.precio_mayor_con !== undefined && p.precio_mayor_con !== null && p.precio_mayor_con !== '';
+            const precioConBase = numeroDesdePrecio_(p.precio_mayor_con);
+            const precioSinBase = numeroDesdePrecio_(p.precio_mayor_sin);
             const tarjeta = document.createElement('div');
             tarjeta.className = 'producto-tarjeta';
 
             let htmlPrecio;
-            if (p.mostrar_precio === false || precioBase === null) {
+            if (p.mostrar_precio === false) {
                 htmlPrecio = '<div class="producto-tarjeta__precio" style="font-size:0.85rem;">Consultar precio</div>';
-            } else if (descuentoPct > 0) {
-                const precioFinal = (precioBase * (1 - descuentoPct / 100)).toFixed(2).replace('.', ',');
-                htmlPrecio =
-                    '<div class="producto-tarjeta__precio-fila">' +
-                        '<span class="producto-tarjeta__precio-original">' + p.precio_con + ' €</span>' +
-                        '<span class="producto-tarjeta__precio">' + precioFinal + ' €</span>' +
-                    '</div>' +
-                    '<span class="insignia-ahorro">-' + descuentoPct + '%</span>';
+            } else if (!hayPrecioMayor || precioConBase === null) {
+                htmlPrecio = '<div class="producto-tarjeta__precio" style="font-size:0.8rem; color:var(--muted);">Precio de mayor no disponible</div>';
             } else {
-                htmlPrecio = '<div class="producto-tarjeta__precio-fila"><span class="producto-tarjeta__precio">' + p.precio_con + ' €</span></div>';
+                const precioConFinal = descuentoPct > 0 ? (precioConBase * (1 - descuentoPct / 100)) : precioConBase;
+                const precioSinFinal = (precioSinBase !== null && descuentoPct > 0) ? (precioSinBase * (1 - descuentoPct / 100)) : precioSinBase;
+                htmlPrecio =
+                    '<div class="producto-tarjeta__etiqueta-precio">Precio de mayor</div>' +
+                    '<div class="producto-tarjeta__precio-fila">' +
+                        (descuentoPct > 0 ? '<span class="producto-tarjeta__precio-original">' + p.precio_mayor_con + ' €</span>' : '') +
+                        '<span class="producto-tarjeta__precio">' + precioConFinal.toFixed(2).replace('.', ',') + ' €</span>' +
+                    '</div>' +
+                    (precioSinFinal !== null ? '<div class="producto-tarjeta__precio-sin">' + precioSinFinal.toFixed(2).replace('.', ',') + ' € sin IVA</div>' : '') +
+                    (descuentoPct > 0 ? '<span class="insignia-ahorro">-' + descuentoPct + '%</span>' : '');
             }
 
             tarjeta.innerHTML =
@@ -303,6 +418,7 @@ function productoVisibleParaCliente_(p, personalizacion) {
                     '<div class="producto-tarjeta__nombre" title="' + p.nombre.replace(/"/g, '&quot;') + '">' + p.nombre + '</div>' +
                     '<div class="producto-tarjeta__precios">' + htmlPrecio + '</div>' +
                 '</div>';
+            tarjeta.addEventListener('click', function () { window.abrirDetalleProducto_ && window.abrirDetalleProducto_(p, descuentoPct); });
             rejilla.appendChild(tarjeta);
         });
     }
@@ -331,16 +447,29 @@ function productoVisibleParaCliente_(p, personalizacion) {
         pintarChips_();
     }
 
+    function precioOrdenable_(p) {
+        const base = numeroDesdePrecio_(p.precio_mayor_con);
+        return base === null ? Infinity : base; // sin precio de mayor, al final al ordenar por precio
+    }
+
     function aplicarFiltros_() {
         const termino = document.getElementById('buscador').value.trim().toLowerCase();
-        let lista = productos;
+        const orden = document.getElementById('orden').value;
+        let lista = productos.slice();
         if (areaActiva) lista = lista.filter(function (p) { return p.area === areaActiva; });
         if (termino) lista = lista.filter(function (p) { return p.nombre.toLowerCase().includes(termino); });
+
+        if (orden === 'nombre_desc') lista.sort(function (a, b) { return b.nombre.localeCompare(a.nombre); });
+        else if (orden === 'precio_asc') lista.sort(function (a, b) { return precioOrdenable_(a) - precioOrdenable_(b); });
+        else if (orden === 'precio_desc') lista.sort(function (a, b) { return precioOrdenable_(b) - precioOrdenable_(a); });
+        else lista.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }); // nombre_asc, por defecto
+
         pintar_(lista);
     }
 
-    pintar_(productos);
+    pintar_(productos.slice().sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }));
     document.getElementById('buscador').addEventListener('input', aplicarFiltros_);
+    document.getElementById('orden').addEventListener('change', aplicarFiltros_);
 })();
 </script>
 </body>

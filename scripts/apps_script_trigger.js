@@ -4215,6 +4215,14 @@ function doGet(e) {
       // cualquiera, autorizado o no. Ahora el propio servidor decide qué
       // incluir, que es donde tiene que decidirse de verdad.
       const pinProfesionalOk = verificarPinProfesional_(e.parameter && e.parameter.pin);
+      // Clientes del Área de Clientes (cuentas individuales en
+      // Supabase, desarrollo aparte — ver feature/area-clientes): su
+      // catálogo siempre tiene que partir del precio al por mayor, no
+      // del precio normal (a petición de Eloy). A diferencia de
+      // "preprod=1" de aquí abajo, esto SÍ se valida de verdad contra
+      // Supabase en cada petición (no es un valor fijo adivinable) —
+      // ver verificarTokenAreaClientes_.
+      const areaClientesOk = verificarTokenAreaClientes_(e.parameter && e.parameter.token_cliente);
       // Vista previa interna del precio mayor en preproducción, para el
       // perfil normal (sin PIN) — a petición explícita de Eloy: el botón
       // "Ver precio mayor" de buscador.html debe seguir funcionando en
@@ -4237,7 +4245,7 @@ function doGet(e) {
       // pidió explícitamente como herramienta interna.
       const vistaPreviaPreproduccionOk = (e.parameter && e.parameter.preprod === '1');
       const quitarPrecioMayor_ = (lista) => {
-        if (pinProfesionalOk || vistaPreviaPreproduccionOk) return lista;
+        if (pinProfesionalOk || vistaPreviaPreproduccionOk || areaClientesOk) return lista;
         return lista.map(p => {
           if (p.precio_mayor_sin === undefined && p.precio_mayor_con === undefined) return p;
           const copia = Object.assign({}, p);
@@ -11941,6 +11949,38 @@ function verificarPinProfesional_(pin) {
   const pinCorrecto = PropertiesService.getScriptProperties().getProperty('PIN_PROFESIONAL');
   if (!pinCorrecto) return false;
   return (pin || '').toString().trim() === pinCorrecto.toString().trim();
+}
+
+// Cliente del Área de Clientes (desarrollo aparte, feature/area-clientes)
+// — a diferencia del PIN de arriba (un valor fijo), aquí SÍ se
+// comprueba de verdad: el "token_cliente" tiene que ser un access_token
+// de sesión real y vigente de Supabase Auth (el mismo proyecto que ya
+// usa la analítica del buscador — ver supabase/schema.sql). Se valida
+// llamando al propio Supabase, no fiándose de nada que llegue del
+// navegador. Si Supabase no responde o el token no es válido/ha
+// caducado, se deniega sin más — nunca se concede el precio mayor "por
+// si acaso".
+const SUPABASE_URL_AREA_CLIENTES_ = 'https://ptuwaqfrphmsmaadedta.supabase.co';
+const SUPABASE_ANON_KEY_AREA_CLIENTES_ = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXdhcWZycGhtc21hYWRlZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NzYwOTEsImV4cCI6MjEwNjQ1MjA5MX0.-NgRcVCBe0JGIt7FqGGAXhtgQicsoM2rGsePGdATA1k';
+
+function verificarTokenAreaClientes_(token) {
+  const limpio = (token || '').toString().trim();
+  if (!limpio) return false;
+  try {
+    const resp = UrlFetchApp.fetch(SUPABASE_URL_AREA_CLIENTES_ + '/auth/v1/user', {
+      method: 'get',
+      headers: {
+        'Authorization': 'Bearer ' + limpio,
+        'apikey': SUPABASE_ANON_KEY_AREA_CLIENTES_,
+      },
+      muteHttpExceptions: true,
+    });
+    if (resp.getResponseCode() !== 200) return false;
+    const usuario = JSON.parse(resp.getContentText());
+    return !!(usuario && usuario.id && usuario.email);
+  } catch (err) {
+    return false;
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════
