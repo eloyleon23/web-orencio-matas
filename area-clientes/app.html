@@ -54,11 +54,10 @@
             window.location.href = 'gestion/clientes.html';
             return;
         }
-        insignia.textContent = perfil.rol;
-        if (perfil.nombre) {
-            document.getElementById('saludo').textContent =
-                'Hola, ' + perfil.nombre + (perfil.apellidos ? ' ' + perfil.apellidos : '');
-        }
+        // Rol "cliente" — directos a su catálogo, esta pantalla no
+        // tiene nada propio que mostrarles.
+        window.location.href = 'catalogo.html';
+        return;
     }
 
     document.getElementById('botonSalir').addEventListener('click', async function () {

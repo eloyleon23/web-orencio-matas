@@ -52,25 +52,12 @@
         return;
     }
 
-    const { data: perfil } = await clienteSim
-        .from('profiles')
-        .select('nombre, apellidos, email')
-        .eq('id', data.session.user.id)
-        .single();
-
-    titulo.textContent = 'Viendo como: ' + (perfil && perfil.nombre ? perfil.nombre + ' ' + (perfil.apellidos || '') : data.session.user.email);
-    ayuda.textContent = 'Fase 1-2 del área de clientes: todavía no hay catálogo ni propuestas de pedido que mostrar aquí — esta pantalla solo demuestra que la simulación entra correctamente como este cliente, sin tocar su contraseña ni tu propia sesión.';
-
-    const boton = document.getElementById('botonSalir');
-    boton.style.display = 'block';
-    boton.addEventListener('click', async function () {
-        await clienteSim.auth.signOut();
-        window.close();
-        // Si el navegador no deja cerrar la pestaña (no se abrió por script, p.ej. al recargar), al menos deja claro que ya se cerró la sesión de simulación.
-        titulo.textContent = 'Simulación finalizada. Puedes cerrar esta pestaña.';
-        ayuda.textContent = '';
-        boton.style.display = 'none';
-    });
+    // Sesión de simulación ya establecida (almacenamiento propio) —
+    // de aquí en adelante, lo que ve el cliente de verdad: su
+    // catálogo. catalogo.html, con ?simulacion=1, usa esta misma
+    // sesión (no vuelve a pedir nada) y pinta su propia banda roja.
+    titulo.textContent = 'Entrando…';
+    window.location.href = 'catalogo.html?simulacion=1';
 })();
 </script>
 </body>

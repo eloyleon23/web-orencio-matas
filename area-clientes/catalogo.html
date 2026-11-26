@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi catálogo — Área de Clientes · Orencio Matas</title>
+<link rel="stylesheet" href="assets/estilos.css">
+<style>
+    body { display: block; }
+    .rejilla-productos {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px; margin-top: 20px;
+    }
+    .producto-tarjeta {
+        background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+        padding: 14px; text-align: center;
+    }
+    .producto-tarjeta img { width: 100%; height: 120px; object-fit: contain; margin-bottom: 10px; }
+    .producto-tarjeta__nombre { font-size: 0.85rem; font-weight: 600; color: var(--dark); min-height: 38px; }
+    .producto-tarjeta__precio-original { font-size: 0.8rem; color: var(--muted); text-decoration: line-through; }
+    .producto-tarjeta__precio { font-size: 1.05rem; font-weight: 800; color: var(--blue); }
+    .barra-filtros {
+        display: flex; gap: 10px; align-items: center; margin: 16px 0 0; flex-wrap: wrap;
+    }
+    .barra-filtros input { max-width: 260px; margin: 0; }
+</style>
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Mi catálogo</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">cliente</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div style="max-width: 1100px; margin: 0 auto; padding: 24px 20px;">
+    <h1 id="saludo">Hola</h1>
+    <p class="ayuda" id="aviso">Cargando tu catálogo…</p>
+
+    <div class="barra-filtros" id="barraFiltros" style="display:none;">
+        <input type="search" id="buscador" placeholder="Buscar por nombre…">
+    </div>
+
+    <div class="rejilla-productos" id="rejilla"></div>
+    <div class="aviso aviso--error" id="avisoError"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+// URL del mismo Apps Script que usa el sitio público — ver index.html
+// (PRODUCTOS_REMOTO_URL_BASE). Solo reutilizamos la capa de datos, no
+// el HTML del buscador. Sin PIN, el servidor ya filtra por su cuenta
+// los productos marcados como no-visibles para "usuario normal" (ver
+// ocultarPorVisibilidad_ en apps_script_trigger.js) — aquí encima se
+// aplica la personalización propia del cliente.
+const CATALOGO_URL_ = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+
+function urlImagenProducto_(p) {
+    if (!p.img) return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="120"%3E%3Crect width="200" height="120" fill="%23f1f5f9"/%3E%3C/svg%3E';
+    return 'https://lh3.googleusercontent.com/d/' + p.img + '=w300';
+}
+
+function numeroDesdePrecio_(texto) {
+    if (!texto) return null;
+    return parseFloat(String(texto).replace(',', '.'));
+}
+
+function productoVisibleParaCliente_(p, personalizacion) {
+    const { familias, areas, productos } = personalizacion;
+    const sinRestriccion = familias.length === 0 && areas.length === 0 && productos.length === 0;
+    if (sinRestriccion) return true;
+    return familias.includes(p.familia) || areas.includes(p.area) || productos.includes(p.ref);
+}
+
+(async function () {
+    // ?simulacion=1 — abierto desde simular.html: usamos la sesión
+    // CON ALMACENAMIENTO PROPIO (ver supabase-client.js), que ya quedó
+    // establecida allí vía verifyOtp. Nunca tocamos la sesión normal
+    // de quien está simulando.
+    const enSimulacion = new URLSearchParams(window.location.search).get('simulacion') === '1';
+    const cliente = window.obtenerClienteSupabase_(enSimulacion);
+    const avisoError = document.getElementById('avisoError');
+
+    let sesion;
+    if (enSimulacion) {
+        const banda = document.createElement('div');
+        banda.className = 'banda-simulacion';
+        banda.textContent = 'MODO SIMULACIÓN — solo visualización, no se puede actuar en nombre del cliente';
+        document.body.prepend(banda);
+        document.body.style.paddingTop = '34px';
+
+        const { data } = await cliente.auth.getSession();
+        if (!data.session) {
+            document.getElementById('aviso').textContent = '';
+            avisoError.textContent = 'La simulación ha caducado. Vuelve a generarla desde el listado de clientes.';
+            avisoError.classList.add('activo');
+            document.getElementById('botonSalir').style.display = 'none';
+            return;
+        }
+        sesion = data.session;
+        document.getElementById('botonSalir').textContent = 'Salir de la simulación';
+        document.getElementById('botonSalir').addEventListener('click', async function () {
+            await cliente.auth.signOut();
+            window.close();
+        });
+    } else {
+        sesion = await window.exigirSesionAreaClientes_();
+        if (!sesion) return;
+        document.getElementById('botonSalir').addEventListener('click', async function () {
+            await cliente.auth.signOut();
+            window.location.href = 'index.html';
+        });
+    }
+
+    const { data: perfil } = await cliente.from('profiles').select('nombre, apellidos, rol').eq('id', sesion.user.id).single();
+    if (!enSimulacion && perfil && perfil.rol !== 'cliente') {
+        // Comercial/administrador viendo esta URL directamente (no es
+        // su pantalla) — al panel de gestión.
+        window.location.href = 'gestion/clientes.html';
+        return;
+    }
+    if (perfil && perfil.nombre) {
+        document.getElementById('saludo').textContent = 'Hola, ' + perfil.nombre;
+    }
+
+    const { data: datosCliente, error: errorCliente } = await cliente
+        .from('clientes')
+        .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct')
+        .eq('id', sesion.user.id)
+        .single();
+
+    if (errorCliente || !datosCliente) {
+        document.getElementById('aviso').textContent = '';
+        avisoError.textContent = 'No se ha podido cargar tu ficha de cliente. Contacta con tu comercial.';
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    const personalizacion = {
+        familias: datosCliente.familias_visibles || [],
+        areas: datosCliente.areas_visibles || [],
+        productos: datosCliente.productos_visibles || [],
+    };
+    const descuentoPct = Number(datosCliente.descuento_pct || 0);
+
+    let productos;
+    try {
+        const resp = await fetch(CATALOGO_URL_, { cache: 'no-store' });
+        const datos = await resp.json();
+        productos = (datos.productos || []).filter(function (p) {
+            return !p.fecha_baja && productoVisibleParaCliente_(p, personalizacion);
+        });
+    } catch (e) {
+        document.getElementById('aviso').textContent = '';
+        avisoError.textContent = 'No se ha podido cargar el catálogo ahora mismo. Inténtalo de nuevo en unos minutos.';
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    document.getElementById('aviso').textContent = productos.length + ' producto(s)' + (descuentoPct > 0 ? ' — ' + descuentoPct + '% de descuento aplicado' : '') + '.';
+    document.getElementById('barraFiltros').style.display = 'flex';
+
+    const rejilla = document.getElementById('rejilla');
+
+    function pintar_(lista) {
+        rejilla.innerHTML = '';
+        lista.forEach(function (p) {
+            const precioBase = numeroDesdePrecio_(p.precio_con);
+            const tarjeta = document.createElement('div');
+            tarjeta.className = 'producto-tarjeta';
+
+            let htmlPrecio;
+            if (p.mostrar_precio === false || precioBase === null) {
+                htmlPrecio = '<div class="producto-tarjeta__precio" style="font-size:0.85rem;">Consultar precio</div>';
+            } else if (descuentoPct > 0) {
+                const precioFinal = (precioBase * (1 - descuentoPct / 100)).toFixed(2).replace('.', ',');
+                htmlPrecio =
+                    '<div class="producto-tarjeta__precio-original">' + p.precio_con + ' €</div>' +
+                    '<div class="producto-tarjeta__precio">' + precioFinal + ' €</div>';
+            } else {
+                htmlPrecio = '<div class="producto-tarjeta__precio">' + p.precio_con + ' €</div>';
+            }
+
+            tarjeta.innerHTML =
+                '<img src="' + urlImagenProducto_(p) + '" alt="" loading="lazy">' +
+                '<div class="producto-tarjeta__nombre">' + p.nombre + '</div>' +
+                htmlPrecio;
+            rejilla.appendChild(tarjeta);
+        });
+    }
+
+    pintar_(productos);
+
+    document.getElementById('buscador').addEventListener('input', function (ev) {
+        const termino = ev.target.value.trim().toLowerCase();
+        if (!termino) return pintar_(productos);
+        pintar_(productos.filter(function (p) { return p.nombre.toLowerCase().includes(termino); }));
+    });
+})();
+</script>
+</body>
+</html>

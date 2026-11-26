@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personalizar catálogo — Panel de gestión · Orencio Matas</title>
+<link rel="stylesheet" href="../assets/estilos.css">
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="../assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Panel de gestión</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="layout-panel">
+    <aside class="panel-lateral">
+        <div class="panel-lateral__titulo">Gestión</div>
+        <a href="clientes.html" class="activo">Clientes</a>
+        <a href="alta-cliente.html">Dar de alta</a>
+        <a href="importar-clientes.html">Importar (CSV/XLSX)</a>
+    </aside>
+    <main class="panel-contenido">
+        <div class="panel-tarjeta">
+            <h1 id="titulo">Personalizar catálogo</h1>
+            <p class="ayuda" id="ayuda">Cargando…</p>
+
+            <form id="formPersonalizar" style="display:none;">
+                <label for="descuento">Descuento sobre el precio con IVA (%)</label>
+                <input id="descuento" type="number" min="0" max="100" step="0.5" value="0">
+
+                <label for="familias">Familias visibles (separadas por comas — vacío = todas)</label>
+                <input id="familias" placeholder="p. ej. BOLSAS BASURA, DETERGENTES">
+
+                <label for="areas">Áreas visibles (separadas por comas — vacío = todas)</label>
+                <input id="areas" placeholder="p. ej. drogueria, perfumeria">
+
+                <label for="productos">Referencias concretas siempre visibles (separadas por comas)</label>
+                <input id="productos" placeholder="p. ej. 8435094836396, 8412345678901">
+
+                <p class="ayuda" style="margin-top:10px;">
+                    Si las tres listas están vacías, el cliente ve el catálogo
+                    completo. Si rellenas alguna, verá lo que caiga en
+                    CUALQUIERA de ellas (no hace falta cumplir todas a la vez).
+                </p>
+
+                <button type="submit" class="boton-principal" id="botonGuardar" style="max-width:220px;">Guardar</button>
+            </form>
+
+            <div class="aviso aviso--error" id="avisoError"></div>
+            <div class="aviso aviso--ok" id="avisoOk"></div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const resultado = await window.exigirRolAreaClientes_(
+        ['comercial', 'administrador'], '../index.html', '../app.html'
+    );
+    if (!resultado) return;
+    document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await window.obtenerClienteSupabase_().auth.signOut();
+        window.location.href = '../index.html';
+    });
+
+    const idCliente = new URLSearchParams(window.location.search).get('id');
+    const ayuda = document.getElementById('ayuda');
+    const avisoError = document.getElementById('avisoError');
+    const avisoOk = document.getElementById('avisoOk');
+
+    if (!idCliente) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'Falta el cliente a personalizar.';
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    const cliente = window.obtenerClienteSupabase_();
+
+    const { data: fila, error } = await cliente
+        .from('clientes')
+        .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct, profiles!clientes_id_fkey(nombre, apellidos, email)')
+        .eq('id', idCliente)
+        .single();
+
+    if (error || !fila) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se ha podido cargar ese cliente: ' + (error ? error.message : 'no encontrado');
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    const nombreCliente = [fila.profiles.nombre, fila.profiles.apellidos].filter(Boolean).join(' ') || fila.profiles.email;
+    document.getElementById('titulo').textContent = 'Personalizar catálogo — ' + nombreCliente;
+    ayuda.textContent = fila.profiles.email;
+
+    document.getElementById('descuento').value = fila.descuento_pct || 0;
+    document.getElementById('familias').value = (fila.familias_visibles || []).join(', ');
+    document.getElementById('areas').value = (fila.areas_visibles || []).join(', ');
+    document.getElementById('productos').value = (fila.productos_visibles || []).join(', ');
+
+    document.getElementById('formPersonalizar').style.display = 'block';
+
+    function listaDesde_(valor) {
+        return valor.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+    }
+
+    document.getElementById('formPersonalizar').addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        avisoError.classList.remove('activo');
+        avisoOk.classList.remove('activo');
+        const boton = document.getElementById('botonGuardar');
+        boton.disabled = true;
+        boton.innerHTML = '<span class="cargando-spinner"></span>Guardando…';
+
+        const { error: errorUpdate } = await cliente
+            .from('clientes')
+            .update({
+                descuento_pct: parseFloat(document.getElementById('descuento').value) || 0,
+                familias_visibles: listaDesde_(document.getElementById('familias').value),
+                areas_visibles: listaDesde_(document.getElementById('areas').value),
+                productos_visibles: listaDesde_(document.getElementById('productos').value),
+            })
+            .eq('id', idCliente);
+
+        if (errorUpdate) {
+            avisoError.textContent = 'No se ha podido guardar: ' + errorUpdate.message;
+            avisoError.classList.add('activo');
+        } else {
+            avisoOk.textContent = 'Guardado.';
+            avisoOk.classList.add('activo');
+        }
+        boton.disabled = false;
+        boton.textContent = 'Guardar';
+    });
+})();
+</script>
+</body>
+</html>

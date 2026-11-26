@@ -89,7 +89,10 @@
             '<td>' + c.profiles.email + '</td>' +
             '<td>' + (c.empresa || '—') + '</td>' +
             '<td>' + (c.crm_id || '—') + '</td>' +
-            '<td><button class="boton-fila" data-id="' + c.id + '">Simular acceso</button></td>';
+            '<td>' +
+            '<a class="boton-fila" style="text-decoration:none; display:inline-block; margin-right:6px;" href="personalizar-cliente.html?id=' + c.id + '">Personalizar</a>' +
+            '<button class="boton-fila" data-id="' + c.id + '">Simular acceso</button>' +
+            '</td>';
         cuerpo.appendChild(fila);
     });
 
