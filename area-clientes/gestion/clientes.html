@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Clientes — Panel de gestión · Orencio Matas</title>
+<link rel="stylesheet" href="../assets/estilos.css">
+<style>
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+    button.boton-fila {
+        padding: 5px 10px; font-size: 0.8rem; font-weight: 600;
+        border: 1px solid var(--blue); color: var(--blue); background: white;
+        border-radius: 6px; cursor: pointer;
+    }
+    button.boton-fila:hover { background: #e8f1fb; }
+    button.boton-fila:disabled { opacity: 0.6; cursor: wait; }
+</style>
+</head>
+<body>
+<div class="tarjeta tarjeta--ancha" style="max-width: 760px;">
+    <div class="cabecera-app">
+        <div class="marca">
+            <span class="marca__nombre">Orencio Matas</span>
+            <span class="marca__etiqueta">Panel de gestión</span>
+        </div>
+        <span class="insignia-rol" id="insigniaRol">…</span>
+    </div>
+
+    <h1>Clientes</h1>
+    <p class="ayuda" id="ayuda">Cargando…</p>
+
+    <table id="tablaClientes" style="display:none;">
+        <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th></th></tr></thead>
+        <tbody id="cuerpoTabla"></tbody>
+    </table>
+
+    <div class="aviso aviso--error" id="avisoError"></div>
+
+    <a class="enlace-discreto" href="alta-cliente.html">+ Dar de alta un cliente</a>
+    <a class="enlace-discreto" href="../app.html">← Volver</a>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const resultado = await window.exigirRolAreaClientes_(
+        ['comercial', 'administrador'], '../index.html', '../app.html'
+    );
+    if (!resultado) return;
+    document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
+
+    const cliente = window.obtenerClienteSupabase_();
+    const ayuda = document.getElementById('ayuda');
+    const avisoError = document.getElementById('avisoError');
+
+    const { data: clientes, error } = await cliente
+        .from('clientes')
+        .select('id, crm_id, empresa, profiles!inner(nombre, apellidos, email)')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se ha podido cargar el listado: ' + error.message;
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    if (!clientes || clientes.length === 0) {
+        ayuda.textContent = 'Todavía no hay clientes. Puedes dar de alta el primero.';
+        return;
+    }
+
+    ayuda.textContent = clientes.length + ' cliente(s).';
+    const cuerpo = document.getElementById('cuerpoTabla');
+
+    clientes.forEach(function (c) {
+        const fila = document.createElement('tr');
+        const nombre = [c.profiles.nombre, c.profiles.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
+        fila.innerHTML =
+            '<td>' + nombre + '</td>' +
+            '<td>' + c.profiles.email + '</td>' +
+            '<td>' + (c.empresa || '—') + '</td>' +
+            '<td>' + (c.crm_id || '—') + '</td>' +
+            '<td><button class="boton-fila" data-id="' + c.id + '">Simular acceso</button></td>';
+        cuerpo.appendChild(fila);
+    });
+
+    document.getElementById('tablaClientes').style.display = 'table';
+
+    cuerpo.addEventListener('click', async function (ev) {
+        const boton = ev.target.closest('button.boton-fila');
+        if (!boton) return;
+        const idCliente = boton.dataset.id;
+        boton.disabled = true;
+        boton.textContent = 'Generando…';
+
+        try {
+            const resp = await fetch(window.SUPABASE_URL + '/functions/v1/simular-acceso', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + resultado.sesion.access_token,
+                },
+                body: JSON.stringify({ cliente_id: idCliente }),
+            });
+            const json = await resp.json();
+
+            if (!resp.ok) {
+                avisoError.textContent = json.error || 'No se ha podido generar el acceso de simulación.';
+                avisoError.classList.add('activo');
+                boton.disabled = false;
+                boton.textContent = 'Simular acceso';
+                return;
+            }
+
+            window.open('../simular.html?token=' + encodeURIComponent(json.token_hash), '_blank');
+            boton.disabled = false;
+            boton.textContent = 'Simular acceso';
+        } catch (e) {
+            avisoError.textContent = 'Error de red al generar la simulación.';
+            avisoError.classList.add('activo');
+            boton.disabled = false;
+            boton.textContent = 'Simular acceso';
+        }
+    });
+})();
+</script>
+</body>
+</html>

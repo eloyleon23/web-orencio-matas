@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Simulación de acceso — Área de Clientes · Orencio Matas</title>
+<link rel="stylesheet" href="assets/estilos.css">
+<style>
+    .banda-simulacion {
+        position: fixed; top: 0; left: 0; right: 0;
+        background: #7c2d12; color: white;
+        text-align: center; padding: 8px 12px;
+        font-size: 0.85rem; font-weight: 700;
+        z-index: 10;
+    }
+    body { padding-top: 56px; }
+</style>
+</head>
+<body>
+<div class="banda-simulacion">
+    MODO SIMULACIÓN — solo visualización, no se puede actuar en nombre del cliente
+</div>
+
+<div class="tarjeta tarjeta--ancha">
+    <div class="cabecera-app">
+        <div class="marca">
+            <span class="marca__nombre">Orencio Matas</span>
+            <span class="marca__etiqueta">Simulación</span>
+        </div>
+        <span class="insignia-rol">cliente</span>
+    </div>
+
+    <h1 id="titulo">Comprobando el acceso…</h1>
+    <p class="ayuda" id="ayuda"></p>
+
+    <button class="boton-secundario" id="botonSalir" style="display:none;">Salir de la simulación</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const parametros = new URLSearchParams(window.location.search);
+    const tokenHash = parametros.get('token');
+    const titulo = document.getElementById('titulo');
+    const ayuda = document.getElementById('ayuda');
+
+    if (!tokenHash) {
+        titulo.textContent = 'Enlace de simulación no válido.';
+        return;
+    }
+
+    // Cliente CON almacenamiento propio (ver supabase-client.js) — no
+    // toca en ningún momento la sesión de quien está simulando.
+    const clienteSim = window.obtenerClienteSupabase_(true);
+    const { data, error } = await clienteSim.auth.verifyOtp({ token_hash: tokenHash, type: 'magiclink' });
+
+    if (error || !data.session) {
+        titulo.textContent = 'El enlace de simulación ha caducado o ya se usó.';
+        ayuda.textContent = 'Pide que te generen uno nuevo desde el listado de clientes.';
+        return;
+    }
+
+    const { data: perfil } = await clienteSim
+        .from('profiles')
+        .select('nombre, apellidos, email')
+        .eq('id', data.session.user.id)
+        .single();
+
+    titulo.textContent = 'Viendo como: ' + (perfil && perfil.nombre ? perfil.nombre + ' ' + (perfil.apellidos || '') : data.session.user.email);
+    ayuda.textContent = 'Fase 1-2 del área de clientes: todavía no hay catálogo ni propuestas de pedido que mostrar aquí — esta pantalla solo demuestra que la simulación entra correctamente como este cliente, sin tocar su contraseña ni tu propia sesión.';
+
+    const boton = document.getElementById('botonSalir');
+    boton.style.display = 'block';
+    boton.addEventListener('click', async function () {
+        await clienteSim.auth.signOut();
+        window.close();
+        // Si el navegador no deja cerrar la pestaña (no se abrió por script, p.ej. al recargar), al menos deja claro que ya se cerró la sesión de simulación.
+        titulo.textContent = 'Simulación finalizada. Puedes cerrar esta pestaña.';
+        ayuda.textContent = '';
+        boton.style.display = 'none';
+    });
+})();
+</script>
+</body>
+</html>

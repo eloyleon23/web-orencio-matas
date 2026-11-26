@@ -8,14 +8,22 @@
 window.SUPABASE_URL = 'https://ptuwaqfrphmsmaadedta.supabase.co';
 window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB0dXdhcWZycGhtc21hYWRlZHRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4NzYwOTEsImV4cCI6MjEwNjQ1MjA5MX0.-NgRcVCBe0JGIt7FqGGAXhtgQicsoM2rGsePGdATA1k';
 
-window.obtenerClienteSupabase_ = function () {
-    if (!window._clienteSupabase) {
-        window._clienteSupabase = window.supabase.createClient(
+// "simulacion", si se pasa true, usa una clave de almacenamiento
+// distinta ('sb-simulacion-auth') — así la sesión de simulación de un
+// cliente vive aparte de la sesión normal del comercial/administrador
+// en el mismo navegador (misma pestaña o distinta, da igual): abrir
+// una simulación nunca puede cerrar ni pisar la sesión de quien la
+// abre. Ver area-clientes/simular.html.
+window.obtenerClienteSupabase_ = function (simulacion) {
+    const clave = simulacion ? '_clienteSupabaseSimulacion' : '_clienteSupabase';
+    if (!window[clave]) {
+        window[clave] = window.supabase.createClient(
             window.SUPABASE_URL,
-            window.SUPABASE_ANON_KEY
+            window.SUPABASE_ANON_KEY,
+            simulacion ? { auth: { storageKey: 'sb-simulacion-auth' } } : undefined
         );
     }
-    return window._clienteSupabase;
+    return window[clave];
 };
 
 // Comprueba que haya una sesión activa; si no, redirige al login.

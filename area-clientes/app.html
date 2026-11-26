@@ -22,6 +22,7 @@
         pedido llegan en las fases siguientes del plan.
     </p>
 
+    <a class="enlace-discreto" id="enlaceGestionClientes" href="gestion/clientes.html" style="display:none;">Ver clientes</a>
     <a class="enlace-discreto" id="enlaceGestionAlta" href="gestion/alta-cliente.html" style="display:none;">Dar de alta un cliente</a>
 
     <button class="boton-secundario" id="botonSalir">Cerrar sesión</button>
@@ -54,6 +55,7 @@
         }
         if (['comercial', 'administrador'].includes(perfil.rol)) {
             document.getElementById('enlaceGestionAlta').style.display = 'block';
+            document.getElementById('enlaceGestionClientes').style.display = 'block';
         }
     }
 
