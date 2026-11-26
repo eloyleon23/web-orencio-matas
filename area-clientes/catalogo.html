@@ -8,13 +8,19 @@
 <style>
     body { display: block; }
 
+    select {
+        width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+        border-radius: 8px; font-size: 16px; font-family: inherit;
+        background: var(--white); color: var(--dark);
+    }
+
     .catalogo-cabecera {
         background: var(--white);
         border-bottom: 1px solid var(--border);
-        padding: 22px 24px;
+        padding: 22px 32px;
     }
     .catalogo-cabecera__fila {
-        max-width: 1180px; margin: 0 auto;
+        max-width: 1800px; margin: 0 auto;
         display: flex; align-items: center; justify-content: space-between;
         gap: 16px; flex-wrap: wrap;
     }
@@ -26,19 +32,22 @@
         white-space: nowrap;
     }
 
-    .catalogo-cuerpo { max-width: 1180px; margin: 0 auto; padding: 22px 24px 60px; }
+    /* 1800px, no 1180: en monitores de escritorio se quedaba mucho
+       hueco libre a los lados sin motivo. */
+    .catalogo-cuerpo { max-width: 1800px; margin: 0 auto; padding: 22px 32px 60px; }
 
     .barra-filtros {
         display: flex; gap: 10px; align-items: center; margin: 0 0 18px;
         flex-wrap: wrap; position: sticky; top: 0; z-index: 5;
         background: var(--light); padding: 10px 0;
     }
-    .barra-buscador { position: relative; flex: 1 1 260px; max-width: 320px; }
+    .barra-buscador { position: relative; flex: 1 1 220px; max-width: 280px; }
     .barra-buscador input { margin: 0; padding-left: 36px; }
     .barra-buscador::before {
         content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
         font-size: 0.85rem; opacity: 0.5;
     }
+    .barra-filtros select { width: auto; margin: 0; min-width: 150px; max-width: 220px; }
     .chip-filtro {
         border: 1px solid var(--border); background: var(--white); color: var(--muted);
         border-radius: 999px; padding: 7px 14px; font-size: 0.8rem; font-weight: 600;
@@ -46,6 +55,13 @@
     }
     .chip-filtro:hover { border-color: var(--blue); color: var(--blue); }
     .chip-filtro.activo { background: var(--dark); color: white; border-color: var(--dark); }
+
+    .grupo-familia__titulo {
+        font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 800;
+        color: var(--dark); margin: 28px 0 14px; padding-bottom: 6px;
+        border-bottom: 2px solid var(--blue-soft);
+    }
+    .grupo-familia__titulo:first-child { margin-top: 0; }
 
     .rejilla-productos {
         display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -55,10 +71,9 @@
         background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
         padding: 0 0 16px; text-align: center; overflow: hidden;
         transition: box-shadow 0.15s ease, transform 0.15s ease;
-        display: flex; flex-direction: column;
+        display: flex; flex-direction: column; cursor: pointer;
     }
     .producto-tarjeta:hover { box-shadow: var(--sombra); transform: translateY(-2px); }
-    .producto-tarjeta { cursor: pointer; }
     .producto-tarjeta__img-envoltorio {
         position: relative; background: var(--light); padding: 18px;
         border-bottom: 1px solid var(--border);
@@ -85,6 +100,7 @@
     .producto-tarjeta__precio-original { font-size: 0.8rem; color: var(--muted); text-decoration: line-through; }
     .producto-tarjeta__precio { font-size: 1.1rem; font-weight: 800; color: var(--blue); }
     .producto-tarjeta__precio-sin { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+    .producto-tarjeta__precio-calculando { font-size: 0.78rem; color: var(--muted); }
     .insignia-ahorro {
         display: inline-block; margin-top: 4px; font-size: 0.68rem; font-weight: 800;
         color: var(--ok); background: var(--ok-soft); border-radius: 5px; padding: 2px 6px;
@@ -132,6 +148,7 @@
         .catalogo-cabecera, .catalogo-cuerpo { padding-left: 16px; padding-right: 16px; }
         .rejilla-productos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
         .barra-buscador { max-width: none; flex: 1 1 100%; }
+        .barra-filtros select { max-width: none; flex: 1 1 100%; }
     }
 </style>
 </head>
@@ -168,12 +185,15 @@
             <div class="barra-buscador">
                 <input type="search" id="buscador" placeholder="Buscar por nombre…">
             </div>
-            <select id="orden" style="width:auto; margin:0; max-width:220px;">
+            <select id="orden">
                 <option value="nombre_asc">Nombre (A-Z)</option>
                 <option value="nombre_desc">Nombre (Z-A)</option>
                 <option value="precio_asc">Precio (menor a mayor)</option>
                 <option value="precio_desc">Precio (mayor a menor)</option>
+                <option value="familia">Agrupar por familia</option>
             </select>
+            <select id="filtroFamilia"><option value="">Todas las familias</option></select>
+            <select id="filtroSubfamilia"><option value="">Todas las subfamilias</option></select>
             <div id="chipsAreas"></div>
         </div>
 
@@ -211,11 +231,33 @@
 // ocultarPorVisibilidad_ en apps_script_trigger.js) — aquí encima se
 // aplica la personalización propia del cliente.
 const CATALOGO_URL_ = 'https://script.google.com/macros/s/AKfycbwqJOASK7XTqZ_XH2wt512Es5DlItsjIQn24JYGuuNMcuolzvi5P8L-m0N5Sf0oHzQ7/exec?accion=obtener_productos';
+// JSON estático que ya genera scripts/generar_productos_json.py en
+// cada despliegue — no lleva precio de mayor (eso solo lo da el
+// Apps Script en vivo, y solo con el token validado), pero sí nombre,
+// imagen, área/familia — de sobra para pintar la rejilla al instante
+// en vez de esperar varios segundos a la respuesta en vivo, igual que
+// hace index.html con el buscador público.
+const CATALOGO_ESTATICO_URL_ = '../data/productos.json';
+
+const PLACEHOLDER_IMG_ = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="120"%3E%3Crect width="200" height="120" fill="%23f1f5f9"/%3E%3C/svg%3E';
 
 function urlImagenProducto_(p) {
-    if (!p.img) return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="120"%3E%3Crect width="200" height="120" fill="%23f1f5f9"/%3E%3C/svg%3E';
+    if (!p.img) return PLACEHOLDER_IMG_;
     return 'https://lh3.googleusercontent.com/d/' + p.img + '=w300';
 }
+
+// Igual que ya le pasaba a escaparate.html con catálogos grandes:
+// googleusercontent.com devuelve algún 429 (demasiadas peticiones
+// seguidas) cuando se piden de golpe las imágenes de una rejilla
+// entera. Un solo reintento tras una breve espera soluciona la
+// mayoría — si tampoco entonces, se cae al hueco gris de "sin imagen"
+// en vez de dejar un icono de imagen rota.
+window.reintentarImagenProducto_ = function (img) {
+    if (img.dataset.reintentado) { img.onerror = null; img.src = PLACEHOLDER_IMG_; return; }
+    img.dataset.reintentado = '1';
+    const srcOriginal = img.src;
+    setTimeout(function () { img.src = srcOriginal + '&_r=' + Date.now(); }, 1100);
+};
 
 function numeroDesdePrecio_(texto) {
     if (!texto) return null;
@@ -234,6 +276,7 @@ function productoVisibleParaCliente_(p, personalizacion) {
 // cosa, cambia la otra (no hay dos sitios distintos calculando precios).
 window.abrirDetalleProducto_ = function (p, descuentoPct) {
     document.getElementById('modalDetalleImg').src = urlImagenProducto_(p);
+    document.getElementById('modalDetalleImg').onerror = function () { window.reintentarImagenProducto_(this); };
     document.getElementById('modalDetalleRef').textContent = 'Ref. ' + p.ref;
     document.getElementById('modalDetalleNombre').textContent = p.nombre;
 
@@ -247,7 +290,9 @@ window.abrirDetalleProducto_ = function (p, descuentoPct) {
 
     const bloquePrecio = document.getElementById('modalDetallePrecio');
     const hayPrecioMayor = p.precio_mayor_con !== undefined && p.precio_mayor_con !== null && p.precio_mayor_con !== '';
-    if (p.mostrar_precio === false) {
+    if (p._precioProvisional) {
+        bloquePrecio.innerHTML = '<span style="color:var(--muted);">Calculando precio de mayor…</span>';
+    } else if (p.mostrar_precio === false) {
         bloquePrecio.innerHTML = '<strong>Consultar precio</strong>';
     } else if (!hayPrecioMayor) {
         bloquePrecio.innerHTML = '<span style="color:var(--muted);">Precio de mayor no disponible</span>';
@@ -355,47 +400,34 @@ document.getElementById('modalDetalleOverlay').addEventListener('click', functio
     };
     const descuentoPct = Number(datosCliente.descuento_pct || 0);
 
-    let productos;
-    try {
-        // token_cliente: el backend lo valida de verdad contra Supabase
-        // (ver verificarTokenAreaClientes_ en apps_script_trigger.js)
-        // antes de conceder precio_mayor_sin/con — sin esto, el propio
-        // servidor los habría quitado ya de la respuesta.
-        const resp = await fetch(CATALOGO_URL_ + '&token_cliente=' + encodeURIComponent(sesion.access_token), { cache: 'no-store' });
-        const datos = await resp.json();
-        productos = (datos.productos || []).filter(function (p) {
-            return !p.fecha_baja && productoVisibleParaCliente_(p, personalizacion);
-        });
-    } catch (e) {
-        document.getElementById('cargando').style.display = 'none';
-        avisoError.textContent = 'No se ha podido cargar el catálogo ahora mismo. Inténtalo de nuevo en unos minutos.';
-        avisoError.classList.add('activo');
-        return;
-    }
-
-    document.getElementById('cargando').style.display = 'none';
-    document.getElementById('contenido').style.display = 'block';
-    document.getElementById('aviso').textContent = productos.length + ' producto(s) en tu catálogo.';
-
-    if (descuentoPct > 0) {
-        const insignia = document.getElementById('insigniaDescuento');
-        insignia.textContent = '-' + descuentoPct + '% en todo tu catálogo';
-        insignia.style.display = 'inline-block';
-    }
+    let productos = [];
+    let familiasOrden = {};
+    let huboPintadoInicial = false;
 
     const rejilla = document.getElementById('rejilla');
     const sinResultados = document.getElementById('sinResultados');
+    let areaActiva = null;
 
-    function pintar_(lista) {
+    function precioOrdenable_(p) {
+        const base = numeroDesdePrecio_(p.precio_mayor_con);
+        return base === null ? Infinity : base; // sin precio de mayor, al final al ordenar por precio
+    }
+
+    function ordenFamilia_(familia) {
+        return familiasOrden[familia] !== undefined ? familiasOrden[familia] : 9999;
+    }
+
+    function pintar_(lista, orden) {
         rejilla.innerHTML = '';
         sinResultados.style.display = lista.length ? 'none' : 'block';
-        lista.forEach(function (p) {
+
+        function pintarTarjeta_(p, contenedor) {
             // El catálogo de clientes siempre parte del precio de
             // mayor (a petición de Eloy) — nunca del precio normal.
-            // Si por lo que sea no llegara (token_cliente no validado,
-            // producto sin precio de mayor informado...), se avisa en
-            // vez de mostrar silenciosamente el precio normal, que
-            // sería un precio distinto al que corresponde.
+            // Si todavía no ha llegado la respuesta en vivo
+            // (p._precioProvisional) se muestra "calculando…" en vez
+            // de un precio equivocado; si ya llegó y de verdad no hay
+            // precio de mayor para ese producto, se avisa.
             const hayPrecioMayor = p.precio_mayor_con !== undefined && p.precio_mayor_con !== null && p.precio_mayor_con !== '';
             const precioConBase = numeroDesdePrecio_(p.precio_mayor_con);
             const precioSinBase = numeroDesdePrecio_(p.precio_mayor_sin);
@@ -403,7 +435,9 @@ document.getElementById('modalDetalleOverlay').addEventListener('click', functio
             tarjeta.className = 'producto-tarjeta';
 
             let htmlPrecio;
-            if (p.mostrar_precio === false) {
+            if (p._precioProvisional) {
+                htmlPrecio = '<div class="producto-tarjeta__precio-calculando"><span class="cargando-spinner" style="border-top-color:var(--blue); width:12px; height:12px; border-width:2px;"></span>Calculando precio…</div>';
+            } else if (p.mostrar_precio === false) {
                 htmlPrecio = '<div class="producto-tarjeta__precio" style="font-size:0.85rem;">Consultar precio</div>';
             } else if (!hayPrecioMayor || precioConBase === null) {
                 htmlPrecio = '<div class="producto-tarjeta__precio" style="font-size:0.8rem; color:var(--muted);">Precio de mayor no disponible</div>';
@@ -423,64 +457,167 @@ document.getElementById('modalDetalleOverlay').addEventListener('click', functio
             tarjeta.innerHTML =
                 '<div class="producto-tarjeta__img-envoltorio">' +
                     (p.oferta ? '<span class="insignia-oferta">Oferta</span>' : '') +
-                    '<img src="' + urlImagenProducto_(p) + '" alt="" loading="lazy">' +
+                    '<img src="' + urlImagenProducto_(p) + '" alt="" loading="lazy" onerror="window.reintentarImagenProducto_(this)">' +
                 '</div>' +
                 '<div class="producto-tarjeta__cuerpo">' +
                     '<div class="producto-tarjeta__nombre" title="' + p.nombre.replace(/"/g, '&quot;') + '">' + p.nombre + '</div>' +
                     '<div class="producto-tarjeta__precios">' + htmlPrecio + '</div>' +
                 '</div>';
             tarjeta.addEventListener('click', function () { window.abrirDetalleProducto_ && window.abrirDetalleProducto_(p, descuentoPct); });
-            rejilla.appendChild(tarjeta);
-        });
-    }
-
-    // Chips de área — solo si el catálogo del cliente abarca más de una,
-    // para poder acotar rápido sin tener que escribir en el buscador.
-    const areasPresentes = Array.from(new Set(productos.map(function (p) { return p.area; }).filter(Boolean)));
-    let areaActiva = null;
-    if (areasPresentes.length > 1) {
-        const contenedorChips = document.getElementById('chipsAreas');
-        function pintarChips_() {
-            contenedorChips.innerHTML = '';
-            [null].concat(areasPresentes).forEach(function (area) {
-                const chip = document.createElement('button');
-                chip.type = 'button';
-                chip.className = 'chip-filtro' + (area === areaActiva ? ' activo' : '');
-                chip.textContent = area === null ? 'Todas las áreas' : area;
-                chip.addEventListener('click', function () {
-                    areaActiva = area;
-                    pintarChips_();
-                    aplicarFiltros_();
-                });
-                contenedorChips.appendChild(chip);
-            });
+            contenedor.appendChild(tarjeta);
         }
-        pintarChips_();
+
+        if (orden === 'familia') {
+            const familias = Array.from(new Set(lista.map(function (p) { return p.familia || '(sin familia)'; })))
+                .sort(function (a, b) { return ordenFamilia_(a) - ordenFamilia_(b); });
+            familias.forEach(function (familia) {
+                const titulo = document.createElement('div');
+                titulo.className = 'grupo-familia__titulo';
+                titulo.textContent = familia;
+                rejilla.appendChild(titulo);
+                const fila = document.createElement('div');
+                fila.className = 'rejilla-productos';
+                fila.style.marginBottom = '6px';
+                lista.filter(function (p) { return (p.familia || '(sin familia)') === familia; })
+                    .sort(function (a, b) { return a.nombre.localeCompare(b.nombre); })
+                    .forEach(function (p) { pintarTarjeta_(p, fila); });
+                rejilla.appendChild(fila);
+            });
+            rejilla.classList.remove('rejilla-productos');
+        } else {
+            if (!rejilla.classList.contains('rejilla-productos')) rejilla.classList.add('rejilla-productos');
+            lista.forEach(function (p) { pintarTarjeta_(p, rejilla); });
+        }
     }
 
-    function precioOrdenable_(p) {
-        const base = numeroDesdePrecio_(p.precio_mayor_con);
-        return base === null ? Infinity : base; // sin precio de mayor, al final al ordenar por precio
+    function poblarSelectorFamilia_(lista) {
+        const select = document.getElementById('filtroFamilia');
+        const valorActual = select.value;
+        const familias = Array.from(new Set(lista.map(function (p) { return p.familia; }).filter(Boolean)))
+            .sort(function (a, b) { return ordenFamilia_(a) - ordenFamilia_(b); });
+        select.innerHTML = '<option value="">Todas las familias</option>' +
+            familias.map(function (f) { return '<option value="' + f.replace(/"/g, '&quot;') + '">' + f + '</option>'; }).join('');
+        if (familias.includes(valorActual)) select.value = valorActual;
+    }
+
+    function poblarSelectorSubfamilia_(lista, familiaElegida) {
+        const select = document.getElementById('filtroSubfamilia');
+        const valorActual = select.value;
+        const base = familiaElegida ? lista.filter(function (p) { return p.familia === familiaElegida; }) : lista;
+        const subfamilias = Array.from(new Set(base.map(function (p) { return p.subfamilia; }).filter(Boolean))).sort();
+        select.innerHTML = '<option value="">Todas las subfamilias</option>' +
+            subfamilias.map(function (s) { return '<option value="' + s.replace(/"/g, '&quot;') + '">' + s + '</option>'; }).join('');
+        if (subfamilias.includes(valorActual)) select.value = valorActual;
     }
 
     function aplicarFiltros_() {
         const termino = document.getElementById('buscador').value.trim().toLowerCase();
         const orden = document.getElementById('orden').value;
+        const familiaElegida = document.getElementById('filtroFamilia').value;
+        const subfamiliaElegida = document.getElementById('filtroSubfamilia').value;
         let lista = productos.slice();
         if (areaActiva) lista = lista.filter(function (p) { return p.area === areaActiva; });
+        if (familiaElegida) lista = lista.filter(function (p) { return p.familia === familiaElegida; });
+        if (subfamiliaElegida) lista = lista.filter(function (p) { return p.subfamilia === subfamiliaElegida; });
         if (termino) lista = lista.filter(function (p) { return p.nombre.toLowerCase().includes(termino); });
 
         if (orden === 'nombre_desc') lista.sort(function (a, b) { return b.nombre.localeCompare(a.nombre); });
         else if (orden === 'precio_asc') lista.sort(function (a, b) { return precioOrdenable_(a) - precioOrdenable_(b); });
         else if (orden === 'precio_desc') lista.sort(function (a, b) { return precioOrdenable_(b) - precioOrdenable_(a); });
-        else lista.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }); // nombre_asc, por defecto
+        else if (orden !== 'familia') lista.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }); // nombre_asc, por defecto
 
-        pintar_(lista);
+        pintar_(lista, orden);
     }
 
-    pintar_(productos.slice().sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }));
-    document.getElementById('buscador').addEventListener('input', aplicarFiltros_);
-    document.getElementById('orden').addEventListener('change', aplicarFiltros_);
+    function mostrarContenidoInicial_(listaProductos, provisional) {
+        productos = listaProductos;
+        document.getElementById('cargando').style.display = 'none';
+        document.getElementById('contenido').style.display = 'block';
+        document.getElementById('aviso').textContent = productos.length + ' producto(s) en tu catálogo.' + (provisional ? ' Calculando precios…' : '');
+
+        if (!huboPintadoInicial) {
+            // Chips de área — solo si el catálogo del cliente abarca
+            // más de una, para poder acotar rápido sin escribir.
+            const areasPresentes = Array.from(new Set(productos.map(function (p) { return p.area; }).filter(Boolean)));
+            if (areasPresentes.length > 1) {
+                const contenedorChips = document.getElementById('chipsAreas');
+                function pintarChips_() {
+                    contenedorChips.innerHTML = '';
+                    [null].concat(areasPresentes).forEach(function (area) {
+                        const chip = document.createElement('button');
+                        chip.type = 'button';
+                        chip.className = 'chip-filtro' + (area === areaActiva ? ' activo' : '');
+                        chip.textContent = area === null ? 'Todas las áreas' : area;
+                        chip.addEventListener('click', function () {
+                            areaActiva = area;
+                            pintarChips_();
+                            poblarSelectorFamilia_(areaActiva ? productos.filter(function (p) { return p.area === areaActiva; }) : productos);
+                            aplicarFiltros_();
+                        });
+                        contenedorChips.appendChild(chip);
+                    });
+                }
+                pintarChips_();
+            }
+
+            document.getElementById('filtroFamilia').addEventListener('change', function () {
+                poblarSelectorSubfamilia_(areaActiva ? productos.filter(function (p) { return p.area === areaActiva; }) : productos, this.value);
+                aplicarFiltros_();
+            });
+            document.getElementById('filtroSubfamilia').addEventListener('change', aplicarFiltros_);
+            document.getElementById('buscador').addEventListener('input', aplicarFiltros_);
+            document.getElementById('orden').addEventListener('change', aplicarFiltros_);
+            huboPintadoInicial = true;
+        }
+
+        poblarSelectorFamilia_(productos);
+        poblarSelectorSubfamilia_(productos, document.getElementById('filtroFamilia').value);
+        aplicarFiltros_();
+    }
+
+    // ── Fase 1: pintado instantáneo con el JSON estático ──────────────
+    // Sin precio de mayor todavía (ese dato nunca viaja por aquí) — se
+    // marca cada producto como "_precioProvisional" para que la
+    // tarjeta muestre "calculando precio…" en vez de un precio
+    // equivocado, hasta que llegue la fase 2.
+    try {
+        const respEstatico = await fetch(CATALOGO_ESTATICO_URL_, { cache: 'default' });
+        if (respEstatico.ok) {
+            const datosEstaticos = await respEstatico.json();
+            familiasOrden = datosEstaticos.familias_orden || {};
+            const productosEstaticos = (datosEstaticos.productos || [])
+                .filter(function (p) { return !p.fecha_baja && productoVisibleParaCliente_(p, personalizacion); })
+                .map(function (p) { return Object.assign({ _precioProvisional: true }, p); });
+            if (productosEstaticos.length) mostrarContenidoInicial_(productosEstaticos, true);
+        }
+    } catch (e) { /* si falla, no pasa nada — la fase 2 (en vivo) es la que de verdad importa */ }
+
+    // ── Fase 2: reconciliar con la respuesta en vivo (con precio de
+    //    mayor real, ya validado contra Supabase) ─────────────────────
+    try {
+        const resp = await fetch(CATALOGO_URL_ + '&token_cliente=' + encodeURIComponent(sesion.access_token), { cache: 'no-store' });
+        const datos = await resp.json();
+        const productosEnVivo = (datos.productos || []).filter(function (p) {
+            return !p.fecha_baja && productoVisibleParaCliente_(p, personalizacion);
+        });
+        mostrarContenidoInicial_(productosEnVivo);
+    } catch (e) {
+        if (!huboPintadoInicial) {
+            document.getElementById('cargando').style.display = 'none';
+            avisoError.textContent = 'No se ha podido cargar el catálogo ahora mismo. Inténtalo de nuevo en unos minutos.';
+            avisoError.classList.add('activo');
+            return;
+        }
+        // Si ya había pintado estático y solo falla la reconciliación
+        // en vivo, se queda con el precio "calculando…" — mejor eso
+        // que esconder todo el catálogo por un fallo de red puntual.
+    }
+
+    if (descuentoPct > 0) {
+        const insignia = document.getElementById('insigniaDescuento');
+        insignia.textContent = '-' + descuentoPct + '% en todo tu catálogo';
+        insignia.style.display = 'inline-block';
+    }
 })();
 </script>
 </body>
