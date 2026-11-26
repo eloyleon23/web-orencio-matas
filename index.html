@@ -10764,6 +10764,26 @@ if (window.OM_PREPRODUCCION) {
         if (nuevos > 0) {
             console.log(`reconciliarConTextoEnVivo: ${nuevos} producto(s) nuevo(s) incorporado(s) que no estaban en la carga inicial.`);
             construirIndiceSugerencias();
+            // Bug real (26/11/2026): esta función solo PARCHEABA productos ya
+            // conocidos y, si hacía falta, los añadía a TODOS — pero nunca
+            // reconstruía los desplegables de Área/Familia (poblarOpcionesArea/
+            // renderFamilias), que solo se reconstruían en la otra ruta de
+            // reconciliación (catálogos de proveedor de Talleres). Mientras el
+            // JSON estático de partida traía ya casi todo el catálogo esto no se
+            // notaba: aquí solo llegaban a parchear productos ya existentes. En
+            // cuanto ese JSON estático queda incompleto (incidente real del
+            // 24-26/11/2026: data/productos.json se generó casi vacío varias
+            // veces seguidas) y esta reconciliación tiene que INCORPORAR miles
+            // de productos nuevos de golpe, sus áreas/familias nunca llegaban a
+            // tener casilla — y como aplicarFiltros() filtra por lo marcado en
+            // esas casillas (nunca reconstruidas), el catálogo visible se
+            // quedaba encogido a solo las áreas/familias que ya existían en la
+            // carga inicial, aunque TODOS ya tuviera el catálogo completo en
+            // memoria. poblarOpcionesArea() conserva el estado marcado/
+            // desmarcado de las áreas que ya hubiera, así que esto es seguro de
+            // llamar en cualquier reconciliación que añada productos nuevos.
+            poblarOpcionesArea();
+            renderFamilias();
         }
 
         // Retirar productos del catálogo principal que ya no aparecen en
