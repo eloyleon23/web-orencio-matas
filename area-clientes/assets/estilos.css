@@ -1,10 +1,13 @@
-/* Área de Clientes — tokens básicos, alineados con los colores de
-   marca ya usados en el sitio principal (--blue/--dark/--light de
-   index.html) para que no se note como "otra web" al pasar de una a
-   otra. Fase 1: solo login/sesión, sin personalización todavía. */
+/* Área de Clientes — mismos tokens de marca que el sitio público
+   (--blue/--dark/--light de index.html) y las mismas tipografías
+   (Inter + Montserrat, vía Google Fonts) para que no se note como
+   "otra web" al pasar de una a otra. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Montserrat:wght@600;700;800;900&display=swap');
+
 :root {
     --blue: #1976D2;
     --blue-dark: #115293;
+    --blue-soft: #e8f1fb;
     --dark: #1e293b;
     --muted: #475569;
     --light: #f8fafc;
@@ -14,7 +17,8 @@
     --danger-soft: #fdecea;
     --ok: #388E3C;
     --ok-soft: #eaf5ec;
-    --radius: 10px;
+    --radius: 12px;
+    --sombra: 0 4px 24px rgba(30, 41, 59, 0.07);
 }
 
 * { box-sizing: border-box; }
@@ -22,13 +26,57 @@
 body {
     margin: 0;
     min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
     background: var(--light);
     color: var(--dark);
+}
+
+h1, h2, .marca__nombre {
+    font-family: 'Montserrat', 'Inter', sans-serif;
+}
+
+/* ── Barra superior de marca, igual en todas las páginas ──────────── */
+.navbar-om {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 24px;
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+}
+
+.navbar-om__marca {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.navbar-om__logo { height: 32px; width: auto; display: block; }
+
+.navbar-om__etiqueta {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--blue);
+    background: var(--blue-soft);
+    border-radius: 999px;
+    padding: 3px 10px;
+    letter-spacing: 0.01em;
+}
+
+.navbar-om__usuario {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ── Páginas de una sola tarjeta centrada (login, solicitar acceso...) */
+.envoltorio-centrado {
+    min-height: calc(100vh - 62px);
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 32px 20px;
 }
 
 .tarjeta {
@@ -38,41 +86,21 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 32px 28px;
-    box-shadow: 0 4px 24px rgba(30, 41, 59, 0.06);
+    box-shadow: var(--sombra);
 }
 
-.tarjeta--ancha { max-width: 620px; }
-
-.marca {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 24px;
-}
-
-.marca__nombre {
-    font-weight: 800;
-    font-size: 1.05rem;
-    color: var(--dark);
-}
-
-.marca__etiqueta {
-    font-size: 0.75rem;
-    font-weight: 700;
-    color: var(--blue);
-    background: #e8f1fb;
-    border-radius: 999px;
-    padding: 3px 10px;
-}
+.tarjeta--ancha { max-width: 640px; }
 
 h1 {
-    font-size: 1.3rem;
+    font-size: 1.35rem;
+    font-weight: 800;
     margin: 0 0 6px;
 }
 
 p.ayuda {
     color: var(--muted);
     font-size: 0.9rem;
+    line-height: 1.5;
     margin: 0 0 22px;
 }
 
@@ -91,6 +119,8 @@ input, textarea {
     border-radius: 8px;
     font-size: 0.95rem;
     font-family: inherit;
+    background: var(--white);
+    color: var(--dark);
 }
 
 input:focus, textarea:focus {
@@ -101,7 +131,7 @@ input:focus, textarea:focus {
 button.boton-principal {
     width: 100%;
     margin-top: 20px;
-    padding: 11px;
+    padding: 12px;
     background: var(--blue);
     color: white;
     border: none;
@@ -109,6 +139,7 @@ button.boton-principal {
     font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
+    transition: background 0.15s ease;
 }
 
 button.boton-principal:hover { background: var(--blue-dark); }
@@ -127,6 +158,8 @@ button.boton-secundario {
     cursor: pointer;
 }
 
+button.boton-secundario:hover { background: var(--light); border-color: #cbd5e1; }
+
 a.enlace-discreto {
     display: block;
     text-align: center;
@@ -134,7 +167,10 @@ a.enlace-discreto {
     font-size: 0.85rem;
     color: var(--blue);
     text-decoration: none;
+    font-weight: 600;
 }
+
+a.enlace-discreto:hover { text-decoration: underline; }
 
 .aviso {
     margin-top: 16px;
@@ -162,20 +198,101 @@ a.enlace-discreto {
 
 @keyframes girar { to { transform: rotate(360deg); } }
 
-.cabecera-app {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-}
-
 .insignia-rol {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--blue);
-    background: #e8f1fb;
+    background: var(--blue-soft);
     border-radius: 999px;
     padding: 4px 10px;
+}
+
+/* ── Layout del panel de gestión: menú lateral + contenido ────────── */
+.layout-panel {
+    display: flex;
+    min-height: calc(100vh - 62px);
+}
+
+.panel-lateral {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--dark);
+    color: #cbd5e1;
+    padding: 24px 14px;
+}
+
+.panel-lateral__titulo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    padding: 0 10px;
+    margin-bottom: 10px;
+}
+
+.panel-lateral a {
+    display: block;
+    padding: 9px 10px;
+    border-radius: 8px;
+    color: #e2e8f0;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.panel-lateral a:hover { background: rgba(255,255,255,0.08); }
+.panel-lateral a.activo { background: var(--blue); color: white; }
+
+.panel-lateral__separador {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    margin: 14px 10px;
+}
+
+.panel-contenido {
+    flex: 1;
+    padding: 32px;
+    max-width: 920px;
+}
+
+.panel-tarjeta {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px 30px;
+    box-shadow: var(--sombra);
+}
+
+@media (max-width: 760px) {
+    .layout-panel { flex-direction: column; }
+    .panel-lateral { width: 100%; display: flex; flex-wrap: wrap; gap: 4px; padding: 14px; }
+    .panel-lateral__titulo { display: none; }
+    .panel-lateral__separador { display: none; }
+    .panel-lateral a { margin-bottom: 0; }
+    .panel-contenido { padding: 20px; }
+}
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.03em; }
+
+button.boton-fila {
+    padding: 6px 12px; font-size: 0.8rem; font-weight: 700;
+    border: 1px solid var(--blue); color: var(--blue); background: white;
+    border-radius: 6px; cursor: pointer;
+}
+
+button.boton-fila:hover { background: var(--blue-soft); }
+button.boton-fila:disabled { opacity: 0.6; cursor: wait; }
+
+.banda-simulacion {
+    position: fixed; top: 0; left: 0; right: 0;
+    background: #7c2d12; color: white;
+    text-align: center; padding: 8px 12px;
+    font-size: 0.85rem; font-weight: 700;
+    z-index: 20;
 }

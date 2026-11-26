@@ -7,25 +7,24 @@
 <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body>
-<div class="tarjeta tarjeta--ancha">
-    <div class="cabecera-app">
-        <div class="marca">
-            <span class="marca__nombre">Orencio Matas</span>
-            <span class="marca__etiqueta">Área de Clientes</span>
-        </div>
-        <span class="insignia-rol" id="insigniaRol">…</span>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Área de Clientes</span>
     </div>
-
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="envoltorio-centrado">
+<div class="tarjeta tarjeta--ancha">
     <h1 id="saludo">Hola</h1>
     <p class="ayuda" id="aviso">
         En construcción: el catálogo personalizado y las propuestas de
         pedido llegan en las fases siguientes del plan.
     </p>
-
-    <a class="enlace-discreto" id="enlaceGestionClientes" href="gestion/clientes.html" style="display:none;">Ver clientes</a>
-    <a class="enlace-discreto" id="enlaceGestionAlta" href="gestion/alta-cliente.html" style="display:none;">Dar de alta un cliente</a>
-
-    <button class="boton-secundario" id="botonSalir">Cerrar sesión</button>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -48,14 +47,17 @@
     if (error || !perfil) {
         insignia.textContent = 'rol desconocido';
     } else {
+        // Comercial/administrador no tienen nada que hacer en esta
+        // pantalla (pensada para el cliente) — van directos al panel
+        // de gestión.
+        if (['comercial', 'administrador'].includes(perfil.rol)) {
+            window.location.href = 'gestion/clientes.html';
+            return;
+        }
         insignia.textContent = perfil.rol;
         if (perfil.nombre) {
             document.getElementById('saludo').textContent =
                 'Hola, ' + perfil.nombre + (perfil.apellidos ? ' ' + perfil.apellidos : '');
-        }
-        if (['comercial', 'administrador'].includes(perfil.rol)) {
-            document.getElementById('enlaceGestionAlta').style.display = 'block';
-            document.getElementById('enlaceGestionClientes').style.display = 'block';
         }
     }
 

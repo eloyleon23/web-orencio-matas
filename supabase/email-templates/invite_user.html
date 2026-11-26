@@ -1,0 +1,31 @@
+<!-- Plantilla "Invite user" — Supabase → Authentication → Emails →
+     Templates → Invite user. Pega este HTML entero en el campo
+     "Message body" (sustituye todo el contenido). Variables de
+     Supabase usadas: {{ .ConfirmationURL }}. -->
+<div style="background:#f8fafc; padding:32px 16px; font-family:Arial,Helvetica,sans-serif;">
+  <div style="max-width:480px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0;">
+    <div style="background:#1e293b; padding:20px 28px; text-align:center;">
+      <img src="https://orenciomatas.es/assets/logos/logo-orencio.png" alt="Orencio Matas" height="34" style="display:inline-block;">
+    </div>
+    <div style="padding:32px 28px;">
+      <p style="font-size:12px; font-weight:700; color:#1976D2; text-transform:uppercase; letter-spacing:0.04em; margin:0 0 12px;">Área de Clientes</p>
+      <h1 style="font-size:20px; color:#1e293b; margin:0 0 16px;">Te hemos dado de alta</h1>
+      <p style="font-size:15px; line-height:1.6; color:#475569; margin:0 0 24px;">
+        Ya tienes acceso al área de clientes de Orencio Matas. Pulsa el botón
+        para fijar tu contraseña y entrar por primera vez.
+      </p>
+      <div style="text-align:center; margin:28px 0;">
+        <a href="{{ .ConfirmationURL }}" style="background:#1976D2; color:#ffffff; text-decoration:none; font-weight:700; font-size:15px; padding:12px 28px; border-radius:8px; display:inline-block;">
+          Fijar mi contraseña
+        </a>
+      </div>
+      <p style="font-size:13px; line-height:1.5; color:#94a3b8; margin:24px 0 0;">
+        Si no esperabas este correo, puedes ignorarlo con tranquilidad: no se
+        ha hecho nada con tu cuenta todavía.
+      </p>
+    </div>
+  </div>
+  <p style="text-align:center; font-size:12px; color:#94a3b8; margin:20px 0 0;">
+    Orencio Matas — este correo se ha enviado automáticamente, por favor no respondas a él.
+  </p>
+</div>

@@ -5,35 +5,26 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Simulación de acceso — Área de Clientes · Orencio Matas</title>
 <link rel="stylesheet" href="assets/estilos.css">
-<style>
-    .banda-simulacion {
-        position: fixed; top: 0; left: 0; right: 0;
-        background: #7c2d12; color: white;
-        text-align: center; padding: 8px 12px;
-        font-size: 0.85rem; font-weight: 700;
-        z-index: 10;
-    }
-    body { padding-top: 56px; }
-</style>
+<style>body { padding-top: 34px; }</style>
 </head>
 <body>
 <div class="banda-simulacion">
     MODO SIMULACIÓN — solo visualización, no se puede actuar en nombre del cliente
 </div>
-
-<div class="tarjeta tarjeta--ancha">
-    <div class="cabecera-app">
-        <div class="marca">
-            <span class="marca__nombre">Orencio Matas</span>
-            <span class="marca__etiqueta">Simulación</span>
-        </div>
-        <span class="insignia-rol">cliente</span>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Simulación</span>
     </div>
-
+    <span class="insignia-rol">cliente</span>
+</nav>
+<div class="envoltorio-centrado">
+<div class="tarjeta tarjeta--ancha">
     <h1 id="titulo">Comprobando el acceso…</h1>
     <p class="ayuda" id="ayuda"></p>
 
     <button class="boton-secundario" id="botonSalir" style="display:none;">Salir de la simulación</button>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>

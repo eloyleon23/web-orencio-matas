@@ -7,15 +7,24 @@
 <link rel="stylesheet" href="../assets/estilos.css">
 </head>
 <body>
-<div class="tarjeta tarjeta--ancha">
-    <div class="cabecera-app">
-        <div class="marca">
-            <span class="marca__nombre">Orencio Matas</span>
-            <span class="marca__etiqueta">Panel de gestión</span>
-        </div>
-        <span class="insignia-rol" id="insigniaRol">…</span>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="../assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Panel de gestión</span>
     </div>
-
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="layout-panel">
+    <aside class="panel-lateral">
+        <div class="panel-lateral__titulo">Gestión</div>
+        <a href="clientes.html">Clientes</a>
+        <a href="alta-cliente.html" class="activo">Dar de alta</a>
+    </aside>
+    <main class="panel-contenido">
+        <div class="panel-tarjeta">
     <h1>Dar de alta un cliente</h1>
     <p class="ayuda">
         Se comprueba que no exista ya una cuenta con ese email. El cliente
@@ -56,8 +65,8 @@
 
     <div class="aviso aviso--error" id="avisoError"></div>
     <div class="aviso aviso--ok" id="avisoOk"></div>
-
-    <a class="enlace-discreto" href="../app.html">← Volver</a>
+        </div>
+    </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -69,6 +78,11 @@
     );
     if (!resultado) return;
     document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await window.obtenerClienteSupabase_().auth.signOut();
+        window.location.href = '../index.html';
+    });
 
     const form = document.getElementById('formAlta');
     const avisoError = document.getElementById('avisoError');

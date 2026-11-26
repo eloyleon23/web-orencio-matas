@@ -7,11 +7,14 @@
 <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body>
-<div class="tarjeta tarjeta--ancha">
-    <div class="marca">
-        <span class="marca__nombre">Orencio Matas</span>
-        <span class="marca__etiqueta">Área de Clientes</span>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Área de Clientes</span>
     </div>
+</nav>
+<div class="envoltorio-centrado">
+<div class="tarjeta tarjeta--ancha">
     <h1>Solicitar acceso</h1>
     <p class="ayuda">
         Rellena tus datos y nos pondremos en contacto contigo para dar de
@@ -53,6 +56,7 @@
     <div class="aviso aviso--ok" id="avisoOk"></div>
 
     <a class="enlace-discreto" href="index.html">Ya tengo cuenta — iniciar sesión</a>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>

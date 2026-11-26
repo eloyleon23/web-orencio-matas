@@ -5,41 +5,37 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Clientes — Panel de gestión · Orencio Matas</title>
 <link rel="stylesheet" href="../assets/estilos.css">
-<style>
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
-    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
-    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
-    button.boton-fila {
-        padding: 5px 10px; font-size: 0.8rem; font-weight: 600;
-        border: 1px solid var(--blue); color: var(--blue); background: white;
-        border-radius: 6px; cursor: pointer;
-    }
-    button.boton-fila:hover { background: #e8f1fb; }
-    button.boton-fila:disabled { opacity: 0.6; cursor: wait; }
-</style>
 </head>
 <body>
-<div class="tarjeta tarjeta--ancha" style="max-width: 760px;">
-    <div class="cabecera-app">
-        <div class="marca">
-            <span class="marca__nombre">Orencio Matas</span>
-            <span class="marca__etiqueta">Panel de gestión</span>
-        </div>
-        <span class="insignia-rol" id="insigniaRol">…</span>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="../assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Panel de gestión</span>
     </div>
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="layout-panel">
+    <aside class="panel-lateral">
+        <div class="panel-lateral__titulo">Gestión</div>
+        <a href="clientes.html" class="activo">Clientes</a>
+        <a href="alta-cliente.html">Dar de alta</a>
+    </aside>
+    <main class="panel-contenido">
+        <div class="panel-tarjeta">
+            <h1>Clientes</h1>
+            <p class="ayuda" id="ayuda">Cargando…</p>
 
-    <h1>Clientes</h1>
-    <p class="ayuda" id="ayuda">Cargando…</p>
+            <table id="tablaClientes" style="display:none;">
+                <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th></th></tr></thead>
+                <tbody id="cuerpoTabla"></tbody>
+            </table>
 
-    <table id="tablaClientes" style="display:none;">
-        <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th></th></tr></thead>
-        <tbody id="cuerpoTabla"></tbody>
-    </table>
-
-    <div class="aviso aviso--error" id="avisoError"></div>
-
-    <a class="enlace-discreto" href="alta-cliente.html">+ Dar de alta un cliente</a>
-    <a class="enlace-discreto" href="../app.html">← Volver</a>
+            <div class="aviso aviso--error" id="avisoError"></div>
+        </div>
+    </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -56,6 +52,11 @@
     const ayuda = document.getElementById('ayuda');
     const avisoError = document.getElementById('avisoError');
 
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await cliente.auth.signOut();
+        window.location.href = '../index.html';
+    });
+
     const { data: clientes, error } = await cliente
         .from('clientes')
         .select('id, crm_id, empresa, profiles!inner(nombre, apellidos, email)')
@@ -69,7 +70,7 @@
     }
 
     if (!clientes || clientes.length === 0) {
-        ayuda.textContent = 'Todavía no hay clientes. Puedes dar de alta el primero.';
+        ayuda.textContent = 'Todavía no hay clientes. Puedes dar de alta el primero desde el menú de la izquierda.';
         return;
     }
 
