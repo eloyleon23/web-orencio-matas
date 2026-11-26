@@ -59,7 +59,10 @@
 
     const { data: clientes, error } = await cliente
         .from('clientes')
-        .select('id, crm_id, empresa, profiles!inner(nombre, apellidos, email)')
+        // "clientes" tiene DOS referencias a "profiles" (id y
+        // comercial_id) — hay que decirle a PostgREST cuál de las dos
+        // seguir aquí (la del propio cliente, no la del comercial).
+        .select('id, crm_id, empresa, profiles!clientes_id_fkey(nombre, apellidos, email)')
         .order('created_at', { ascending: false });
 
     if (error) {

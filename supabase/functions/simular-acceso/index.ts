@@ -65,7 +65,10 @@ Deno.serve(async (req) => {
 
   const { data: cliente, error: errorCliente } = await admin
     .from('clientes')
-    .select('id, comercial_id, profiles!inner(email, nombre, apellidos)')
+    // Igual que en gestion/clientes.html: "clientes" tiene dos
+    // referencias a "profiles" (id y comercial_id), hay que indicar
+    // cuál seguir.
+    .select('id, comercial_id, profiles!clientes_id_fkey(email, nombre, apellidos)')
     .eq('id', clienteId)
     .single();
 
