@@ -400,3 +400,27 @@ th { color: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: 
     font-size: 0.85rem; font-weight: 700;
     z-index: 20;
 }
+
+/* Variante llamativa de .boton-fila para acciones destructivas o de
+   bloqueo (nunca de eliminación real — siempre baja lógica, pero el
+   botón tiene que transmitir que "pasa algo serio" igual). */
+.boton-fila.boton-peligro {
+    border-color: var(--danger); color: white; background: var(--danger);
+}
+.boton-fila.boton-peligro:hover { background: #b02a2a; border-color: #b02a2a; }
+
+/* ── Modal de confirmación genérica, reutilizable en cualquier página
+   (ver window.confirmarModal_ en supabase-client.js) ──────────────── */
+.modal-confirmar-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55);
+    align-items: center; justify-content: center; padding: 20px; z-index: 60;
+}
+.modal-confirmar-overlay.activo { display: flex; }
+.modal-confirmar {
+    background: var(--white); border-radius: var(--radius); max-width: 420px; width: 100%;
+    padding: 26px 26px 20px;
+}
+.modal-confirmar__titulo { font-size: 1.05rem; font-weight: 800; margin: 0 0 8px; }
+.modal-confirmar__texto { font-size: 0.9rem; color: var(--muted); line-height: 1.5; margin: 0 0 20px; }
+.modal-confirmar__botones { display: flex; gap: 10px; justify-content: flex-end; }
+.modal-confirmar__botones button { width: auto; margin: 0; padding: 9px 16px; }

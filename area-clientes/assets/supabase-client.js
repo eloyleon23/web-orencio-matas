@@ -60,3 +60,52 @@ window.exigirRolAreaClientes_ = async function (rolesPermitidos, rutaLogin, ruta
     }
     return { sesion, perfil };
 };
+
+// Modal de confirmación con estilo propio, en vez del confirm()
+// nativo del navegador (sin marca y sin forma de resaltar que la
+// acción es delicada). Crea la modal en el DOM la primera vez que se
+// llama y la reutiliza después. Devuelve una promesa: true si se
+// confirma, false si se cancela o se cierra de cualquier otra forma.
+window.confirmarModal_ = function (titulo, texto, textoBotonConfirmar, peligroso) {
+    let overlay = document.getElementById('modalConfirmarOverlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'modalConfirmarOverlay';
+        overlay.className = 'modal-confirmar-overlay';
+        overlay.innerHTML =
+            '<div class="modal-confirmar">' +
+                '<h3 class="modal-confirmar__titulo" id="modalConfirmarTitulo"></h3>' +
+                '<p class="modal-confirmar__texto" id="modalConfirmarTexto"></p>' +
+                '<div class="modal-confirmar__botones">' +
+                    '<button type="button" class="boton-secundario" id="modalConfirmarCancelar">Cancelar</button>' +
+                    '<button type="button" class="boton-principal" id="modalConfirmarAceptar"></button>' +
+                '</div>' +
+            '</div>';
+        document.body.appendChild(overlay);
+    }
+
+    document.getElementById('modalConfirmarTitulo').textContent = titulo;
+    document.getElementById('modalConfirmarTexto').textContent = texto;
+    const botonAceptar = document.getElementById('modalConfirmarAceptar');
+    botonAceptar.textContent = textoBotonConfirmar || 'Confirmar';
+    botonAceptar.style.background = peligroso ? 'var(--danger)' : '';
+
+    overlay.classList.add('activo');
+
+    return new Promise(function (resolve) {
+        function cerrar_(resultado) {
+            overlay.classList.remove('activo');
+            botonAceptar.removeEventListener('click', onAceptar_);
+            document.getElementById('modalConfirmarCancelar').removeEventListener('click', onCancelar_);
+            overlay.removeEventListener('click', onFondo_);
+            resolve(resultado);
+        }
+        function onAceptar_() { cerrar_(true); }
+        function onCancelar_() { cerrar_(false); }
+        function onFondo_(ev) { if (ev.target === overlay) cerrar_(false); }
+
+        botonAceptar.addEventListener('click', onAceptar_);
+        document.getElementById('modalConfirmarCancelar').addEventListener('click', onCancelar_);
+        overlay.addEventListener('click', onFondo_);
+    });
+};

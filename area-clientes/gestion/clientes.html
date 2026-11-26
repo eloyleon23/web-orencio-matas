@@ -98,7 +98,7 @@
             '<td style="white-space:nowrap;">' +
             '<a class="boton-fila" style="text-decoration:none; display:inline-block; margin-right:6px;" href="personalizar-cliente.html?id=' + c.id + '">Personalizar</a>' +
             '<button class="boton-fila" data-id="' + c.id + '" style="margin-right:6px;">Simular</button>' +
-            '<button class="boton-fila boton-estado" data-id="' + c.id + '" data-activo="' + activo + '">' + (activo ? 'Bloquear' : 'Reactivar') + '</button>' +
+            '<button class="boton-fila boton-estado' + (activo ? ' boton-peligro' : '') + '" data-id="' + c.id + '" data-activo="' + activo + '">' + (activo ? 'Bloquear' : 'Reactivar') + '</button>' +
             '</td>';
         cuerpo.appendChild(fila);
     });
@@ -115,7 +115,15 @@
             // marca "activo = false" en la ficha. Confirmación extra
             // al bloquear (no al reactivar) para evitar un clic
             // accidental que deje a un cliente sin acceso sin querer.
-            if (activoActual && !confirm('¿Bloquear el acceso de este cliente? Podrás reactivarlo cuando quieras.')) return;
+            if (activoActual) {
+                const confirmado = await window.confirmarModal_(
+                    'Bloquear acceso',
+                    'Este cliente dejará de poder entrar al área de clientes de inmediato. Podrás reactivarlo cuando quieras — no se borra nada.',
+                    'Bloquear acceso',
+                    true
+                );
+                if (!confirmado) return;
+            }
 
             botonEstado.disabled = true;
             const { error: errorEstado } = await cliente.from('clientes').update({ activo: !activoActual }).eq('id', idCliente);
@@ -134,6 +142,7 @@
             badge.style.color = nuevoActivo ? 'var(--ok)' : 'var(--danger)';
             badge.style.background = nuevoActivo ? 'var(--ok-soft)' : 'var(--danger-soft)';
             botonEstado.textContent = nuevoActivo ? 'Bloquear' : 'Reactivar';
+            botonEstado.classList.toggle('boton-peligro', nuevoActivo);
             botonEstado.dataset.activo = String(nuevoActivo);
             return;
         }
