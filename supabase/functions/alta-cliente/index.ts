@@ -98,11 +98,24 @@ Deno.serve(async (req) => {
     return responder({ error: 'Ya existe una cuenta con ese email' }, 409);
   }
 
+  // "redirect_to" lo manda ya resuelto el navegador que llama (p. ej.
+  // la previsualización hoy, clientes.orenciomatas.es el día de
+  // mañana) — así el enlace del correo apunta siempre al sitio
+  // correcto sin tener que tocar esta función al cambiar de entorno.
+  // Si por lo que sea no llega, cae en el Site URL configurado en el
+  // propio proyecto de Supabase.
+  const redirectTo = cuerpo.redirect_to ? String(cuerpo.redirect_to) : undefined;
+
   // Crea el usuario en Auth e, inmediatamente, envía el correo de
   // acceso de Supabase (enlace para fijar contraseña). El trigger
   // on_auth_user_created_area_clientes crea su fila en profiles solo.
+  // IMPORTANTE: para que Supabase respete este "redirectTo" en vez de
+  // caer en el Site URL por defecto, la URL de destino tiene que estar
+  // en la lista de "Redirect URLs" permitidas (Authentication → URL
+  // Configuration, en el panel de Supabase).
   const { data: altaAuth, error: errorAlta } = await admin.auth.admin.inviteUserByEmail(email, {
     data: { rol: 'cliente', nombre, apellidos },
+    redirectTo,
   });
 
   if (errorAlta || !altaAuth?.user) {

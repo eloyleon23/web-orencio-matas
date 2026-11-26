@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fijar contraseña — Área de Clientes · Orencio Matas</title>
+<link rel="stylesheet" href="assets/estilos.css">
+</head>
+<body>
+<div class="tarjeta">
+    <div class="marca">
+        <span class="marca__nombre">Orencio Matas</span>
+        <span class="marca__etiqueta">Área de Clientes</span>
+    </div>
+    <h1>Fija tu contraseña</h1>
+    <p class="ayuda" id="ayuda">Comprobando el enlace…</p>
+
+    <form id="formContrasena" style="display:none;">
+        <label for="password">Nueva contraseña</label>
+        <input id="password" type="password" minlength="8" autocomplete="new-password" required>
+
+        <label for="password2">Repite la contraseña</label>
+        <input id="password2" type="password" minlength="8" autocomplete="new-password" required>
+
+        <button type="submit" class="boton-principal" id="botonGuardar">Guardar y entrar</button>
+    </form>
+
+    <div class="aviso aviso--error" id="avisoError"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script>
+(async function () {
+    // El enlace del correo de invitación/recuperación de Supabase trae
+    // el token en el propio hash de la URL — supabase-js lo detecta
+    // solo (detectSessionInUrl, activado por defecto) y deja ya una
+    // sesión temporal activa, sin necesitar contraseña todavía.
+    const cliente = window.obtenerClienteSupabase_();
+    const ayuda = document.getElementById('ayuda');
+    const form = document.getElementById('formContrasena');
+    const avisoError = document.getElementById('avisoError');
+
+    const { data } = await cliente.auth.getSession();
+    if (!data.session) {
+        ayuda.textContent = 'Este enlace no es válido o ha caducado. Pide que te reenvíen la invitación.';
+        return;
+    }
+
+    ayuda.textContent = 'Elige una contraseña de al menos 8 caracteres.';
+    form.style.display = 'block';
+
+    form.addEventListener('submit', async function (ev) {
+        ev.preventDefault();
+        avisoError.classList.remove('activo');
+        const p1 = document.getElementById('password').value;
+        const p2 = document.getElementById('password2').value;
+
+        if (p1 !== p2) {
+            avisoError.textContent = 'Las dos contraseñas no coinciden.';
+            avisoError.classList.add('activo');
+            return;
+        }
+
+        const boton = document.getElementById('botonGuardar');
+        boton.disabled = true;
+        boton.innerHTML = '<span class="cargando-spinner"></span>Guardando…';
+
+        const { error } = await cliente.auth.updateUser({ password: p1 });
+        if (error) {
+            avisoError.textContent = 'No se ha podido guardar la contraseña: ' + error.message;
+            avisoError.classList.add('activo');
+            boton.disabled = false;
+            boton.textContent = 'Guardar y entrar';
+            return;
+        }
+
+        window.location.href = 'app.html';
+    });
+})();
+</script>
+</body>
+</html>

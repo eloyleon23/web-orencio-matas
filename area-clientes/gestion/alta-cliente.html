@@ -92,6 +92,10 @@
             direccion_calle: document.getElementById('calle').value.trim() || null,
             direccion_cp: document.getElementById('cp').value.trim() || null,
             direccion_poblacion: document.getElementById('poblacion').value.trim() || null,
+            // URL absoluta, resuelta respecto a esta misma página — así
+            // funciona igual sea cual sea la ruta base del despliegue
+            // (previsualización hoy, dominio propio más adelante).
+            redirect_to: new URL('../establecer-contrasena.html', window.location.href).href,
         };
 
         try {
