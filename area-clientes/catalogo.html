@@ -326,7 +326,7 @@ document.getElementById('modalDetalleOverlay').addEventListener('click', functio
 
     const { data: datosCliente, error: errorCliente } = await cliente
         .from('clientes')
-        .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct')
+        .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct, activo')
         .eq('id', sesion.user.id)
         .single();
 
@@ -334,6 +334,17 @@ document.getElementById('modalDetalleOverlay').addEventListener('click', functio
         document.getElementById('cargando').style.display = 'none';
         avisoError.textContent = 'No se ha podido cargar tu ficha de cliente. Contacta con tu comercial.';
         avisoError.classList.add('activo');
+        return;
+    }
+
+    // Baja lógica: si se desactiva mientras hay una sesión ya abierta
+    // (no solo al iniciar sesión), se cierra aquí también.
+    if (datosCliente.activo === false) {
+        document.getElementById('cargando').style.display = 'none';
+        avisoError.textContent = 'Tu acceso está desactivado. Contacta con tu comercial.';
+        avisoError.classList.add('activo');
+        if (!enSimulacion) await cliente.auth.signOut();
+        document.getElementById('botonSalir').style.display = 'none';
         return;
     }
 

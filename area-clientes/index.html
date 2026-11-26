@@ -68,7 +68,7 @@
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const cliente = window.obtenerClienteSupabase_();
-        const { error } = await cliente.auth.signInWithPassword({ email, password });
+        const { data, error } = await cliente.auth.signInWithPassword({ email, password });
 
         if (error) {
             mostrarError_('Email o contraseña incorrectos.');
@@ -76,6 +76,20 @@
             boton.textContent = 'Entrar';
             return;
         }
+
+        // Baja lógica: si es una cuenta de cliente y está desactivada,
+        // fuera inmediatamente — nunca se borra nada, solo se bloquea
+        // el acceso. No afecta a comercial/almacén/administrador (esas
+        // cuentas no tienen fila en "clientes").
+        const { data: fichaCliente } = await cliente.from('clientes').select('activo').eq('id', data.user.id).maybeSingle();
+        if (fichaCliente && fichaCliente.activo === false) {
+            await cliente.auth.signOut();
+            mostrarError_('Tu acceso está desactivado. Contacta con tu comercial.');
+            boton.disabled = false;
+            boton.textContent = 'Entrar';
+            return;
+        }
+
         window.location.href = 'app.html';
     });
 })();

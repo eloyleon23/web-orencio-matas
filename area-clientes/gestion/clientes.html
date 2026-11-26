@@ -31,7 +31,7 @@
 
             <div id="tablaClientes" class="tabla-scroll" style="display:none;">
             <table>
-                <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th></th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th>Estado</th><th></th></tr></thead>
                 <tbody id="cuerpoTabla"></tbody>
             </table>
             </div>
@@ -65,7 +65,7 @@
         // "clientes" tiene DOS referencias a "profiles" (id y
         // comercial_id) — hay que decirle a PostgREST cuál de las dos
         // seguir aquí (la del propio cliente, no la del comercial).
-        .select('id, crm_id, empresa, profiles!clientes_id_fkey(nombre, apellidos, email)')
+        .select('id, crm_id, empresa, activo, profiles!clientes_id_fkey(nombre, apellidos, email)')
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -86,14 +86,19 @@
     clientes.forEach(function (c) {
         const fila = document.createElement('tr');
         const nombre = [c.profiles.nombre, c.profiles.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
+        const activo = c.activo !== false;
         fila.innerHTML =
             '<td>' + nombre + '</td>' +
             '<td>' + c.profiles.email + '</td>' +
             '<td>' + (c.empresa || '—') + '</td>' +
             '<td>' + (c.crm_id || '—') + '</td>' +
-            '<td>' +
+            '<td><span style="font-size:0.75rem; font-weight:700; padding:3px 9px; border-radius:999px; ' +
+                (activo ? 'color:var(--ok); background:var(--ok-soft);' : 'color:var(--danger); background:var(--danger-soft);') +
+                '">' + (activo ? 'Activo' : 'Desactivado') + '</span></td>' +
+            '<td style="white-space:nowrap;">' +
             '<a class="boton-fila" style="text-decoration:none; display:inline-block; margin-right:6px;" href="personalizar-cliente.html?id=' + c.id + '">Personalizar</a>' +
-            '<button class="boton-fila" data-id="' + c.id + '">Simular acceso</button>' +
+            '<button class="boton-fila" data-id="' + c.id + '" style="margin-right:6px;">Simular acceso</button>' +
+            '<button class="boton-fila boton-estado" data-id="' + c.id + '" data-activo="' + activo + '">' + (activo ? 'Bloquear acceso' : 'Reactivar') + '</button>' +
             '</td>';
         cuerpo.appendChild(fila);
     });
@@ -101,6 +106,38 @@
     document.getElementById('tablaClientes').style.display = 'block';
 
     cuerpo.addEventListener('click', async function (ev) {
+        const botonEstado = ev.target.closest('button.boton-estado');
+        if (botonEstado) {
+            const idCliente = botonEstado.dataset.id;
+            const activoActual = botonEstado.dataset.activo === 'true';
+
+            // Baja lógica únicamente — nunca se borra nada, solo se
+            // marca "activo = false" en la ficha. Confirmación extra
+            // al bloquear (no al reactivar) para evitar un clic
+            // accidental que deje a un cliente sin acceso sin querer.
+            if (activoActual && !confirm('¿Bloquear el acceso de este cliente? Podrás reactivarlo cuando quieras.')) return;
+
+            botonEstado.disabled = true;
+            const { error: errorEstado } = await cliente.from('clientes').update({ activo: !activoActual }).eq('id', idCliente);
+            botonEstado.disabled = false;
+
+            if (errorEstado) {
+                avisoError.textContent = 'No se ha podido cambiar el estado: ' + errorEstado.message;
+                avisoError.classList.add('activo');
+                return;
+            }
+
+            const fila = botonEstado.closest('tr');
+            const badge = fila.querySelector('td:nth-child(5) span');
+            const nuevoActivo = !activoActual;
+            badge.textContent = nuevoActivo ? 'Activo' : 'Desactivado';
+            badge.style.color = nuevoActivo ? 'var(--ok)' : 'var(--danger)';
+            badge.style.background = nuevoActivo ? 'var(--ok-soft)' : 'var(--danger-soft)';
+            botonEstado.textContent = nuevoActivo ? 'Bloquear acceso' : 'Reactivar';
+            botonEstado.dataset.activo = String(nuevoActivo);
+            return;
+        }
+
         const boton = ev.target.closest('button.boton-fila');
         if (!boton) return;
         const idCliente = boton.dataset.id;
