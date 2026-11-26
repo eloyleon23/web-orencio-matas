@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Importar clientes — Panel de gestión · Orencio Matas</title>
+<!-- Usamos "xlsx" (SheetJS) para generar la plantilla y leer también
+     archivos .xlsx, no solo .csv. -->
 <link rel="stylesheet" href="../assets/estilos.css">
 <style>
     .estado-creado { color: var(--ok); font-weight: 700; }
@@ -32,22 +34,25 @@
         <div class="panel-lateral__titulo">Gestión</div>
         <a href="clientes.html">Clientes</a>
         <a href="alta-cliente.html">Dar de alta</a>
-        <a href="importar-clientes.html" class="activo">Importar (CSV)</a>
+        <a href="importar-clientes.html" class="activo">Importar (CSV/XLSX)</a>
     </aside>
     <main class="panel-contenido">
         <div class="panel-tarjeta">
-            <h1>Importar clientes desde CSV</h1>
+            <h1>Importar clientes desde CSV o Excel</h1>
             <p class="ayuda">
-                El archivo debe tener cabecera con estas columnas (el orden da
-                igual, las que no reconozcamos se ignoran):
+                El archivo (<code>.csv</code> o <code>.xlsx</code>) debe tener
+                cabecera con estas columnas (el orden da igual, las que no
+                reconozcamos se ignoran):
                 <code>nombre, apellidos, email, empresa, telefono, crm_id, direccion_calle, direccion_cp, direccion_poblacion</code>.
                 Los clientes nuevos reciben el correo de acceso de siempre; a
                 los que ya tienen cuenta solo se les completan los datos que
                 les faltaran — nunca se les reenvía ningún correo.
             </p>
 
+            <button class="boton-secundario" id="botonPlantilla" style="width:auto; padding:9px 16px; margin: 0 0 16px;">⬇ Descargar plantilla (XLSX)</button>
+
             <div class="zona-archivo">
-                <input type="file" id="archivoCsv" accept=".csv">
+                <input type="file" id="archivoCsv" accept=".csv,.xlsx">
             </div>
 
             <div id="vistaPrevia" style="display:none;">
@@ -74,6 +79,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="../assets/supabase-client.js"></script>
 <script>
 (async function () {
@@ -91,38 +97,70 @@
     const avisoError = document.getElementById('avisoError');
     let filasValidas = [];
 
+    const COLUMNAS_PLANTILLA = ['nombre', 'apellidos', 'email', 'empresa', 'telefono', 'crm_id', 'direccion_calle', 'direccion_cp', 'direccion_poblacion'];
+
+    document.getElementById('botonPlantilla').addEventListener('click', function () {
+        const fila_ejemplo = { nombre: 'Ana', apellidos: 'García', email: 'ana.garcia@ejemplo.com', empresa: 'Ferretería Ana', telefono: '600111222', crm_id: '', direccion_calle: 'Calle Mayor 1', direccion_cp: '28001', direccion_poblacion: 'Madrid' };
+        const hoja = XLSX.utils.json_to_sheet([fila_ejemplo], { header: COLUMNAS_PLANTILLA });
+        const libro = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(libro, hoja, 'Clientes');
+        XLSX.writeFile(libro, 'plantilla_importacion_clientes.xlsx');
+    });
+
+    function mostrarVistaPrevia_(filas) {
+        filasValidas = filas.filter(function (f) { return f.email && f.nombre && f.apellidos; });
+        const invalidas = filas.length - filasValidas.length;
+
+        document.getElementById('resumenPrevia').textContent =
+            filasValidas.length + ' fila(s) con email, nombre y apellidos.' +
+            (invalidas > 0 ? ' ' + invalidas + ' fila(s) se ignorarán por faltarles alguno de esos tres campos.' : '');
+
+        const cuerpo = document.getElementById('cuerpoPrevia');
+        cuerpo.innerHTML = '';
+        filasValidas.slice(0, 20).forEach(function (f, i) {
+            const fila = document.createElement('tr');
+            fila.innerHTML = '<td>' + (i + 2) + '</td><td>' + f.nombre + ' ' + f.apellidos + '</td><td>' + f.email + '</td><td>' + (f.empresa || '—') + '</td>';
+            cuerpo.appendChild(fila);
+        });
+        if (filasValidas.length > 20) {
+            const fila = document.createElement('tr');
+            fila.innerHTML = '<td colspan="4">… y ' + (filasValidas.length - 20) + ' más.</td>';
+            cuerpo.appendChild(fila);
+        }
+
+        document.getElementById('vistaPrevia').style.display = filasValidas.length ? 'block' : 'none';
+        document.getElementById('resultados').style.display = 'none';
+    }
+
     document.getElementById('archivoCsv').addEventListener('change', function (ev) {
         const archivo = ev.target.files[0];
         if (!archivo) return;
         avisoError.classList.remove('activo');
+        const esXlsx = /\.xlsx$/i.test(archivo.name);
+
+        if (esXlsx) {
+            const lector = new FileReader();
+            lector.onload = function (e) {
+                try {
+                    const libro = XLSX.read(e.target.result, { type: 'array' });
+                    const hoja = libro.Sheets[libro.SheetNames[0]];
+                    // defval: '' — para que una celda vacía llegue como
+                    // cadena vacía y no se pierda la columna en esa fila.
+                    const filas = XLSX.utils.sheet_to_json(hoja, { defval: '' });
+                    mostrarVistaPrevia_(filas);
+                } catch (err) {
+                    avisoError.textContent = 'No se ha podido leer el Excel: ' + err.message;
+                    avisoError.classList.add('activo');
+                }
+            };
+            lector.readAsArrayBuffer(archivo);
+            return;
+        }
 
         Papa.parse(archivo, {
             header: true,
             skipEmptyLines: true,
-            complete: function (res) {
-                filasValidas = res.data.filter(function (f) { return f.email && f.nombre && f.apellidos; });
-                const invalidas = res.data.length - filasValidas.length;
-
-                document.getElementById('resumenPrevia').textContent =
-                    filasValidas.length + ' fila(s) con email, nombre y apellidos.' +
-                    (invalidas > 0 ? ' ' + invalidas + ' fila(s) se ignorarán por faltarles alguno de esos tres campos.' : '');
-
-                const cuerpo = document.getElementById('cuerpoPrevia');
-                cuerpo.innerHTML = '';
-                filasValidas.slice(0, 20).forEach(function (f, i) {
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = '<td>' + (i + 2) + '</td><td>' + f.nombre + ' ' + f.apellidos + '</td><td>' + f.email + '</td><td>' + (f.empresa || '—') + '</td>';
-                    cuerpo.appendChild(fila);
-                });
-                if (filasValidas.length > 20) {
-                    const fila = document.createElement('tr');
-                    fila.innerHTML = '<td colspan="4">… y ' + (filasValidas.length - 20) + ' más.</td>';
-                    cuerpo.appendChild(fila);
-                }
-
-                document.getElementById('vistaPrevia').style.display = filasValidas.length ? 'block' : 'none';
-                document.getElementById('resultados').style.display = 'none';
-            },
+            complete: function (res) { mostrarVistaPrevia_(res.data); },
             error: function (err) {
                 avisoError.textContent = 'No se ha podido leer el CSV: ' + err.message;
                 avisoError.classList.add('activo');
