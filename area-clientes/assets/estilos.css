@@ -529,10 +529,13 @@ th { color: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: 
 .boton-fila.boton-peligro:hover { background: #b02a2a; border-color: #b02a2a; }
 
 /* ── Modal de confirmación genérica, reutilizable en cualquier página
-   (ver window.confirmarModal_ en supabase-client.js) ──────────────── */
+   (ver window.confirmarModal_ en supabase-client.js) — siempre tiene
+   que quedar POR ENCIMA de cualquier otro modal de la página (p. ej.
+   el de gestión de pedidos, z-index 200), si no sus botones quedan
+   tapados y los clics los recibe lo que haya debajo. ──────────────── */
 .modal-confirmar-overlay {
     display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55);
-    align-items: center; justify-content: center; padding: 20px; z-index: 60;
+    align-items: center; justify-content: center; padding: 20px; z-index: 300;
 }
 .modal-confirmar-overlay.activo { display: flex; }
 .modal-confirmar {
