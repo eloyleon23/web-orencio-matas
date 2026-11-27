@@ -129,7 +129,7 @@ window.generarPedidoPdf_ = async function (pedido, estadoLabel) {
         const rectificada = l.cantidad_confirmada !== null && l.cantidad_confirmada !== undefined && Number(l.cantidad_confirmada) !== Number(l.cantidad);
         if (l.notas) {
             doc.setFontSize(9);
-            const notaLineas = doc.splitTextToSize('↳ Nota: ' + l.notas, anchoUtil - 10);
+            const notaLineas = doc.splitTextToSize('- Nota: ' + l.notas, anchoUtil - 10);
             doc.text(notaLineas, margen + 10, y);
             y += notaLineas.length * 11;
             doc.setFontSize(10);
@@ -137,7 +137,9 @@ window.generarPedidoPdf_ = async function (pedido, estadoLabel) {
         if (rectificada) {
             doc.setFontSize(9);
             doc.setTextColor(180, 40, 40);
-            const motivoTexto = '⚠ Rectificado a ' + l.cantidad_confirmada + ' (pedido: ' + l.cantidad + ')' + (l.motivo_rectificacion ? ' — ' + l.motivo_rectificacion : '');
+            // Nada de emoji aquí — las fuentes estándar de jsPDF solo
+            // cubren Latin-1 y un "⚠" sale como un carácter roto.
+            const motivoTexto = 'Rectificado a ' + l.cantidad_confirmada + ' (pedido: ' + l.cantidad + ')' + (l.motivo_rectificacion ? ' — ' + l.motivo_rectificacion : '');
             const motivoLineas = doc.splitTextToSize(motivoTexto, anchoUtil - 10);
             doc.text(motivoLineas, margen + 10, y);
             y += motivoLineas.length * 11;
