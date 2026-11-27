@@ -130,7 +130,7 @@
         display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px;
         scroll-snap-type: x proximity;
     }
-    .modulo-descubrimiento__fila > .producto-tarjeta { flex: 0 0 160px; scroll-snap-align: start; }
+    .modulo-descubrimiento__fila > .producto-tarjeta { flex: 0 0 200px; scroll-snap-align: start; }
     .producto-tarjeta--transicion { opacity: 0; transition: opacity 0.22s ease; }
 
     /* ── Sigue explorando: sub-bloques de color con rejilla 2x2 de solo
@@ -187,7 +187,7 @@
     .grupo-familia__titulo:first-child { margin-top: 0; }
 
     .rejilla-productos {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
         gap: 18px;
     }
     .producto-tarjeta {
@@ -202,6 +202,10 @@
         border-bottom: 1px solid var(--border);
     }
     .producto-tarjeta img { width: 100%; height: 120px; object-fit: contain; display: block; }
+    /* Logo de reserva (sin foto propia) — mismo criterio que
+       sin-imagen-fabricante-logo en la web pública: difuminado, nunca
+       a toda opacidad, para que no se confunda con una foto real. */
+    img[src*="logo_transparente.png"] { opacity: 0.4; }
     .insignia-oferta {
         position: absolute; top: 8px; left: 8px;
         background: var(--danger); color: white; font-size: 0.65rem; font-weight: 800;
@@ -217,7 +221,9 @@
     .producto-tarjeta__ref {
         display: flex; align-items: center; justify-content: center; gap: 6px;
         font-size: 0.72rem; color: var(--muted); margin-bottom: 8px;
+        white-space: nowrap; overflow: hidden;
     }
+    .producto-tarjeta__ref span { overflow: hidden; text-overflow: ellipsis; }
     .producto-tarjeta__ref-copiar {
         border: none; background: none; cursor: pointer; font-size: 0.8rem;
         line-height: 1; padding: 2px 4px; border-radius: 4px; opacity: 0.6;
@@ -462,7 +468,10 @@ const CATALOGO_ESTATICO_URL_ = '../data/productos.json';
 // Nuestro propio logo como imagen de reserva — a petición de Eloy,
 // igual que hace el sitio público (sin-imagen-fabricante en
 // index.html): nunca dejar un hueco en blanco, siempre algo de marca.
-const PLACEHOLDER_IMG_ = 'assets/logo-orencio.png';
+// Logo SIN texto (igual que LOGO_EMPRESA en index.html) — a petición
+// de Eloy, no el logo con el nombre de la empresa que se usaba antes.
+// Se pinta difuminado vía CSS (img[src*="logo_transparente.png"]).
+const PLACEHOLDER_IMG_ = '../assets/logos/logo_transparente.png';
 
 function urlImagenProducto_(p) {
     if (!p.img) return PLACEHOLDER_IMG_;
