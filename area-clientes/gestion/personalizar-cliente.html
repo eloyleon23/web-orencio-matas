@@ -22,6 +22,9 @@
     .selector-multiple__opcion:hover { background: var(--light); }
     .selector-multiple__opcion input { width: auto; margin: 0; }
     .selector-multiple__vacio { padding: 10px 12px; font-size: 0.82rem; color: var(--muted); }
+    /* En modo "solo estas referencias", área/familia no pintan nada —
+       se atenúan y se bloquean para que quede claro de un vistazo. */
+    #bloqueAreaFamilia.bloque-deshabilitado { opacity: 0.45; pointer-events: none; }
     .selector-multiple__chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
     .chip-seleccion {
         background: var(--blue-soft); color: var(--blue-dark); font-size: 0.78rem; font-weight: 600;
@@ -59,21 +62,30 @@
                 <label for="descuento">Descuento general sobre el precio de mayor (%)</label>
                 <input id="descuento" type="number" min="0" max="100" step="0.5" value="0" style="max-width:160px;">
 
+                <div id="bloqueAreaFamilia">
                 <label>Áreas visibles (vacío = todas)</label>
                 <div id="selectorAreas"></div>
 
                 <label style="margin-top:18px;">Familias visibles — se acotan a las áreas de arriba (vacío = todas)</label>
                 <div id="selectorFamilias"></div>
+                </div>
 
-                <label style="margin-top:18px;">Referencias concretas siempre visibles — se acotan a área/familia de arriba</label>
+                <label style="margin-top:18px;" id="etiquetaSelectorProductos">Referencias concretas</label>
+                <select id="modoProductos" style="max-width:360px; margin-bottom:10px;">
+                    <option value="incluir">Incluir — además de área/familia, se ven siempre</option>
+                    <option value="excluir">Excluir — se ocultan aunque cumplan área/familia</option>
+                    <option value="solo">Mostrar solo estas — ignora área/familia</option>
+                </select>
+                <p class="ayuda" id="ayudaModoProductos" style="margin:0 0 8px;"></p>
                 <div id="selectorProductos"></div>
 
                 <p class="ayuda" style="margin-top:14px;">
-                    Si las tres están vacías, el cliente ve el catálogo completo.
-                    Área y familia se acotan entre sí (si rellenas las dos, tiene
-                    que cumplir ambas a la vez). Las referencias concretas son un
-                    añadido: esos productos se ven siempre, aunque no cumplan el
-                    área/familia de arriba.
+                    Si las tres (área, familia y referencias) están vacías, el
+                    cliente ve el catálogo completo. Área y familia se acotan
+                    entre sí: si rellenas las dos, tiene que cumplir ambas a la
+                    vez. Las referencias concretas, según el modo elegido arriba,
+                    se añaden siempre, se excluyen siempre, o son lo único que
+                    se ve.
                 </p>
 
                 <button type="submit" class="boton-principal" id="botonGuardar" style="max-width:220px;">Guardar</button>
@@ -203,7 +215,7 @@ function crearSelectorMultiple_(contenedor, opciones, seleccionInicial, conFiltr
     const [{ data: fila, error }, respCatalogo] = await Promise.all([
         cliente
             .from('clientes')
-            .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct, profiles!clientes_id_fkey(nombre, apellidos, email)')
+            .select('familias_visibles, areas_visibles, productos_visibles, modo_productos_visibles, descuento_pct, profiles!clientes_id_fkey(nombre, apellidos, email)')
             .eq('id', idCliente)
             .single(),
         fetch(CATALOGO_URL_, { cache: 'no-store' }).catch(function () { return null; }),
@@ -258,6 +270,33 @@ function crearSelectorMultiple_(contenedor, opciones, seleccionInicial, conFiltr
         true
     );
 
+    // Los tres modos de "referencias concretas" (a petición de Eloy,
+    // 27/11/2026 — antes solo existía "incluir"):
+    //   'incluir' — además de área/familia, esas referencias se ven
+    //               siempre (comportamiento de antes).
+    //   'excluir' — lo contrario: esas referencias se OCULTAN aunque
+    //               cumplan área/familia.
+    //   'solo'    — ignora área/familia por completo: el cliente ve
+    //               ÚNICAMENTE esas referencias (se atenúa y bloquea
+    //               el bloque de área/familia para que quede claro que
+    //               no pintan nada en este modo).
+    const AYUDA_MODO_PRODUCTOS_ = {
+        incluir: 'Estas referencias se ven siempre, además de lo que ya entra por área/familia.',
+        excluir: 'Estas referencias se ocultan siempre, aunque cumplan el área/familia de arriba.',
+        solo: 'El cliente ve ÚNICAMENTE estas referencias — área y familia dejan de aplicarse.',
+    };
+    const selectModoProductos = document.getElementById('modoProductos');
+    const bloqueAreaFamilia = document.getElementById('bloqueAreaFamilia');
+    selectModoProductos.value = fila.modo_productos_visibles || 'incluir';
+
+    function actualizarModoProductos_() {
+        const modo = selectModoProductos.value;
+        document.getElementById('ayudaModoProductos').textContent = AYUDA_MODO_PRODUCTOS_[modo] || '';
+        bloqueAreaFamilia.classList.toggle('bloque-deshabilitado', modo === 'solo');
+    }
+    actualizarModoProductos_();
+    selectModoProductos.addEventListener('change', actualizarModoProductos_);
+
     // Cambiar el área recalcula las familias disponibles; cambiar
     // cualquiera de las dos recalcula las referencias disponibles —
     // vía "change" delegado en los checkboxes ya pintados, así que se
@@ -289,6 +328,7 @@ function crearSelectorMultiple_(contenedor, opciones, seleccionInicial, conFiltr
                 areas_visibles: selectorAreas.obtenerSeleccion(),
                 familias_visibles: selectorFamilias.obtenerSeleccion(),
                 productos_visibles: selectorProductos.obtenerSeleccion(),
+                modo_productos_visibles: selectModoProductos.value,
             })
             .eq('id', idCliente);
 

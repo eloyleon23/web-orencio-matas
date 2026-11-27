@@ -602,21 +602,34 @@ function numeroDesdePrecio_(texto) {
 }
 
 function productoVisibleParaCliente_(p, personalizacion) {
-    const { familias, areas, productos } = personalizacion;
-    // "Referencias concretas" es un añadido que SIEMPRE se ve, por
-    // encima de cualquier restricción de área/familia (bug reportado
-    // por Eloy, 27/11/2026: antes se combinaban las tres listas con OR
-    // puro e independiente, así que con área Y familia rellenas a la
-    // vez, la restricción de área —al ser más amplia— dejaba ver TODA
-    // esa área sin que la familia llegase a acotar nada). Área y
-    // familia ahora se acotan entre sí (intersección), igual que ya
-    // sugería el propio formulario de personalización ("Familias
-    // visibles — se acotan a las áreas de arriba").
+    const { familias, areas, productos, modoProductos } = personalizacion;
+    // Área y familia se acotan entre sí (intersección): si rellenas
+    // las dos, el producto tiene que cumplir ambas a la vez (bug
+    // reportado por Eloy, 27/11/2026 — antes era un OR puro e
+    // independiente entre las tres listas).
+    const cumpleAreaFamilia = function () {
+        if (areas.length && !areas.includes(p.area)) return false;
+        if (familias.length && !familias.includes(p.familia)) return false;
+        return true;
+    };
+
+    // "Referencias concretas" ahora tiene tres modos distintos (a
+    // petición de Eloy, 27/11/2026 — antes solo existía "incluir"):
+    //   'solo'    — ignora área/familia por completo: ve ÚNICAMENTE
+    //               las referencias listadas.
+    //   'excluir' — lo contrario de "incluir": esas referencias se
+    //               OCULTAN aunque cumplan área/familia.
+    //   'incluir' (por defecto) — además de lo que ya entra por área/
+    //               familia, esas referencias se ven sí o sí.
+    if (modoProductos === 'solo') return productos.includes(p.ref);
+    if (modoProductos === 'excluir') {
+        if (productos.includes(p.ref)) return false;
+        if (!areas.length && !familias.length) return true;
+        return cumpleAreaFamilia();
+    }
     if (productos.includes(p.ref)) return true;
     if (!areas.length && !familias.length) return productos.length === 0;
-    if (areas.length && !areas.includes(p.area)) return false;
-    if (familias.length && !familias.includes(p.familia)) return false;
-    return true;
+    return cumpleAreaFamilia();
 }
 
 // Vista de detalle — se abre al pulsar cualquier tarjeta. Misma lógica
@@ -802,7 +815,7 @@ window.copiarReferencia_ = function (ref, boton) {
 
     const { data: datosCliente, error: errorCliente } = await cliente
         .from('clientes')
-        .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct, activo')
+        .select('familias_visibles, areas_visibles, productos_visibles, modo_productos_visibles, descuento_pct, activo')
         .eq('id', sesion.user.id)
         .single();
 
@@ -828,6 +841,7 @@ window.copiarReferencia_ = function (ref, boton) {
         familias: datosCliente.familias_visibles || [],
         areas: datosCliente.areas_visibles || [],
         productos: datosCliente.productos_visibles || [],
+        modoProductos: datosCliente.modo_productos_visibles || 'incluir',
     };
     const descuentoPct = Number(datosCliente.descuento_pct || 0);
 
