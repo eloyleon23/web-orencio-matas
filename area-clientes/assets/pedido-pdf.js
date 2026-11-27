@@ -31,15 +31,17 @@ window.generarPedidoPdf_ = async function (pedido, estadoLabel) {
     // nunca choca con CORS como pasaría con el dominio público. Si aun
     // así falla por lo que sea, el PDF se genera igual, solo sin logo
     // — nunca debe bloquear la descarga.
+    const alturaLogo = 32;
+    let anchoLogo = 0; // 0 si no hay logo — el texto de cabecera se pega al margen
     try {
-        const logoDataUrl = await new Promise(function (resolve, reject) {
+        const { dataUrl, anchoNatural, altoNatural } = await new Promise(function (resolve, reject) {
             const img = new Image();
             img.onload = function () {
                 const canvas = document.createElement('canvas');
                 canvas.width = img.naturalWidth;
                 canvas.height = img.naturalHeight;
                 canvas.getContext('2d').drawImage(img, 0, 0);
-                resolve(canvas.toDataURL('image/png'));
+                resolve({ dataUrl: canvas.toDataURL('image/png'), anchoNatural: img.naturalWidth, altoNatural: img.naturalHeight });
             };
             img.onerror = reject;
             // Se reutiliza la URL ya resuelta por el navegador del logo
@@ -49,18 +51,20 @@ window.generarPedidoPdf_ = async function (pedido, estadoLabel) {
             const logoEnNavbar = document.querySelector('.navbar-om__logo');
             img.src = logoEnNavbar ? logoEnNavbar.currentSrc || logoEnNavbar.src : 'assets/logo-orencio.png';
         });
-        const alturaLogo = 36;
-        const anchoLogo = alturaLogo; // el logo es prácticamente cuadrado
-        doc.addImage(logoDataUrl, 'PNG', margen, y, anchoLogo, alturaLogo);
+        // Mantener SIEMPRE la proporción real del logo (202×86 — no es
+        // cuadrado) para no deformarlo.
+        anchoLogo = alturaLogo * (anchoNatural / altoNatural);
+        doc.addImage(dataUrl, 'PNG', margen, y, anchoLogo, alturaLogo);
     } catch (e) { /* sin logo, no pasa nada */ }
 
+    const inicioTextoCabecera = margen + (anchoLogo ? anchoLogo + 14 : 0);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
-    doc.text('Orencio Matas y Hnos, S.L.', margen + 48, y + 16);
+    doc.text('Orencio Matas y Hnos, S.L.', inicioTextoCabecera, y + 14);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Pedido del área de clientes', margen + 48, y + 32);
-    y += 56;
+    doc.text('Pedido del área de clientes', inicioTextoCabecera, y + 30);
+    y += Math.max(alturaLogo, 40) + 16;
 
     doc.setDrawColor(220, 220, 220);
     doc.line(margen, y, margen + anchoUtil, y);
