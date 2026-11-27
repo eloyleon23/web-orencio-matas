@@ -76,6 +76,33 @@ commit propio a esta rama para poder seguir el avance en el historial.
   separación legal CRM/web).
 - Pruebas con el volumen real esperado (~100 clientes).
 - Validación funcional completa por Eloy sobre la previsualización.
+- **Secretos por entorno (demo/producción) — pendiente, anotado
+  explícitamente por Eloy el 27/11/2026 para no olvidarlo.** Ahora
+  mismo todo (Supabase, Edge Functions, sus secretos) es un único
+  proyecto/entorno compartido por el preview y lo que más adelante
+  sea producción. Antes de abrir el Área de Clientes a clientes reales
+  hace falta decidir y montar cómo conviven DEMO y PROD sin pisarse,
+  como mínimo para:
+    - `notificar-pedido` (ver supabase/functions/notificar-pedido/
+      CONFIGURACION.md): `PEDIDOS_EMAIL_DESTINO`,
+      `PEDIDOS_ACTIVAR_CLIENTES_REALES`, `PEDIDOS_EMAIL_PRUEBA_CLIENTE`,
+      `AREA_CLIENTES_URL` tienen que poder ser distintos en demo y en
+      producción (en demo, todo a un correo de pruebas y clientes
+      reales desactivados; en producción, al revés).
+    - Backup de Supabase (`SUPABASE_DB_URL`, `BACKUP_GPG_PASSPHRASE` —
+      ver supabase/BACKUPS.md): si hay un proyecto de Supabase por
+      entorno, cada uno necesita su propio backup configurado aparte.
+    - Cualquier Edge Function nueva que se añada en fases siguientes
+      (Fase 5/6) con esta misma necesidad.
+
+      Dos caminos posibles a valorar entonces (no decidido todavía):
+      (a) un proyecto de Supabase separado por entorno (más limpio,
+      más aislado, pero hay que duplicar esquema/RLS y mantener los
+      dos sincronizados), o (b) un solo proyecto con secretos
+      duplicados por sufijo (`_DEMO`/`_PROD`) y la función decidiendo
+      cuál usar según de dónde llega la petición. Se decide y se monta
+      en esta fase, antes de la puesta en producción — no antes,
+      porque hasta entonces no hay "producción" real que proteger.
 - Solo tras esta fase: planificación de la puesta en producción
   (subdominio IONOS, DNS, primer alta real).
 

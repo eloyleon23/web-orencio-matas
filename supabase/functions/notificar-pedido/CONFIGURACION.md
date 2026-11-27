@@ -7,6 +7,15 @@ formulario de contacto de la web pública, por ejemplo) — petición
 explícita de Eloy: poder cambiar o dedicar un correo propio a pedidos
 más adelante sin tocar nada de los demás flujos.
 
+> ⚠️ **Pendiente (anotado, no olvidar):** estos secretos son, de
+> momento, un único juego compartido entre el preview/pruebas y lo que
+> más adelante sea producción (un solo proyecto de Supabase). Antes de
+> abrir el Área de Clientes a clientes reales hay que decidir cómo
+> conviven los valores de DEMO y PROD de `PEDIDOS_EMAIL_DESTINO`,
+> `PEDIDOS_ACTIVAR_CLIENTES_REALES`, `PEDIDOS_EMAIL_PRUEBA_CLIENTE` y
+> `AREA_CLIENTES_URL` sin pisarse — ver el apartado correspondiente en
+> `docs/area-clientes/PLAN.md` (Fase 7).
+
 ## Desplegar la función (una vez, y cada vez que cambie el código)
 
 ```
