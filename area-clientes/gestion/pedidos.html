@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos — Panel de gestión · Orencio Matas</title>
+<link rel="icon" type="image/x-icon" href="../../assets/logos/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../../assets/logos/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../assets/logos/favicon-16x16.png">
+<link rel="stylesheet" href="../assets/estilos.css">
+<style>
+    .insignia-estado-pedido {
+        font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+        text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; display: inline-block;
+    }
+    .insignia-estado-pedido--recibida { color: var(--blue); background: rgba(25, 118, 210, 0.12); }
+    .insignia-estado-pedido--en_preparacion { color: #b7791f; background: rgba(183, 121, 31, 0.14); }
+    .insignia-estado-pedido--lista_para_enviar { color: #6b46c1; background: rgba(107, 70, 193, 0.14); }
+    .insignia-estado-pedido--en_reparto { color: #0f766e; background: rgba(15, 118, 110, 0.14); }
+    .insignia-estado-pedido--entregada { color: var(--ok); background: var(--ok-soft); }
+
+    .modal-pedido-gestion-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+        align-items: center; justify-content: center; z-index: 200; padding: 16px;
+    }
+    .modal-pedido-gestion-overlay.activo { display: flex; }
+    .modal-pedido-gestion {
+        background: var(--white); border-radius: var(--radius); max-width: 640px; width: 100%;
+        max-height: 88vh; overflow-y: auto; padding: 22px 24px; box-shadow: var(--sombra);
+    }
+    .modal-pedido-gestion__cabecera { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 4px; }
+    .modal-pedido-gestion__cliente { font-weight: 700; font-size: 1.05rem; }
+    .modal-pedido-gestion__meta { font-size: 0.82rem; color: var(--muted); margin-bottom: 14px; }
+    .modal-pedido-gestion__notas-generales {
+        font-size: 0.85rem; color: var(--dark); background: var(--light); border-radius: 8px;
+        padding: 8px 10px; margin-bottom: 14px;
+    }
+    .linea-gestion {
+        border-bottom: 1px dashed var(--border); padding: 10px 0; font-size: 0.88rem;
+    }
+    .linea-gestion:last-child { border-bottom: none; }
+    .linea-gestion__fila { display: flex; justify-content: space-between; gap: 10px; }
+    .linea-gestion__notas { font-size: 0.78rem; color: var(--blue); margin-top: 2px; }
+    .linea-gestion__diff { font-size: 0.78rem; color: var(--danger); margin-top: 2px; font-weight: 600; }
+    .linea-gestion__rectificar {
+        display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;
+    }
+    .linea-gestion__rectificar input[type="number"] { width: 90px; margin: 0; }
+    .linea-gestion__rectificar input[type="text"] { flex: 1; min-width: 160px; margin: 0; }
+    .modal-pedido-gestion__resumen {
+        display: flex; justify-content: space-between; font-weight: 700; margin-top: 10px; padding-top: 10px;
+        border-top: 1px solid var(--border);
+    }
+    .modal-pedido-gestion__acciones { margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
+    .modal-pedido-gestion__acciones button, .modal-pedido-gestion__acciones a { width: auto; }
+    .modal-pedido-gestion__cerrar { position: sticky; top: 0; }
+</style>
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="../assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Panel de gestión</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="layout-panel">
+    <aside class="panel-lateral" id="panelLateral">
+        <div class="panel-lateral__titulo">Gestión</div>
+        <a href="clientes.html" id="enlaceClientes">Clientes</a>
+        <a href="alta-cliente.html" id="enlaceAlta">Dar de alta</a>
+        <a href="importar-clientes.html" id="enlaceImportar">Importar (CSV/XLSX)</a>
+        <a href="pedidos.html" class="activo">Pedidos</a>
+    </aside>
+    <main class="panel-contenido">
+        <div class="panel-tarjeta">
+            <h1>Pedidos</h1>
+            <p class="ayuda" id="ayuda">Cargando…</p>
+
+            <div id="bloqueTabla" style="display:none;">
+                <div class="tabla-herramientas">
+                    <input type="search" id="filtroPedidos" placeholder="Buscar por cliente, empresa, referencia…" autocomplete="off">
+                    <select id="filtroEstado" style="width:auto;">
+                        <option value="">Todos los estados</option>
+                        <option value="recibida">Recibida</option>
+                        <option value="en_preparacion">En preparación</option>
+                        <option value="lista_para_enviar">Lista para enviar</option>
+                        <option value="en_reparto">En reparto</option>
+                        <option value="entregada">Entregada</option>
+                    </select>
+                </div>
+
+                <div id="tablaPedidos" class="tabla-scroll tabla-adaptativa">
+                <table>
+                    <thead><tr>
+                        <th>Cliente</th>
+                        <th>Enviado</th>
+                        <th>Productos</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr></thead>
+                    <tbody id="cuerpoTabla"></tbody>
+                </table>
+                </div>
+            </div>
+
+            <div class="aviso aviso--error" id="avisoError"></div>
+        </div>
+    </main>
+</div>
+
+<div class="modal-pedido-gestion-overlay" id="modalOverlay">
+    <div class="modal-pedido-gestion" id="modalContenido"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const resultado = await window.exigirRolAreaClientes_(
+        ['comercial', 'almacen', 'administrador'], '../index.html', '../app.html'
+    );
+    if (!resultado) return;
+    const rol = resultado.perfil.rol;
+    document.getElementById('insigniaRol').textContent = rol;
+
+    // Almacén no gestiona clientes/altas — solo pedidos.
+    if (rol === 'almacen') {
+        ['enlaceClientes', 'enlaceAlta', 'enlaceImportar'].forEach(function (id) {
+            document.getElementById(id).remove();
+        });
+    }
+
+    const cliente = window.obtenerClienteSupabase_();
+    const ayuda = document.getElementById('ayuda');
+    const avisoError = document.getElementById('avisoError');
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await cliente.auth.signOut();
+        window.location.href = '../index.html';
+    });
+
+    const ESTADOS_LABEL_ = {
+        recibida: 'Recibida', en_preparacion: 'En preparación', lista_para_enviar: 'Lista para enviar',
+        en_reparto: 'En reparto', entregada: 'Entregada',
+    };
+    // Qué transición puede hacer cada rol desde cada estado — refleja
+    // exactamente transicion_pedido_permitida_() en
+    // supabase/area_clientes_schema_fase5.sql. Esto solo es para
+    // decidir qué botón mostrar; quien de verdad lo impone siempre es
+    // el trigger en la base de datos (si este mapa y el de la BBDD
+    // alguna vez se desincronizan, manda la BBDD y el usuario vería un
+    // error al intentar la transición, nunca un cambio sin permiso).
+    const TRANSICION_POR_ROL_ = {
+        comercial: { recibida: 'en_preparacion' },
+        almacen: { en_preparacion: 'lista_para_enviar' },
+        administrador: { recibida: 'en_preparacion', en_preparacion: 'lista_para_enviar', lista_para_enviar: 'en_reparto', en_reparto: 'entregada' },
+    };
+
+    function formatearEuros_(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+    function formatearFecha_(valor) {
+        if (!valor) return '—';
+        const f = new Date(valor);
+        return f.toLocaleDateString('es-ES') + ' ' + f.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+    function escapar_(s) { return String(s || '').replace(/</g, '&lt;'); }
+
+    const { data: pedidosBrutos, error } = await cliente
+        .from('propuestas_pedido')
+        .select('id, estado, notas, creado_en, enviado_en, clientes(empresa, profiles!clientes_id_fkey(nombre, apellidos, email)), propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion)')
+        .neq('estado', 'borrador')
+        .order('enviado_en', { ascending: false });
+
+    if (error) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se ha podido cargar el listado: ' + error.message;
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    if (!pedidosBrutos || pedidosBrutos.length === 0) {
+        ayuda.textContent = 'Todavía no hay ningún pedido recibido.';
+        return;
+    }
+
+    function desenvolver_(x) { return Array.isArray(x) ? x[0] : x; }
+
+    const pedidos_ = pedidosBrutos.map(function (p) {
+        const clienteInfo = desenvolver_(p.clientes) || {};
+        const perfilCliente = desenvolver_(clienteInfo.profiles) || {};
+        const lineas = p.propuesta_pedido_lineas || [];
+        const totalImporte = lineas.reduce(function (acc, l) {
+            return acc + (l.precio_unitario !== null ? Number(l.cantidad) * Number(l.precio_unitario) : 0);
+        }, 0);
+        return {
+            id: p.id, estado: p.estado, notas: p.notas, creado_en: p.creado_en, enviado_en: p.enviado_en,
+            lineas: lineas, totalImporte: totalImporte,
+            clienteNombre: [perfilCliente.nombre, perfilCliente.apellidos].filter(Boolean).join(' ') || '(sin nombre)',
+            clienteEmail: perfilCliente.email || '',
+            clienteEmpresa: clienteInfo.empresa || '',
+            textoBusqueda: [perfilCliente.nombre, perfilCliente.apellidos, perfilCliente.email, clienteInfo.empresa]
+                .concat(lineas.map(function (l) { return l.ref + ' ' + l.nombre; }))
+                .join(' ').toLowerCase(),
+        };
+    });
+
+    let filtroTexto_ = '';
+    let filtroEstado_ = '';
+    const cuerpo = document.getElementById('cuerpoTabla');
+    const filtroInput = document.getElementById('filtroPedidos');
+    const estadoSelect = document.getElementById('filtroEstado');
+
+    function listaFiltrada_() {
+        return pedidos_.filter(function (p) {
+            if (filtroEstado_ && p.estado !== filtroEstado_) return false;
+            if (filtroTexto_ && !p.textoBusqueda.includes(filtroTexto_)) return false;
+            return true;
+        });
+    }
+
+    function pintarFila_(p) {
+        const fila = document.createElement('tr');
+        fila.innerHTML =
+            '<td>' + escapar_(p.clienteNombre) + (p.clienteEmpresa ? ' <span style="color:var(--muted);">(' + escapar_(p.clienteEmpresa) + ')</span>' : '') + '</td>' +
+            '<td>' + formatearFecha_(p.enviado_en || p.creado_en) + '</td>' +
+            '<td>' + p.lineas.length + '</td>' +
+            '<td>' + formatearEuros_(p.totalImporte) + '</td>' +
+            '<td><span class="insignia-estado-pedido insignia-estado-pedido--' + p.estado + '">' + ESTADOS_LABEL_[p.estado] + '</span></td>' +
+            '<td><button type="button" class="boton-fila" data-id="' + p.id + '">Ver detalle</button></td>';
+        fila.querySelector('button').addEventListener('click', function () { abrirModal_(p.id); });
+        return fila;
+    }
+
+    function repintar_() {
+        const filtrada = listaFiltrada_();
+        cuerpo.innerHTML = '';
+        filtrada.forEach(function (p) { cuerpo.appendChild(pintarFila_(p)); });
+        ayuda.textContent = filtrada.length + ' pedido(s)' + (filtrada.length !== pedidos_.length ? ' (de ' + pedidos_.length + ' en total)' : '') + '.';
+    }
+
+    document.getElementById('bloqueTabla').style.display = 'block';
+    repintar_();
+
+    let temporizadorFiltro_ = null;
+    filtroInput.addEventListener('input', function () {
+        clearTimeout(temporizadorFiltro_);
+        temporizadorFiltro_ = setTimeout(function () {
+            filtroTexto_ = filtroInput.value.trim().toLowerCase();
+            repintar_();
+        }, 150);
+    });
+    estadoSelect.addEventListener('change', function () {
+        filtroEstado_ = estadoSelect.value;
+        repintar_();
+    });
+
+    // ── Modal de detalle / gestión ──────────────────────────────────
+    const overlay = document.getElementById('modalOverlay');
+    const contenido = document.getElementById('modalContenido');
+
+    overlay.addEventListener('click', function (ev) { if (ev.target === overlay) cerrarModal_(); });
+    function cerrarModal_() { overlay.classList.remove('activo'); }
+
+    function textoCantidad_(l) {
+        if (window.textoCantidadLinea_) return window.textoCantidadLinea_(l);
+        return l.cantidad + ' ud.';
+    }
+
+    function abrirModal_(idPedido) {
+        const p = pedidos_.find(function (x) { return x.id === idPedido; });
+        if (!p) return;
+        pintarModal_(p);
+        overlay.classList.add('activo');
+    }
+
+    function pintarModal_(p) {
+        const puedeRectificar = (rol === 'almacen' || rol === 'administrador') && p.estado === 'en_preparacion';
+        const siguienteEstado = (TRANSICION_POR_ROL_[rol] || {})[p.estado];
+
+        const lineasHtml = p.lineas.map(function (l) {
+            const haySubtotal = l.precio_unitario !== null && l.precio_unitario !== undefined;
+            const subtotal = haySubtotal ? Number(l.precio_unitario) * Number(l.cantidad) : null;
+            const rectificada = l.cantidad_confirmada !== null && l.cantidad_confirmada !== undefined && Number(l.cantidad_confirmada) !== Number(l.cantidad);
+            return (
+                '<div class="linea-gestion" data-linea-id="' + l.id + '">' +
+                    '<div class="linea-gestion__fila">' +
+                        '<span>' + textoCantidad_(l) + ' × ' + escapar_(l.nombre) + ' <span style="color:var(--muted);">(Ref. ' + escapar_(l.ref) + ')</span></span>' +
+                        '<span>' + (subtotal !== null ? formatearEuros_(subtotal) : '—') + '</span>' +
+                    '</div>' +
+                    (l.notas ? '<div class="linea-gestion__notas">↳ nota del cliente: ' + escapar_(l.notas) + '</div>' : '') +
+                    (rectificada ? '<div class="linea-gestion__diff">⚠ Se rectificó a ' + l.cantidad_confirmada + ' (pedido: ' + l.cantidad + ')' + (l.motivo_rectificacion ? ' — ' + escapar_(l.motivo_rectificacion) : '') + '</div>' : '') +
+                    (puedeRectificar
+                        ? '<div class="linea-gestion__rectificar">' +
+                            '<label style="margin:0; font-size:0.78rem; color:var(--muted);">Cantidad a servir</label>' +
+                            '<input type="number" min="0" step="any" class="input-cantidad-confirmada" value="' + (l.cantidad_confirmada !== null && l.cantidad_confirmada !== undefined ? l.cantidad_confirmada : l.cantidad) + '">' +
+                            '<input type="text" class="input-motivo-rectificacion" placeholder="Motivo si se reduce (p. ej. sin stock)" value="' + escapar_(l.motivo_rectificacion || '') + '">' +
+                          '</div>'
+                        : '') +
+                '</div>'
+            );
+        }).join('');
+
+        let accionesHtml = '';
+        if (puedeRectificar) {
+            accionesHtml += '<button type="button" class="boton-secundario" id="botonGuardarRectificacion">Guardar rectificación</button>';
+        }
+        if (siguienteEstado) {
+            accionesHtml += '<button type="button" class="boton-principal" id="botonAvanzarEstado" data-siguiente="' + siguienteEstado + '">Pasar a «' + ESTADOS_LABEL_[siguienteEstado] + '»</button>';
+        }
+
+        contenido.innerHTML =
+            '<div class="modal-pedido-gestion__cabecera">' +
+                '<div>' +
+                    '<div class="modal-pedido-gestion__cliente">' + escapar_(p.clienteNombre) + (p.clienteEmpresa ? ' — ' + escapar_(p.clienteEmpresa) : '') + '</div>' +
+                    '<div class="modal-pedido-gestion__meta">' + escapar_(p.clienteEmail) + ' · Enviado el ' + formatearFecha_(p.enviado_en || p.creado_en) + '</div>' +
+                '</div>' +
+                '<span class="insignia-estado-pedido insignia-estado-pedido--' + p.estado + '">' + ESTADOS_LABEL_[p.estado] + '</span>' +
+            '</div>' +
+            (p.notas ? '<div class="modal-pedido-gestion__notas-generales"><strong>Instrucciones generales:</strong> ' + escapar_(p.notas) + '</div>' : '') +
+            lineasHtml +
+            '<div class="modal-pedido-gestion__resumen"><span>Total</span><span>' + formatearEuros_(p.totalImporte) + '</span></div>' +
+            '<div class="aviso aviso--error" id="modalAvisoError"></div>' +
+            '<div class="aviso aviso--ok" id="modalAvisoOk"></div>' +
+            '<div class="modal-pedido-gestion__acciones">' +
+                accionesHtml +
+                '<button type="button" class="boton-secundario" id="botonCerrarModal">Cerrar</button>' +
+            '</div>';
+
+        document.getElementById('botonCerrarModal').addEventListener('click', cerrarModal_);
+
+        const modalAvisoError = document.getElementById('modalAvisoError');
+        const modalAvisoOk = document.getElementById('modalAvisoOk');
+
+        if (puedeRectificar) {
+            document.getElementById('botonGuardarRectificacion').addEventListener('click', async function () {
+                const boton = this;
+                boton.disabled = true;
+                modalAvisoError.classList.remove('activo');
+                const filas = contenido.querySelectorAll('.linea-gestion[data-linea-id]');
+                let errorGuardado = null;
+                for (const fila of filas) {
+                    const inputCantidad = fila.querySelector('.input-cantidad-confirmada');
+                    if (!inputCantidad) continue;
+                    const lineaId = fila.dataset.lineaId;
+                    const inputMotivo = fila.querySelector('.input-motivo-rectificacion');
+                    const nuevaCantidad = inputCantidad.value === '' ? null : Number(inputCantidad.value);
+                    const { error: errorUpd } = await cliente
+                        .from('propuesta_pedido_lineas')
+                        .update({ cantidad_confirmada: nuevaCantidad, motivo_rectificacion: (inputMotivo.value || '').trim() || null })
+                        .eq('id', lineaId);
+                    if (errorUpd) { errorGuardado = errorUpd.message; break; }
+                    const lineaLocal = p.lineas.find(function (l) { return l.id === lineaId; });
+                    if (lineaLocal) {
+                        lineaLocal.cantidad_confirmada = nuevaCantidad;
+                        lineaLocal.motivo_rectificacion = (inputMotivo.value || '').trim() || null;
+                    }
+                }
+                boton.disabled = false;
+                if (errorGuardado) {
+                    modalAvisoError.textContent = 'No se ha podido guardar: ' + errorGuardado;
+                    modalAvisoError.classList.add('activo');
+                    return;
+                }
+                modalAvisoOk.textContent = 'Rectificación guardada.';
+                modalAvisoOk.classList.add('activo');
+                pintarModal_(p);
+            });
+        }
+
+        const botonAvanzar = document.getElementById('botonAvanzarEstado');
+        if (botonAvanzar) {
+            botonAvanzar.addEventListener('click', async function () {
+                const nuevoEstado = botonAvanzar.dataset.siguiente;
+                botonAvanzar.disabled = true;
+                modalAvisoError.classList.remove('activo');
+                const { error: errorEstado } = await cliente.from('propuestas_pedido').update({ estado: nuevoEstado }).eq('id', p.id);
+                botonAvanzar.disabled = false;
+                if (errorEstado) {
+                    modalAvisoError.textContent = 'No se ha podido cambiar el estado: ' + errorEstado.message;
+                    modalAvisoError.classList.add('activo');
+                    return;
+                }
+                p.estado = nuevoEstado;
+                repintar_();
+                pintarModal_(p);
+            });
+        }
+    }
+})();
+</script>
+</body>
+</html>

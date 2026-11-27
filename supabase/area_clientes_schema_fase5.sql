@@ -166,6 +166,34 @@ create policy "administrador rectifica lineas en preparacion"
     and propuesta_id in (select id from public.propuestas_pedido where estado = 'en_preparacion')
   );
 
+-- ── Lectura de clientes/perfiles para almacén ────────────────────────
+-- El listado de pedidos de gestión necesita el nombre/empresa del
+-- cliente de cada pedido (join con "clientes" y, dentro, con
+-- "profiles") — comercial y administrador ya podían leer esto (Fase 2);
+-- a almacén le faltaba, igual que le faltaba ver las propias
+-- propuestas. Se limita a los clientes que tengan al menos un pedido
+-- no-borrador (igual criterio que su política de propuestas_pedido),
+-- no a todos los clientes sin más.
+drop policy if exists "almacen ve clientes con pedidos activos" on public.clientes;
+create policy "almacen ve clientes con pedidos activos"
+  on public.clientes
+  for select
+  to authenticated
+  using (
+    public.rol_actual_() = 'almacen'
+    and id in (select cliente_id from public.propuestas_pedido where estado <> 'borrador')
+  );
+
+drop policy if exists "almacen ve el perfil de clientes con pedidos activos" on public.profiles;
+create policy "almacen ve el perfil de clientes con pedidos activos"
+  on public.profiles
+  for select
+  to authenticated
+  using (
+    public.rol_actual_() = 'almacen'
+    and id in (select cliente_id from public.propuestas_pedido where estado <> 'borrador')
+  );
+
 -- Nota sobre cómo dar de alta el primer usuario "almacen" (no hay
 -- formulario propio todavía, igual que ya pasaba con comercial/
 -- administrador): crear el usuario en Supabase Auth (o con la Edge

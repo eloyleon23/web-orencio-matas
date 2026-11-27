@@ -52,9 +52,14 @@
     } else {
         // Comercial/administrador no tienen nada que hacer en esta
         // pantalla (pensada para el cliente) — van directos al panel
-        // de gestión.
+        // de gestión. Almacén no gestiona clientes, solo pedidos, así
+        // que va directo a su propio listado.
         if (['comercial', 'administrador'].includes(perfil.rol)) {
             window.location.href = 'gestion/clientes.html';
+            return;
+        }
+        if (perfil.rol === 'almacen') {
+            window.location.href = 'gestion/pedidos.html';
             return;
         }
         // Rol "cliente" — directos a su catálogo, esta pantalla no

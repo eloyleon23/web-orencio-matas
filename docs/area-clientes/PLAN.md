@@ -51,14 +51,27 @@ commit propio a esta rama para poder seguir el avance en el historial.
 - Entregable revisable: ciclo completo de creación de un pedido.
 
 ### Fase 5 — Panel de gestión (comercial / almacén / administrador)
-- Listado de clientes por comercial / todos para admin.
-- Listado de propuestas de pedido con estado y detalle.
+- Listado de clientes por comercial / todos para admin. ✅ (ya existía
+  desde la Fase 2, `area-clientes/gestion/clientes.html`.)
+- Listado de propuestas de pedido con estado y detalle. ✅
+  `area-clientes/gestion/pedidos.html` — listado filtrable por
+  cliente/estado + modal de detalle, visible para comercial
+  (sus clientes), almacén (todo lo no-borrador) y administrador (todo).
 - Máquina de estados completa: Borrador → Recibida → En preparación →
   Lista para enviar → En reparto → Entregada, con permisos de edición
-  por rol y por estado.
-- Rectificación de pedidos por falta de stock (con diff para el cliente).
+  por rol y por estado. ✅ `supabase/area_clientes_schema_fase5.sql` —
+  un paso de la máquina por rol (comercial confirma recibida→en
+  preparación, almacén prepara→lista para enviar, administrador cierra
+  el resto), impuesto con un trigger en la propia base de datos.
+- Rectificación de pedidos por falta de stock (con diff para el
+  cliente). ✅ Almacén edita `cantidad_confirmada`/
+  `motivo_rectificacion` por línea mientras el pedido está "en
+  preparación"; el cliente ve el aviso de diferencia en
+  "Mis pedidos" en cuanto difiere de lo que pidió.
 - Entregable revisable: un pedido gestionado de principio a fin por los
-  tres roles de gestión.
+  tres roles de gestión. — Pendiente de validación por Eloy sobre la
+  previsualización (hace falta una cuenta de prueba con rol "almacen":
+  ver la nota al final de area_clientes_schema_fase5.sql).
 
 ### Fase 6 — Notificaciones y puente con el CRM
 - Matriz de notificaciones por correo (cliente, comercial, correo

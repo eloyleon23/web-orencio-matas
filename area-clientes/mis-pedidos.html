@@ -28,7 +28,12 @@
         text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap;
     }
     .insignia-estado-pedido--borrador { color: var(--muted); background: var(--light); border: 1px solid var(--border); }
-    .insignia-estado-pedido--recibida { color: var(--ok); background: var(--ok-soft); }
+    .insignia-estado-pedido--recibida { color: var(--blue); background: rgba(25, 118, 210, 0.12); }
+    .insignia-estado-pedido--en_preparacion { color: #b7791f; background: rgba(183, 121, 31, 0.14); }
+    .insignia-estado-pedido--lista_para_enviar { color: #6b46c1; background: rgba(107, 70, 193, 0.14); }
+    .insignia-estado-pedido--en_reparto { color: #0f766e; background: rgba(15, 118, 110, 0.14); }
+    .insignia-estado-pedido--entregada { color: var(--ok); background: var(--ok-soft); }
+    .tarjeta-pedido__linea-diff { font-size: 0.78rem; color: var(--danger); font-weight: 600; margin: -4px 0 6px 10px; }
     .tarjeta-pedido__detalle { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
     .tarjeta-pedido__detalle.abierto { display: block; }
     .tarjeta-pedido__linea {
@@ -92,6 +97,10 @@
         window.location.href = 'index.html';
     });
 
+    const ESTADOS_LABEL_ = {
+        recibida: 'Recibida', en_preparacion: 'En preparación', lista_para_enviar: 'Lista para enviar',
+        en_reparto: 'En reparto', entregada: 'Entregada',
+    };
     function formatearEuros_(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
     function formatearFecha_(valor) {
         if (!valor) return '';
@@ -130,7 +139,7 @@
                 '</div>' +
                 '<div class="tarjeta-pedido__derecha">' +
                     '<span class="tarjeta-pedido__total">' + formatearEuros_(p.totalImporte) + '</span>' +
-                    '<span class="insignia-estado-pedido insignia-estado-pedido--' + p.estado + '">' + (esBorrador ? 'Borrador' : 'Recibida') + '</span>' +
+                    '<span class="insignia-estado-pedido insignia-estado-pedido--' + p.estado + '">' + (esBorrador ? 'Borrador' : ESTADOS_LABEL_[p.estado]) + '</span>' +
                 '</div>' +
             '</div>' +
             '<div class="tarjeta-pedido__detalle" id="detallePedido' + indice + '"></div>';
@@ -145,11 +154,13 @@
                     p.lineas.map(function (l) {
                         const precioConocido = l.precio_unitario !== null && l.precio_unitario !== undefined;
                         const subtotal = precioConocido ? Number(l.precio_unitario) * Number(l.cantidad) : null;
+                        const rectificada = l.cantidad_confirmada !== null && l.cantidad_confirmada !== undefined && Number(l.cantidad_confirmada) !== Number(l.cantidad);
                         return '<div class="tarjeta-pedido__linea">' +
                             '<span>' + window.textoCantidadLinea_(l) + ' × ' + l.nombre + ' <span style="color:var(--muted);">(Ref. ' + l.ref + ')</span></span>' +
                             '<span>' + (subtotal !== null ? formatearEuros_(subtotal) : '—') + '</span>' +
                         '</div>' +
-                        (l.notas ? '<div class="tarjeta-pedido__linea-notas">↳ ' + l.notas.replace(/</g, '&lt;') + '</div>' : '');
+                        (l.notas ? '<div class="tarjeta-pedido__linea-notas">↳ ' + l.notas.replace(/</g, '&lt;') + '</div>' : '') +
+                        (rectificada ? '<div class="tarjeta-pedido__linea-diff">⚠ Se ha ajustado a ' + l.cantidad_confirmada + ' (pediste ' + l.cantidad + ')' + (l.motivo_rectificacion ? ' — ' + l.motivo_rectificacion.replace(/</g, '&lt;') : '') + '</div>' : '');
                     }).join('') +
                     (esBorrador
                         ? '<div class="tarjeta-pedido__acciones"><a class="boton-principal" style="text-decoration:none; display:inline-block; width:auto; padding:9px 16px;" href="propuesta.html">Ir a este pedido</a></div>'

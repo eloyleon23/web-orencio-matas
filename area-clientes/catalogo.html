@@ -1394,9 +1394,10 @@ document.getElementById('modalPedidoEnviar').addEventListener('click', async fun
 
     const { data: perfil } = await cliente.from('profiles').select('nombre, apellidos, rol').eq('id', sesion.user.id).single();
     if (!enSimulacion && perfil && perfil.rol !== 'cliente') {
-        // Comercial/administrador viendo esta URL directamente (no es
-        // su pantalla) — al panel de gestión.
-        window.location.href = 'gestion/clientes.html';
+        // Comercial/administrador/almacén viendo esta URL directamente
+        // (no es su pantalla) — cada uno a su parte del panel de
+        // gestión (almacén no tiene acceso a clientes.html).
+        window.location.href = perfil.rol === 'almacen' ? 'gestion/pedidos.html' : 'gestion/clientes.html';
         return;
     }
     if (perfil && perfil.nombre) {
