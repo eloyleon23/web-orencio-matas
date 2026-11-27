@@ -361,6 +361,43 @@
         #btnSubirArriba { right: 14px; bottom: 14px; width: 36px; height: 36px; font-size: 0.9rem; }
     }
 
+    /* ── Botón flotante "Mi pedido" (Fase 4) — mismo patrón que
+       #btnSubirArriba, pero a la izquierda para no solaparse, con
+       contador de líneas del borrador actual. ─────────────────────── */
+    #btnMiPedido {
+        display: none; position: fixed; left: 22px; bottom: 22px; z-index: 40;
+        align-items: center; gap: 8px; border: none; border-radius: 999px;
+        background: var(--blue); color: #fff; font-size: 0.85rem; font-weight: 700;
+        padding: 12px 18px 12px 16px; cursor: pointer; text-decoration: none;
+        box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    }
+    #btnMiPedido.visible { display: inline-flex; }
+    #btnMiPedido:hover { background: var(--blue-dark); }
+    #btnMiPedido__contador {
+        background: #fff; color: var(--blue); border-radius: 999px;
+        min-width: 20px; height: 20px; padding: 0 5px; font-size: 0.75rem;
+        display: inline-flex; align-items: center; justify-content: center;
+    }
+    @media (max-width: 640px) {
+        #btnMiPedido { left: 14px; bottom: 14px; padding: 10px 14px 10px 12px; font-size: 0.8rem; }
+    }
+
+    /* ── Controles de "añadir al pedido" en la tarjeta del grid y en el
+       modal de detalle. ────────────────────────────────────────────── */
+    .anadir-pedido {
+        display: flex; align-items: center; gap: 6px; margin-top: 10px;
+    }
+    .anadir-pedido__cantidad {
+        width: 52px; text-align: center; padding: 6px 4px; font-size: 0.85rem;
+    }
+    .anadir-pedido__boton {
+        flex: 1; background: var(--blue); color: #fff; border: none; border-radius: 8px;
+        font-size: 0.78rem; font-weight: 700; padding: 8px 8px; cursor: pointer;
+        white-space: nowrap;
+    }
+    .anadir-pedido__boton:hover { background: var(--blue-dark); }
+    .anadir-pedido__boton.anadir-pedido__boton--ok { background: var(--ok); }
+
     @media (max-width: 600px) {
         .catalogo-cuerpo { padding-left: 16px; padding-right: 16px; }
         .rejilla-productos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
@@ -415,6 +452,7 @@
         <span class="insignia-descuento" id="insigniaDescuento" style="display:none;"></span>
     </div>
     <div class="navbar-om__usuario">
+        <a href="mis-pedidos.html" class="boton-secundario" id="enlaceMisPedidos" style="width:auto; margin:0; padding:8px 14px; text-decoration:none; display:none;">Mis pedidos</a>
         <span class="insignia-rol" id="insigniaRol">cliente</span>
         <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
     </div>
@@ -425,6 +463,14 @@
 <button id="btnSubirArriba" title="Subir arriba" aria-label="Subir arriba">
     <i class="fa-solid fa-arrow-up"></i>
 </button>
+
+<!-- Botón flotante "Mi pedido" (Fase 4) — oculto hasta saber si hay
+     sesión de cliente real (nunca en simulación: ver más abajo). -->
+<a href="propuesta.html" id="btnMiPedido" title="Ver mi pedido">
+    <i class="fa-solid fa-cart-shopping"></i>
+    <span>Mi pedido</span>
+    <span id="btnMiPedido__contador" style="display:none;">0</span>
+</a>
 
 <div class="catalogo-cuerpo">
     <div class="spinner-pagina" id="cargando">
@@ -505,6 +551,10 @@
                 <h2 class="modal-detalle__nombre" id="modalDetalleNombre"></h2>
                 <div class="modal-detalle__meta" id="modalDetalleMeta"></div>
                 <div class="modal-detalle__precio-bloque" id="modalDetallePrecio"></div>
+                <div class="anadir-pedido" id="modalDetalleAnadirPedido" style="display:none; max-width:260px;">
+                    <input type="number" class="anadir-pedido__cantidad" id="modalDetalleCantidad" min="1" step="1" value="1" aria-label="Cantidad">
+                    <button type="button" class="anadir-pedido__boton" id="modalDetalleBotonAnadir">Añadir al pedido</button>
+                </div>
             </div>
         </div>
     </div>
@@ -542,6 +592,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="assets/supabase-client.js"></script>
+<script src="assets/propuesta-cliente.js"></script>
 <script>
 // URL del mismo Apps Script que usa el sitio público — ver index.html
 // (PRODUCTOS_REMOTO_URL_BASE). Solo reutilizamos la capa de datos, no
@@ -664,6 +715,7 @@ window.abrirDetalleProducto_ = function (p, descuentoPct) {
 
     const bloquePrecio = document.getElementById('modalDetallePrecio');
     const hayPrecioMayor = p.precio_mayor_con !== undefined && p.precio_mayor_con !== null && p.precio_mayor_con !== '';
+    let precioFinalParaPedido = null;
     if (p._precioProvisional) {
         bloquePrecio.innerHTML = '<span style="color:var(--muted);">Calculando precio de mayor…</span>';
     } else if (p.mostrar_precio === false) {
@@ -675,11 +727,33 @@ window.abrirDetalleProducto_ = function (p, descuentoPct) {
         const sinBase = numeroDesdePrecio_(p.precio_mayor_sin);
         const conFinal = descuentoPct > 0 ? conBase * (1 - descuentoPct / 100) : conBase;
         const sinFinal = (sinBase !== null && descuentoPct > 0) ? sinBase * (1 - descuentoPct / 100) : sinBase;
+        precioFinalParaPedido = conFinal;
         bloquePrecio.innerHTML =
             '<div style="font-size:0.72rem; font-weight:700; text-transform:uppercase; color:var(--muted); margin-bottom:4px;">Precio de mayor' + (descuentoPct > 0 ? ' (con tu ' + descuentoPct + '% de descuento)' : '') + '</div>' +
             '<div style="font-size:1.4rem; font-weight:800; color:var(--blue);">' + conFinal.toFixed(2).replace('.', ',') + ' € <span style="font-size:0.8rem; font-weight:600; color:var(--muted);">con IVA</span></div>' +
             (sinFinal !== null ? '<div style="font-size:0.85rem; color:var(--muted);">' + sinFinal.toFixed(2).replace('.', ',') + ' € sin IVA</div>' : '') +
             (descuentoPct > 0 ? '<div style="font-size:0.78rem; color:var(--muted); text-decoration:line-through; margin-top:4px;">' + p.precio_mayor_con + ' € antes del descuento</div>' : '');
+    }
+
+    // Fase 4: "añadir al pedido" — nunca en simulación.
+    const bloqueAnadirModal = document.getElementById('modalDetalleAnadirPedido');
+    if (window.enSimulacionAreaClientes_) {
+        bloqueAnadirModal.style.display = 'none';
+    } else {
+        bloqueAnadirModal.style.display = 'flex';
+        const inputCantidadModal = document.getElementById('modalDetalleCantidad');
+        inputCantidadModal.value = '1';
+        const botonAnadirModal = document.getElementById('modalDetalleBotonAnadir');
+        botonAnadirModal.disabled = false;
+        botonAnadirModal.textContent = 'Añadir al pedido';
+        botonAnadirModal.classList.remove('anadir-pedido__boton--ok');
+        botonAnadirModal.onclick = function () {
+            window.anadirProductoAPedido_(
+                { ref: p.ref, nombre: p.nombre, precio_unitario: precioFinalParaPedido },
+                Math.max(1, parseInt(inputCantidadModal.value, 10) || 1),
+                botonAnadirModal
+            );
+        };
     }
 
     document.getElementById('modalDetalleOverlay').classList.add('activo');
@@ -727,6 +801,58 @@ window.copiarReferencia_ = function (ref, boton) {
     }
 };
 
+// ── Fase 4: "añadir al pedido" — usado por la tarjeta del grid y por
+// el modal de detalle. window.propuestaBorradorId_ se rellena al
+// cargar la página (ver más abajo, fuera de simulación); si por lo que
+// sea todavía no está listo (carga lenta), se crea aquí mismo.
+window.anadirProductoAPedido_ = async function (producto, cantidad, botonOrigen) {
+    if (window.enSimulacionAreaClientes_) return;
+    if (botonOrigen) { botonOrigen.disabled = true; botonOrigen.textContent = 'Añadiendo…'; }
+    try {
+        if (!window.propuestaBorradorId_) {
+            const { data: borrador, error } = await window.obtenerOCrearBorradorPropuesta_();
+            if (error || !borrador) {
+                if (botonOrigen) { botonOrigen.disabled = false; botonOrigen.textContent = 'Error — reinténtalo'; }
+                return;
+            }
+            window.propuestaBorradorId_ = borrador.id;
+        }
+        const { error: errorLinea } = await window.incrementarCantidadLinea_(window.propuestaBorradorId_, producto, cantidad);
+        if (botonOrigen) {
+            if (errorLinea) {
+                botonOrigen.disabled = false;
+                botonOrigen.textContent = 'Error — reinténtalo';
+            } else {
+                botonOrigen.classList.add('anadir-pedido__boton--ok');
+                botonOrigen.textContent = '✓ Añadido';
+                setTimeout(function () {
+                    botonOrigen.disabled = false;
+                    botonOrigen.textContent = 'Añadir al pedido';
+                    botonOrigen.classList.remove('anadir-pedido__boton--ok');
+                }, 1200);
+            }
+        }
+        if (!errorLinea) await window.actualizarContadorPedido_();
+    } catch (e) {
+        if (botonOrigen) { botonOrigen.disabled = false; botonOrigen.textContent = 'Error — reinténtalo'; }
+    }
+};
+
+window.actualizarContadorPedido_ = async function () {
+    if (window.enSimulacionAreaClientes_ || !window.propuestaBorradorId_) return;
+    const n = await window.contarLineasBorrador_(window.propuestaBorradorId_);
+    const boton = document.getElementById('btnMiPedido');
+    const contador = document.getElementById('btnMiPedido__contador');
+    if (!boton || !contador) return;
+    boton.classList.add('visible');
+    if (n > 0) {
+        contador.textContent = String(n);
+        contador.style.display = 'inline-flex';
+    } else {
+        contador.style.display = 'none';
+    }
+};
+
 // Botón flotante "subir arriba" — mismo umbral y comportamiento que la
 // web pública (ver #btn-subir-arriba en index.html): aparece a partir
 // de 400px de scroll, throttle con requestAnimationFrame.
@@ -749,6 +875,10 @@ window.copiarReferencia_ = function (ref, boton) {
     // establecida allí vía verifyOtp. Nunca tocamos la sesión normal
     // de quien está simulando.
     const enSimulacion = new URLSearchParams(window.location.search).get('simulacion') === '1';
+    // Se fija ya aquí (no al final de este IIFE) porque crearTarjetaProducto_
+    // pinta tarjetas desde el primer pintado provisional (Fase 1 de
+    // carga), mucho antes de llegar al final de esta función.
+    window.enSimulacionAreaClientes_ = enSimulacion;
     const cliente = window.obtenerClienteSupabase_(enSimulacion);
     const avisoError = document.getElementById('avisoError');
 
@@ -811,6 +941,17 @@ window.copiarReferencia_ = function (ref, boton) {
     // no es una visita real del cliente). No bloquea nada si falla.
     if (!enSimulacion) {
         try { await cliente.rpc('registrar_ultimo_acceso_'); } catch (e) { /* no crítico */ }
+    }
+
+    // Fase 4: enlace a "Mis pedidos" + borrador de propuesta (para el
+    // contador del botón flotante "Mi pedido") — nunca en simulación.
+    if (!enSimulacion) {
+        document.getElementById('enlaceMisPedidos').style.display = 'inline-block';
+        const { data: borrador } = await window.obtenerOCrearBorradorPropuesta_();
+        if (borrador) {
+            window.propuestaBorradorId_ = borrador.id;
+            await window.actualizarContadorPedido_();
+        }
     }
 
     const { data: datosCliente, error: errorCliente } = await cliente
@@ -1103,6 +1244,11 @@ window.copiarReferencia_ = function (ref, boton) {
         const hayPrecioMayor = p.precio_mayor_con !== undefined && p.precio_mayor_con !== null && p.precio_mayor_con !== '';
         let precioConBase = numeroDesdePrecio_(p.precio_mayor_con);
         let precioSinBase = numeroDesdePrecio_(p.precio_mayor_sin);
+        // Precio con el que se guarda la línea si el cliente lo añade a
+        // su pedido (Fase 4) — null cuando todavía no se conoce de
+        // verdad (sigue siendo "añadible": un pedido con precio a
+        // confirmar es un caso real, no un error).
+        let precioFinalParaPedido = null;
         const tarjeta = document.createElement('div');
         tarjeta.className = 'producto-tarjeta';
         tarjeta.dataset.ref = p.ref;
@@ -1150,6 +1296,7 @@ window.copiarReferencia_ = function (ref, boton) {
         } else {
             const precioConFinal = descuentoPct > 0 ? (precioConBase * (1 - descuentoPct / 100)) : precioConBase;
             const precioSinFinal = (precioSinBase !== null && descuentoPct > 0) ? (precioSinBase * (1 - descuentoPct / 100)) : precioSinBase;
+            precioFinalParaPedido = precioConFinal;
             // Precio tachado: el de mayor normal si hay promoción de
             // destacado (prioridad) o, si no, el de antes del descuento
             // propio del cliente — nunca los dos acumulados en el
@@ -1181,12 +1328,36 @@ window.copiarReferencia_ = function (ref, boton) {
                     '<button type="button" class="producto-tarjeta__ref-copiar" title="Copiar referencia" aria-label="Copiar referencia">📋</button>' +
                 '</div>' +
                 '<div class="producto-tarjeta__precios">' + htmlPrecio + '</div>' +
+                // Nunca en modo simulación (banda arriba: "no se puede
+                // actuar en nombre del cliente") — el comercial/admin
+                // viendo la simulación comparte el mismo auth.uid() que
+                // el cliente real, así que tocar el pedido aquí tocaría
+                // de verdad SU pedido.
+                (window.enSimulacionAreaClientes_ ? '' :
+                    '<div class="anadir-pedido">' +
+                        '<input type="number" class="anadir-pedido__cantidad" min="1" step="1" value="1" aria-label="Cantidad">' +
+                        '<button type="button" class="anadir-pedido__boton">Añadir al pedido</button>' +
+                    '</div>') +
             '</div>';
         tarjeta.querySelector('.producto-tarjeta__ref-copiar').addEventListener('click', function (ev) {
             ev.stopPropagation(); // no abrir el detalle al copiar
             window.copiarReferencia_(p.ref, this);
         });
         tarjeta.addEventListener('click', function () { window.abrirDetalleProducto_ && window.abrirDetalleProducto_(p, descuentoPct); });
+
+        const bloqueAnadir = tarjeta.querySelector('.anadir-pedido');
+        if (bloqueAnadir) {
+            const inputCantidad = bloqueAnadir.querySelector('.anadir-pedido__cantidad');
+            const botonAnadir = bloqueAnadir.querySelector('.anadir-pedido__boton');
+            bloqueAnadir.addEventListener('click', function (ev) { ev.stopPropagation(); }); // no abrir el detalle
+            botonAnadir.addEventListener('click', function () {
+                window.anadirProductoAPedido_(
+                    { ref: p.ref, nombre: p.nombre, precio_unitario: precioFinalParaPedido },
+                    Math.max(1, parseInt(inputCantidad.value, 10) || 1),
+                    botonAnadir
+                );
+            });
+        }
         return tarjeta;
     }
 

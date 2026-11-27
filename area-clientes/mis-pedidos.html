@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mis pedidos — Área de Clientes · Orencio Matas</title>
+<link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+<link rel="stylesheet" href="assets/estilos.css">
+<style>
+    .cuerpo-pedidos { max-width: 860px; margin: 0 auto; padding: 26px 20px 60px; }
+    .cuerpo-pedidos h1 { margin: 0 0 4px; }
+    .tarjeta-pedido {
+        background: var(--white); border: 1px solid var(--border); border-radius: var(--radius);
+        padding: 16px 18px; margin-bottom: 14px; box-shadow: var(--sombra);
+    }
+    .tarjeta-pedido__cabecera {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        flex-wrap: wrap; cursor: pointer;
+    }
+    .tarjeta-pedido__titulo { font-weight: 700; }
+    .tarjeta-pedido__meta { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+    .tarjeta-pedido__derecha { display: flex; align-items: center; gap: 12px; }
+    .tarjeta-pedido__total { font-weight: 800; font-size: 1.05rem; white-space: nowrap; }
+    .insignia-estado-pedido {
+        font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+        text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap;
+    }
+    .insignia-estado-pedido--borrador { color: var(--muted); background: var(--light); border: 1px solid var(--border); }
+    .insignia-estado-pedido--recibida { color: var(--ok); background: var(--ok-soft); }
+    .tarjeta-pedido__detalle { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .tarjeta-pedido__detalle.abierto { display: block; }
+    .tarjeta-pedido__linea {
+        display: flex; justify-content: space-between; gap: 10px; font-size: 0.85rem;
+        padding: 6px 0; border-bottom: 1px dashed var(--border);
+    }
+    .tarjeta-pedido__linea:last-child { border-bottom: none; }
+    .tarjeta-pedido__acciones { margin-top: 12px; display: flex; justify-content: flex-end; }
+    .tarjeta-pedido__acciones button { width: auto; }
+    .vacio-pedidos { text-align: center; padding: 50px 20px; color: var(--muted); }
+    .vacio-pedidos a { color: var(--blue); font-weight: 700; text-decoration: none; }
+</style>
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Mis pedidos</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <a href="catalogo.html" class="boton-secundario" style="width:auto; margin:0; padding:8px 14px; text-decoration:none;">← Volver al catálogo</a>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+
+<div class="cuerpo-pedidos">
+    <h1>Mis pedidos</h1>
+    <p class="ayuda" id="ayuda">Cargando…</p>
+
+    <div id="listaPedidos"></div>
+
+    <div class="vacio-pedidos" id="bloqueVacio" style="display:none;">
+        Todavía no tienes ningún pedido.<br>
+        <a href="catalogo.html">Ir al catálogo →</a>
+    </div>
+
+    <div class="aviso aviso--error" id="avisoError"></div>
+    <div class="aviso aviso--ok" id="avisoOk"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/propuesta-cliente.js"></script>
+<script>
+(async function () {
+    const sesion = await window.exigirSesionAreaClientes_();
+    if (!sesion) return;
+
+    const cliente = window.obtenerClienteSupabase_();
+    const ayuda = document.getElementById('ayuda');
+    const avisoError = document.getElementById('avisoError');
+    const avisoOk = document.getElementById('avisoOk');
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await cliente.auth.signOut();
+        window.location.href = 'index.html';
+    });
+
+    function formatearEuros_(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+    function formatearFecha_(valor) {
+        if (!valor) return '';
+        const f = new Date(valor);
+        return f.toLocaleDateString('es-ES') + ' ' + f.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    const { data: pedidos, error } = await window.listarPropuestasCliente_();
+    if (error) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se ha podido cargar tu historial: ' + error;
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    if (!pedidos.length) {
+        ayuda.textContent = '';
+        document.getElementById('bloqueVacio').style.display = 'block';
+        return;
+    }
+
+    ayuda.textContent = pedidos.length + ' pedido(s).';
+    const lista = document.getElementById('listaPedidos');
+
+    pedidos.forEach(function (p, indice) {
+        const esBorrador = p.estado === 'borrador';
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'tarjeta-pedido';
+        tarjeta.innerHTML =
+            '<div class="tarjeta-pedido__cabecera">' +
+                '<div>' +
+                    '<div class="tarjeta-pedido__titulo">' +
+                        (esBorrador ? 'Pedido en curso (sin enviar)' : 'Pedido del ' + formatearFecha_(p.enviado_en || p.creado_en)) +
+                    '</div>' +
+                    '<div class="tarjeta-pedido__meta">' + p.totalUnidades + ' unidad(es) · ' + p.lineas.length + ' producto(s)</div>' +
+                '</div>' +
+                '<div class="tarjeta-pedido__derecha">' +
+                    '<span class="tarjeta-pedido__total">' + formatearEuros_(p.totalImporte) + '</span>' +
+                    '<span class="insignia-estado-pedido insignia-estado-pedido--' + p.estado + '">' + (esBorrador ? 'Borrador' : 'Recibida') + '</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="tarjeta-pedido__detalle" id="detallePedido' + indice + '"></div>';
+
+        const cabecera = tarjeta.querySelector('.tarjeta-pedido__cabecera');
+        const detalle = tarjeta.querySelector('.tarjeta-pedido__detalle');
+        let pintado = false;
+        cabecera.addEventListener('click', function () {
+            if (!pintado) {
+                detalle.innerHTML =
+                    p.lineas.map(function (l) {
+                        const precioConocido = l.precio_unitario !== null && l.precio_unitario !== undefined;
+                        const subtotal = precioConocido ? Number(l.precio_unitario) * Number(l.cantidad) : null;
+                        return '<div class="tarjeta-pedido__linea">' +
+                            '<span>' + l.cantidad + ' × ' + l.nombre + ' <span style="color:var(--muted);">(Ref. ' + l.ref + ')</span></span>' +
+                            '<span>' + (subtotal !== null ? formatearEuros_(subtotal) : '—') + '</span>' +
+                        '</div>';
+                    }).join('') +
+                    (esBorrador
+                        ? '<div class="tarjeta-pedido__acciones"><a class="boton-principal" style="text-decoration:none; display:inline-block; width:auto; padding:9px 16px;" href="propuesta.html">Ir a este pedido</a></div>'
+                        : '<div class="tarjeta-pedido__acciones"><button type="button" class="boton-secundario" data-id="' + p.id + '">Reutilizar este pedido</button></div>');
+                pintado = true;
+
+                if (!esBorrador) {
+                    detalle.querySelector('button[data-id]').addEventListener('click', async function (ev) {
+                        ev.stopPropagation();
+                        const boton = this;
+                        const confirmado = await window.confirmarModal_(
+                            'Reutilizar pedido',
+                            'Se copiarán estos productos a tu pedido en curso, sustituyendo lo que tuvieras ahora en él. Después podrás añadir, quitar o cambiar cantidades antes de volver a enviarlo.',
+                            'Reutilizar pedido',
+                            true
+                        );
+                        if (!confirmado) return;
+                        boton.disabled = true;
+                        boton.textContent = 'Copiando…';
+                        const { error: errorDup } = await window.duplicarPropuestaComoBorrador_(p.id);
+                        if (errorDup) {
+                            avisoError.textContent = 'No se ha podido reutilizar el pedido: ' + errorDup;
+                            avisoError.classList.add('activo');
+                            boton.disabled = false;
+                            boton.textContent = 'Reutilizar este pedido';
+                            return;
+                        }
+                        avisoOk.textContent = 'Productos copiados a tu pedido en curso.';
+                        avisoOk.classList.add('activo');
+                        setTimeout(function () { window.location.href = 'propuesta.html'; }, 900);
+                    });
+                }
+            }
+            detalle.classList.toggle('abierto');
+        });
+
+        lista.appendChild(tarjeta);
+    });
+})();
+</script>
+</body>
+</html>

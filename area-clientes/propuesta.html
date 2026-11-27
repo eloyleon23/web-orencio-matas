@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mi pedido — Área de Clientes · Orencio Matas</title>
+<link rel="icon" type="image/x-icon" href="assets/logos/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logos/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/logos/favicon-16x16.png">
+<link rel="stylesheet" href="assets/estilos.css">
+<style>
+    .cuerpo-propuesta { max-width: 860px; margin: 0 auto; padding: 26px 20px 60px; }
+    .cuerpo-propuesta h1 { margin: 0 0 4px; }
+    .linea-pedido {
+        display: flex; align-items: center; gap: 14px; padding: 14px 0;
+        border-bottom: 1px solid var(--border);
+    }
+    .linea-pedido:last-child { border-bottom: none; }
+    .linea-pedido__info { flex: 1; min-width: 0; }
+    .linea-pedido__nombre { font-weight: 700; font-size: 0.92rem; }
+    .linea-pedido__ref { font-size: 0.75rem; color: var(--muted); }
+    .linea-pedido__precio-unitario { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .linea-pedido__cantidad {
+        width: 70px; text-align: center; padding: 7px 4px; font-size: 0.9rem;
+    }
+    .linea-pedido__subtotal { width: 90px; text-align: right; font-weight: 700; white-space: nowrap; }
+    .linea-pedido__quitar {
+        border: none; background: none; color: var(--muted); cursor: pointer;
+        font-size: 1rem; padding: 4px 6px; border-radius: 6px;
+    }
+    .linea-pedido__quitar:hover { background: var(--danger-soft); color: var(--danger); }
+    .resumen-propuesta {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-top: 18px; padding-top: 18px; border-top: 2px solid var(--dark);
+        font-size: 1.1rem; font-weight: 800;
+    }
+    .acciones-propuesta { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+    .acciones-propuesta button { width: auto; }
+    .acciones-propuesta .boton-secundario { flex: 0 0 auto; }
+    .acciones-propuesta .boton-principal { flex: 1 1 220px; }
+    .vacio-propuesta { text-align: center; padding: 50px 20px; color: var(--muted); }
+    .vacio-propuesta a { color: var(--blue); font-weight: 700; text-decoration: none; }
+    @media (max-width: 560px) {
+        .linea-pedido { flex-wrap: wrap; }
+        .linea-pedido__info { flex: 1 1 100%; order: 1; }
+        .linea-pedido__cantidad { order: 2; }
+        .linea-pedido__subtotal { order: 3; }
+        .linea-pedido__quitar { order: 4; }
+    }
+</style>
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Mi pedido</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <a href="catalogo.html" class="boton-secundario" style="width:auto; margin:0; padding:8px 14px; text-decoration:none;">← Volver al catálogo</a>
+        <a href="mis-pedidos.html" class="boton-secundario" style="width:auto; margin:0; padding:8px 14px; text-decoration:none;">Mis pedidos</a>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+
+<div class="cuerpo-propuesta">
+    <h1>Mi pedido</h1>
+    <p class="ayuda" id="ayuda">Cargando…</p>
+
+    <div id="bloqueLineas" style="display:none;">
+        <div id="listaLineas"></div>
+        <div class="resumen-propuesta">
+            <span>Total (con IVA)</span>
+            <span id="totalPropuesta">0,00 €</span>
+        </div>
+        <p class="ayuda" style="margin-top:6px;">
+            Los precios de a continuación son orientativos (los que viste al
+            añadir cada producto) — el pedido definitivo lo confirma tu
+            comercial.
+        </p>
+        <div class="acciones-propuesta">
+            <button type="button" class="boton-secundario" id="botonVaciar">Vaciar pedido</button>
+            <button type="button" class="boton-principal" id="botonEnviar">Enviar pedido</button>
+        </div>
+    </div>
+
+    <div class="vacio-propuesta" id="bloqueVacio" style="display:none;">
+        Todavía no has añadido ningún producto.<br>
+        <a href="catalogo.html">Ir al catálogo →</a>
+    </div>
+
+    <div class="aviso aviso--error" id="avisoError"></div>
+    <div class="aviso aviso--ok" id="avisoOk"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="assets/supabase-client.js"></script>
+<script src="assets/propuesta-cliente.js"></script>
+<script>
+(async function () {
+    const sesion = await window.exigirSesionAreaClientes_();
+    if (!sesion) return;
+
+    const cliente = window.obtenerClienteSupabase_();
+    const ayuda = document.getElementById('ayuda');
+    const avisoError = document.getElementById('avisoError');
+    const avisoOk = document.getElementById('avisoOk');
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await cliente.auth.signOut();
+        window.location.href = 'index.html';
+    });
+
+    const { data: borrador, error: errorBorrador } = await window.obtenerOCrearBorradorPropuesta_();
+    if (errorBorrador || !borrador) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se ha podido cargar tu pedido: ' + (errorBorrador || 'error desconocido');
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    function formatearEuros_(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+
+    async function repintar_() {
+        const { data: lineas, error } = await window.obtenerLineasPropuesta_(borrador.id);
+        if (error) {
+            ayuda.textContent = '';
+            avisoError.textContent = 'No se han podido cargar los productos del pedido: ' + error;
+            avisoError.classList.add('activo');
+            return;
+        }
+
+        ayuda.textContent = lineas.length
+            ? lineas.length + ' producto(s) en tu pedido.'
+            : '';
+
+        document.getElementById('bloqueLineas').style.display = lineas.length ? 'block' : 'none';
+        document.getElementById('bloqueVacio').style.display = lineas.length ? 'none' : 'block';
+        if (!lineas.length) return;
+
+        const lista = document.getElementById('listaLineas');
+        lista.innerHTML = '';
+        let total = 0;
+        lineas.forEach(function (l) {
+            const precioConocido = l.precio_unitario !== null && l.precio_unitario !== undefined;
+            const subtotal = precioConocido ? Number(l.precio_unitario) * Number(l.cantidad) : null;
+            if (subtotal !== null) total += subtotal;
+
+            const fila = document.createElement('div');
+            fila.className = 'linea-pedido';
+            fila.dataset.id = l.id;
+            fila.dataset.ref = l.ref;
+            fila.innerHTML =
+                '<div class="linea-pedido__info">' +
+                    '<div class="linea-pedido__nombre">' + l.nombre + '</div>' +
+                    '<div class="linea-pedido__ref">Ref. ' + l.ref + '</div>' +
+                    '<div class="linea-pedido__precio-unitario">' +
+                        (precioConocido ? formatearEuros_(Number(l.precio_unitario)) + ' / ud.' : 'Precio a confirmar') +
+                    '</div>' +
+                '</div>' +
+                '<input type="number" class="linea-pedido__cantidad" min="1" step="1" value="' + l.cantidad + '" aria-label="Cantidad">' +
+                '<div class="linea-pedido__subtotal">' + (subtotal !== null ? formatearEuros_(subtotal) : '—') + '</div>' +
+                '<button type="button" class="linea-pedido__quitar" title="Quitar del pedido" aria-label="Quitar del pedido">✕</button>';
+            lista.appendChild(fila);
+
+            const inputCantidad = fila.querySelector('.linea-pedido__cantidad');
+            let temporizador = null;
+            inputCantidad.addEventListener('change', function () {
+                clearTimeout(temporizador);
+                const nuevaCantidad = Math.max(0, parseInt(inputCantidad.value, 10) || 0);
+                temporizador = setTimeout(async function () {
+                    inputCantidad.disabled = true;
+                    const { error: errorCantidad } = await window.establecerCantidadLinea_(
+                        borrador.id, { ref: l.ref, nombre: l.nombre, precio_unitario: l.precio_unitario }, nuevaCantidad
+                    );
+                    inputCantidad.disabled = false;
+                    if (errorCantidad) {
+                        avisoError.textContent = 'No se ha podido actualizar la cantidad: ' + errorCantidad;
+                        avisoError.classList.add('activo');
+                        return;
+                    }
+                    await repintar_();
+                    if (window.actualizarContadorPedido_) { window.propuestaBorradorId_ = borrador.id; await window.actualizarContadorPedido_(); }
+                }, 50);
+            });
+
+            fila.querySelector('.linea-pedido__quitar').addEventListener('click', async function () {
+                const boton = this;
+                boton.disabled = true;
+                const { error: errorQuitar } = await window.eliminarLineaPorId_(l.id);
+                if (errorQuitar) {
+                    boton.disabled = false;
+                    avisoError.textContent = 'No se ha podido quitar el producto: ' + errorQuitar;
+                    avisoError.classList.add('activo');
+                    return;
+                }
+                await repintar_();
+                window.propuestaBorradorId_ = borrador.id;
+                if (window.actualizarContadorPedido_) await window.actualizarContadorPedido_();
+            });
+        });
+
+        document.getElementById('totalPropuesta').textContent = formatearEuros_(total);
+    }
+
+    await repintar_();
+
+    document.getElementById('botonVaciar').addEventListener('click', async function () {
+        const confirmado = await window.confirmarModal_(
+            'Vaciar pedido',
+            'Se quitarán todos los productos de tu pedido actual. Esta acción no se puede deshacer.',
+            'Vaciar pedido',
+            true
+        );
+        if (!confirmado) return;
+        avisoError.classList.remove('activo');
+        const { error } = await window.vaciarPropuesta_(borrador.id);
+        if (error) {
+            avisoError.textContent = 'No se ha podido vaciar el pedido: ' + error;
+            avisoError.classList.add('activo');
+            return;
+        }
+        await repintar_();
+        window.propuestaBorradorId_ = borrador.id;
+        if (window.actualizarContadorPedido_) await window.actualizarContadorPedido_();
+    });
+
+    document.getElementById('botonEnviar').addEventListener('click', async function () {
+        const confirmado = await window.confirmarModal_(
+            'Enviar pedido',
+            'Tu comercial recibirá este pedido tal y como está ahora mismo. Una vez enviado, ya no podrás modificarlo desde aquí.',
+            'Enviar pedido',
+            false
+        );
+        if (!confirmado) return;
+
+        avisoError.classList.remove('activo');
+        const boton = this;
+        boton.disabled = true;
+        boton.textContent = 'Enviando…';
+        const { error } = await window.enviarPropuesta_(borrador.id);
+        boton.disabled = false;
+        boton.textContent = 'Enviar pedido';
+
+        if (error) {
+            avisoError.textContent = 'No se ha podido enviar el pedido: ' + error;
+            avisoError.classList.add('activo');
+            return;
+        }
+        avisoOk.textContent = '¡Pedido enviado! Puedes verlo en "Mis pedidos".';
+        avisoOk.classList.add('activo');
+        setTimeout(function () { window.location.href = 'mis-pedidos.html'; }, 1200);
+    });
+})();
+</script>
+</body>
+</html>
