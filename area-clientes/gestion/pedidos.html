@@ -80,6 +80,41 @@
     .bloque-seguimiento__campo input, .bloque-seguimiento__campo select { margin: 0; }
     .bloque-seguimiento__solo-lectura { font-size: 0.85rem; }
     .bloque-seguimiento__solo-lectura strong { font-weight: 700; }
+
+    .modal-pedido-gestion { position: relative; }
+    .modal-pedido-gestion__cerrar-x {
+        position: sticky; top: 0; float: right; margin: -10px -14px 0 10px;
+        width: 32px; height: 32px; border-radius: 50%; border: none; background: var(--light);
+        color: var(--muted); font-size: 1.1rem; cursor: pointer; z-index: 1;
+    }
+    .modal-pedido-gestion__cerrar-x:hover { background: var(--danger-soft); color: var(--danger); }
+
+    .linea-gestion__acciones-gestion { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .linea-gestion__acciones-gestion button { width: auto; margin: 0; padding: 5px 10px; font-size: 0.76rem; }
+    .linea-gestion__sustituir-contenedor { margin-top: 8px; }
+
+    .buscador-producto { position: relative; }
+    .buscador-producto__input { margin: 0; }
+    .buscador-producto__resultados {
+        position: relative; max-height: 220px; overflow-y: auto; border: 1px solid var(--border);
+        border-radius: 8px; margin-top: 4px; background: var(--white);
+    }
+    .buscador-producto__resultados:empty { display: none; border: none; margin: 0; }
+    .buscador-producto__item { padding: 7px 10px; font-size: 0.82rem; cursor: pointer; border-bottom: 1px solid var(--border); }
+    .buscador-producto__item:last-child { border-bottom: none; }
+    .buscador-producto__item:hover { background: var(--light); }
+    .buscador-producto__vacio { padding: 8px 10px; font-size: 0.8rem; color: var(--muted); }
+
+    .bloque-anadir-producto {
+        margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    .bloque-anadir-producto__titulo { font-weight: 700; font-size: 0.88rem; margin-bottom: 8px; }
+    .bloque-anadir-producto__seleccionado {
+        display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.85rem;
+        background: var(--light); border-radius: 8px; padding: 8px 10px; margin-top: 8px;
+    }
+    .bloque-anadir-producto__seleccionado input[type="number"] { width: 90px; margin: 0; }
+    .bloque-anadir-producto__seleccionado button { width: auto; margin: 0; }
 </style>
 </head>
 <body>
@@ -202,6 +237,62 @@
     }
     function escapar_(s) { return String(s || '').replace(/</g, '&lt;'); }
 
+    // ── Buscador de producto (para sustituir o añadir productos a un
+    // pedido) — catálogo estático, el mismo que usa catalogo.html como
+    // reserva sin personalizar; de sobra para esta herramienta interna.
+    let catalogoProductosPromesa_ = null;
+    function cargarCatalogoProductos_() {
+        if (!catalogoProductosPromesa_) {
+            catalogoProductosPromesa_ = fetch('../../data/productos.json')
+                .then(function (r) { return r.json(); })
+                .then(function (data) { return (data && data.productos) || []; })
+                .catch(function () { return []; });
+        }
+        return catalogoProductosPromesa_;
+    }
+    function parsearPrecio_(s) {
+        if (!s) return null;
+        const n = Number(String(s).replace(',', '.'));
+        return isNaN(n) ? null : n;
+    }
+    function buscarProductosCatalogo_(productos, texto) {
+        const t = texto.trim().toLowerCase();
+        if (t.length < 2) return [];
+        return productos.filter(function (p) {
+            return (p.ref && p.ref.toLowerCase().includes(t)) || (p.nombre && p.nombre.toLowerCase().includes(t));
+        }).slice(0, 15);
+    }
+    // Pinta el buscador dentro de "contenedor" y llama a onSeleccionar_(p)
+    // con el producto del catálogo elegido.
+    async function pintarBuscadorProducto_(contenedor, onSeleccionar_) {
+        const productos = await cargarCatalogoProductos_();
+        contenedor.innerHTML =
+            '<div class="buscador-producto">' +
+                '<input type="text" class="buscador-producto__input" placeholder="Buscar por referencia o nombre…" autocomplete="off">' +
+                '<div class="buscador-producto__resultados"></div>' +
+            '</div>';
+        const input = contenedor.querySelector('.buscador-producto__input');
+        const resultadosDiv = contenedor.querySelector('.buscador-producto__resultados');
+        input.focus();
+        let temporizador = null;
+        input.addEventListener('input', function () {
+            clearTimeout(temporizador);
+            temporizador = setTimeout(function () {
+                const coincidencias = buscarProductosCatalogo_(productos, input.value);
+                resultadosDiv.innerHTML = coincidencias.map(function (p, i) {
+                    const precio = parsearPrecio_(p.precio_con);
+                    return '<div class="buscador-producto__item" data-indice="' + i + '">' +
+                        '<strong>' + escapar_(p.nombre) + '</strong><br>' +
+                        '<span style="color:var(--muted);">Ref. ' + escapar_(p.ref) + (precio !== null ? ' — ' + formatearEuros_(precio) : '') + '</span>' +
+                    '</div>';
+                }).join('') || (input.value.trim().length >= 2 ? '<div class="buscador-producto__vacio">Sin coincidencias.</div>' : '');
+                resultadosDiv.querySelectorAll('.buscador-producto__item').forEach(function (item) {
+                    item.addEventListener('click', function () { onSeleccionar_(coincidencias[Number(item.dataset.indice)]); });
+                });
+            }, 150);
+        });
+    }
+
     // Filtro opcional por cliente concreto (llegado desde "Ver pedidos"
     // en gestion/clientes.html) — ?cliente=<id>.
     const parametrosUrl = new URLSearchParams(window.location.search);
@@ -239,6 +330,15 @@
         if (!desde) return null;
         const msPorDia = 24 * 60 * 60 * 1000;
         return Math.max(0, Math.round((new Date(hasta).getTime() - new Date(desde).getTime()) / msPorDia));
+    }
+
+    function recomputarTotal_(p) {
+        p.totalImporte = p.lineas.reduce(function (acc, l) {
+            return acc + (l.precio_unitario !== null ? Number(l.cantidad) * Number(l.precio_unitario) : 0);
+        }, 0);
+    }
+    function marcarEditadoPorMi_(p) {
+        p.editorNombre = resultado.perfil.nombre ? [resultado.perfil.nombre, resultado.perfil.apellidos].filter(Boolean).join(' ') : p.editorNombre;
     }
 
     const pedidos_ = pedidosBrutos.map(function (p) {
@@ -369,11 +469,19 @@
 
     const ESTADOS_CON_SEGUIMIENTO_ = ['lista_para_enviar', 'en_reparto', 'entregada'];
 
+    const ESTADOS_EDITABLES_LINEAS_ = ['recibida', 'en_preparacion'];
+
     function pintarModal_(p) {
         const puedeRectificar = (rol === 'almacen' || rol === 'administrador') && p.estado === 'en_preparacion';
         const siguienteEstado = (TRANSICION_POR_ROL_[rol] || {})[p.estado];
         const mostrarSeguimiento = ESTADOS_CON_SEGUIMIENTO_.includes(p.estado);
         const puedeEditarSeguimiento = mostrarSeguimiento && (rol === 'almacen' || rol === 'administrador');
+        // Comercial/almacén/administrador pueden sustituir, quitar o
+        // añadir productos mientras el pedido todavía se pueda tocar
+        // (recibida o en preparación) — por si lo que pidió el cliente
+        // ya no hay, o hace falta añadir algo a mano. Ver
+        // supabase/area_clientes_schema_fase5e_editar_lineas.sql.
+        const puedeEditarLineas = ESTADOS_EDITABLES_LINEAS_.includes(p.estado);
 
         const lineasHtml = p.lineas.map(function (l) {
             const haySubtotal = l.precio_unitario !== null && l.precio_unitario !== undefined;
@@ -394,9 +502,23 @@
                             '<input type="text" class="input-motivo-rectificacion" placeholder="Motivo si se reduce (p. ej. sin stock)" value="' + escapar_(l.motivo_rectificacion || '') + '">' +
                           '</div>'
                         : '') +
+                    (puedeEditarLineas
+                        ? '<div class="linea-gestion__acciones-gestion">' +
+                            '<button type="button" class="boton-fila boton-sustituir-linea" data-linea-id="' + l.id + '">Sustituir producto</button>' +
+                            '<button type="button" class="boton-fila boton-peligro boton-quitar-linea" data-linea-id="' + l.id + '">Quitar del pedido</button>' +
+                          '</div>' +
+                          '<div class="linea-gestion__sustituir-contenedor" data-linea-id="' + l.id + '" style="display:none;"></div>'
+                        : '') +
                 '</div>'
             );
         }).join('');
+
+        const anadirProductoHtml = !puedeEditarLineas ? '' : (
+            '<div class="bloque-anadir-producto">' +
+                '<div class="bloque-anadir-producto__titulo">Añadir producto al pedido</div>' +
+                '<div id="contenedorAnadirProducto"></div>' +
+            '</div>'
+        );
 
         const puedeRectificarRol = (rol === 'almacen' || rol === 'administrador');
         const avisoAyudaHtml = (!puedeRectificar && puedeRectificarRol && p.estado === 'recibida')
@@ -439,6 +561,7 @@
         );
 
         contenido.innerHTML =
+            '<button type="button" class="modal-pedido-gestion__cerrar-x" id="botonCerrarModalX" aria-label="Cerrar">✕</button>' +
             '<div class="modal-pedido-gestion__cabecera">' +
                 '<div>' +
                     '<div class="modal-pedido-gestion__cliente">' + escapar_(p.clienteNombre) + (p.clienteEmpresa ? ' — ' + escapar_(p.clienteEmpresa) : '') + '</div>' +
@@ -458,6 +581,7 @@
             '</div>' +
             (p.notas ? '<div class="modal-pedido-gestion__notas-generales"><strong>Instrucciones generales:</strong> ' + escapar_(p.notas) + '</div>' : '') +
             lineasHtml +
+            anadirProductoHtml +
             '<div class="modal-pedido-gestion__resumen"><span>Total</span><span>' + formatearEuros_(p.totalImporte) + '</span></div>' +
             seguimientoHtml +
             avisoAyudaHtml +
@@ -465,13 +589,169 @@
             '<div class="aviso aviso--ok" id="modalAvisoOk"></div>' +
             '<div class="modal-pedido-gestion__acciones">' +
                 accionesHtml +
-                '<button type="button" class="boton-secundario" id="botonCerrarModal">Cerrar</button>' +
             '</div>';
 
-        document.getElementById('botonCerrarModal').addEventListener('click', cerrarModal_);
+        document.getElementById('botonCerrarModalX').addEventListener('click', cerrarModal_);
 
         const modalAvisoError = document.getElementById('modalAvisoError');
         const modalAvisoOk = document.getElementById('modalAvisoOk');
+
+        if (puedeEditarLineas) {
+            contenido.querySelectorAll('.boton-sustituir-linea').forEach(function (boton) {
+                boton.addEventListener('click', function () {
+                    const lineaId = boton.dataset.lineaId;
+                    const contenedor = contenido.querySelector('.linea-gestion__sustituir-contenedor[data-linea-id="' + lineaId + '"]');
+                    const yaAbierto = contenedor.style.display !== 'none';
+                    // Solo un buscador abierto a la vez, para no liar la
+                    // modal con varios desplegados.
+                    contenido.querySelectorAll('.linea-gestion__sustituir-contenedor').forEach(function (c) { c.style.display = 'none'; c.innerHTML = ''; });
+                    if (yaAbierto) return;
+                    contenedor.style.display = 'block';
+                    pintarBuscadorProducto_(contenedor, async function (nuevoProducto) {
+                        const lineaActual = p.lineas.find(function (l) { return l.id === lineaId; });
+                        if (!lineaActual) return;
+                        const precioNuevo = parsearPrecio_(nuevoProducto.precio_con);
+                        const confirmado1 = await window.confirmarModal_(
+                            'Sustituir producto',
+                            'Vas a sustituir "' + lineaActual.nombre + '" (Ref. ' + lineaActual.ref + ') por "' + nuevoProducto.nombre + '" (Ref. ' + nuevoProducto.ref + '). Se mantiene la cantidad pedida (' + lineaActual.cantidad + ').',
+                            'Continuar',
+                            false
+                        );
+                        if (!confirmado1) return;
+                        const confirmado2 = await window.confirmarModal_(
+                            'Confirma la sustitución',
+                            'Esta acción no se puede deshacer. ¿Confirmas definitivamente el cambio de producto?',
+                            'Sustituir definitivamente',
+                            true
+                        );
+                        if (!confirmado2) return;
+
+                        const { error: errorSustituir } = await cliente
+                            .from('propuesta_pedido_lineas')
+                            .update({
+                                ref: nuevoProducto.ref, nombre: nuevoProducto.nombre, precio_unitario: precioNuevo,
+                                modo_compra: 'unidad', cantidad_envases: null, envase_cantidad: null, envase_unidad: null, envase_tipo: null,
+                                cantidad_confirmada: null, motivo_rectificacion: null,
+                            })
+                            .eq('id', lineaId);
+                        if (errorSustituir) {
+                            modalAvisoError.textContent = 'No se ha podido sustituir el producto: ' + errorSustituir.message;
+                            modalAvisoError.classList.add('activo');
+                            return;
+                        }
+                        Object.assign(lineaActual, {
+                            ref: nuevoProducto.ref, nombre: nuevoProducto.nombre, precio_unitario: precioNuevo,
+                            modo_compra: 'unidad', cantidad_envases: null, envase_cantidad: null, envase_unidad: null, envase_tipo: null,
+                            cantidad_confirmada: null, motivo_rectificacion: null,
+                        });
+                        recomputarTotal_(p);
+                        marcarEditadoPorMi_(p);
+                        modalAvisoOk.textContent = 'Producto sustituido.';
+                        modalAvisoOk.classList.add('activo');
+                        repintar_();
+                        pintarModal_(p);
+                    });
+                });
+            });
+
+            contenido.querySelectorAll('.boton-quitar-linea').forEach(function (boton) {
+                boton.addEventListener('click', async function () {
+                    const lineaId = boton.dataset.lineaId;
+                    const lineaActual = p.lineas.find(function (l) { return l.id === lineaId; });
+                    if (!lineaActual) return;
+                    const confirmado1 = await window.confirmarModal_(
+                        'Quitar producto del pedido',
+                        '¿Seguro que quieres quitar "' + lineaActual.nombre + '" (Ref. ' + lineaActual.ref + ') de este pedido?',
+                        'Quitar',
+                        true
+                    );
+                    if (!confirmado1) return;
+                    const confirmado2 = await window.confirmarModal_(
+                        'Confirma que quieres quitarlo',
+                        'Esta acción no se puede deshacer. ¿Confirmas definitivamente que se quita del pedido?',
+                        'Quitar definitivamente',
+                        true
+                    );
+                    if (!confirmado2) return;
+
+                    boton.disabled = true;
+                    const { error: errorQuitar } = await cliente.from('propuesta_pedido_lineas').delete().eq('id', lineaId);
+                    if (errorQuitar) {
+                        boton.disabled = false;
+                        modalAvisoError.textContent = 'No se ha podido quitar el producto: ' + errorQuitar.message;
+                        modalAvisoError.classList.add('activo');
+                        return;
+                    }
+                    p.lineas = p.lineas.filter(function (l) { return l.id !== lineaId; });
+                    recomputarTotal_(p);
+                    marcarEditadoPorMi_(p);
+                    modalAvisoOk.textContent = 'Producto quitado del pedido.';
+                    modalAvisoOk.classList.add('activo');
+                    repintar_();
+                    pintarModal_(p);
+                });
+            });
+
+            const contenedorAnadir = document.getElementById('contenedorAnadirProducto');
+            pintarBuscadorProducto_(contenedorAnadir, function (productoElegido) {
+                const precioElegido = parsearPrecio_(productoElegido.precio_con);
+                const bloqueSeleccionado = document.createElement('div');
+                bloqueSeleccionado.className = 'bloque-anadir-producto__seleccionado';
+                bloqueSeleccionado.innerHTML =
+                    '<span><strong>' + escapar_(productoElegido.nombre) + '</strong> (Ref. ' + escapar_(productoElegido.ref) + ')</span>' +
+                    '<label style="margin:0; font-size:0.78rem;">Cantidad</label>' +
+                    '<input type="number" min="1" step="1" value="1" id="inputCantidadNuevoProducto">' +
+                    '<button type="button" class="boton-principal" id="botonConfirmarAnadirProducto">Añadir al pedido</button>' +
+                    '<button type="button" class="boton-secundario" id="botonCancelarAnadirProducto">Cancelar</button>';
+                contenedorAnadir.innerHTML = '';
+                contenedorAnadir.appendChild(bloqueSeleccionado);
+
+                document.getElementById('botonCancelarAnadirProducto').addEventListener('click', function () {
+                    pintarModal_(p);
+                });
+                document.getElementById('botonConfirmarAnadirProducto').addEventListener('click', async function () {
+                    const boton = this;
+                    const cantidad = Math.max(1, parseInt(document.getElementById('inputCantidadNuevoProducto').value, 10) || 1);
+                    const confirmado1 = await window.confirmarModal_(
+                        'Añadir producto',
+                        '¿Añadir ' + cantidad + ' unidad(es) de "' + productoElegido.nombre + '" (Ref. ' + productoElegido.ref + ') a este pedido?',
+                        'Continuar',
+                        false
+                    );
+                    if (!confirmado1) return;
+                    const confirmado2 = await window.confirmarModal_(
+                        'Confirma que quieres añadirlo',
+                        'Esta acción no se puede deshacer fácilmente (habría que volver a quitarlo a mano). ¿Confirmas definitivamente?',
+                        'Añadir definitivamente',
+                        false
+                    );
+                    if (!confirmado2) return;
+
+                    boton.disabled = true;
+                    const { data: insertada, error: errorInsertar } = await cliente
+                        .from('propuesta_pedido_lineas')
+                        .insert({
+                            propuesta_id: p.id, ref: productoElegido.ref, nombre: productoElegido.nombre,
+                            precio_unitario: precioElegido, cantidad: cantidad, modo_compra: 'unidad',
+                        })
+                        .select('id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion')
+                        .single();
+                    if (errorInsertar) {
+                        boton.disabled = false;
+                        modalAvisoError.textContent = 'No se ha podido añadir el producto: ' + errorInsertar.message;
+                        modalAvisoError.classList.add('activo');
+                        return;
+                    }
+                    p.lineas.push(insertada);
+                    recomputarTotal_(p);
+                    marcarEditadoPorMi_(p);
+                    modalAvisoOk.textContent = 'Producto añadido al pedido.';
+                    modalAvisoOk.classList.add('activo');
+                    repintar_();
+                    pintarModal_(p);
+                });
+            });
+        }
 
         document.getElementById('botonDescargarPdf').addEventListener('click', async function () {
             const boton = this;
@@ -548,7 +828,7 @@
                     modalAvisoError.classList.add('activo');
                     return;
                 }
-                p.editorNombre = resultado.perfil.nombre ? [resultado.perfil.nombre, resultado.perfil.apellidos].filter(Boolean).join(' ') : p.editorNombre;
+                marcarEditadoPorMi_(p);
                 modalAvisoOk.textContent = 'Rectificación guardada.';
                 modalAvisoOk.classList.add('activo');
                 pintarModal_(p);
@@ -596,7 +876,7 @@
                 p.estado = nuevoEstado;
                 if (nuevoEstado === 'entregada') p.entregado_en = new Date().toISOString();
                 p.dias = diasEntre_(p.enviado_en || p.creado_en, p.entregado_en || new Date());
-                p.editorNombre = resultado.perfil.nombre ? [resultado.perfil.nombre, resultado.perfil.apellidos].filter(Boolean).join(' ') : p.editorNombre;
+                marcarEditadoPorMi_(p);
                 repintar_();
                 pintarModal_(p);
             });
