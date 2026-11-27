@@ -62,14 +62,13 @@
     .barra-filtros select { width: auto; margin: 0; min-width: 150px; max-width: 220px; font-size: 0.85rem; }
     .chip-filtro {
         border: 1px solid var(--border); background: var(--white); color: var(--muted);
-        border-radius: 999px; padding: 7px 14px; font-size: 0.8rem; font-weight: 600;
-        cursor: pointer; white-space: nowrap;
+        border-radius: 999px; padding: 10px 16px; font-size: 0.8rem; font-weight: 600;
+        cursor: pointer; white-space: nowrap; box-sizing: border-box;
     }
     .chip-filtro:hover { border-color: var(--blue); color: var(--blue); }
     .chip-filtro.activo { background: var(--dark); color: white; border-color: var(--dark); }
-    .chip-toggle { display: inline-flex; align-items: center; gap: 6px; user-select: none; }
-    .chip-toggle input { margin: 0; width: auto; accent-color: var(--dark); }
-    .chip-toggle.activo { background: var(--danger); color: white; border-color: var(--danger); }
+    .chip-filtro--limpiar { border-color: var(--blue); color: var(--blue); }
+    .chip-filtro--limpiar:hover { background: var(--blue-soft); color: var(--blue); border-color: var(--blue); }
 
     /* ── Selector múltiple con buscador interno (familia/subfamilia) ── */
     .multi-select { position: relative; }
@@ -438,11 +437,9 @@
                 </select>
                 <div class="multi-select" id="multiFamilia"></div>
                 <div class="multi-select" id="multiSubfamilia"></div>
-                <label class="chip-filtro chip-toggle" id="etiquetaFiltroOferta">
-                    <input type="checkbox" id="filtroOferta"> Solo ofertas y promociones
-                </label>
+                <button type="button" class="chip-filtro" id="botonFiltroOferta">Solo ofertas y promociones</button>
                 <div id="chipsAreas"></div>
-                <button type="button" class="chip-filtro" id="botonLimpiarFiltros" style="display:none;">✕ Limpiar filtros</button>
+                <button type="button" class="chip-filtro chip-filtro--limpiar" id="botonLimpiarFiltros" style="display:none;">✕ Limpiar filtros</button>
             </div>
         </div>
         <div class="filtros-activos" id="filtrosActivos"></div>
@@ -1285,9 +1282,9 @@ window.copiarReferencia_ = function (ref, boton) {
         familiasActivas.forEach(function (f) { chips.push({ texto: f, quitar: function () { familiasActivas.delete(f); } }); });
         subfamiliasActivas.forEach(function (s) { chips.push({ texto: s, quitar: function () { subfamiliasActivas.delete(s); } }); });
         if (termino) chips.push({ texto: '“' + termino + '”', quitar: function () { document.getElementById('buscador').value = ''; } });
-        if (soloOfertasActivo_) chips.push({ texto: 'Solo ofertas y promociones', quitar: function () { soloOfertasActivo_ = false; document.getElementById('filtroOferta').checked = false; } });
+        if (soloOfertasActivo_) chips.push({ texto: 'Solo ofertas y promociones', quitar: function () { soloOfertasActivo_ = false; } });
 
-        document.getElementById('etiquetaFiltroOferta').classList.toggle('activo', soloOfertasActivo_);
+        document.getElementById('botonFiltroOferta').classList.toggle('activo', soloOfertasActivo_);
         contenedor.innerHTML = '';
         chips.forEach(function (c) {
             const chip = document.createElement('button');
@@ -1311,7 +1308,7 @@ window.copiarReferencia_ = function (ref, boton) {
         familiasActivas.clear();
         subfamiliasActivas.clear();
         soloOfertasActivo_ = false;
-        document.getElementById('filtroOferta').checked = false;
+        document.getElementById('botonFiltroOferta').classList.remove('activo');
         document.getElementById('buscador').value = '';
         document.getElementById('orden').value = 'familia';
         pintarChipsArea_();
@@ -1376,8 +1373,8 @@ window.copiarReferencia_ = function (ref, boton) {
             activarSugerencias_(document.getElementById('buscador'), 'sugerenciasBuscador', aplicarFiltros_);
             document.getElementById('orden').addEventListener('change', aplicarFiltros_);
             document.getElementById('botonLimpiarFiltros').addEventListener('click', limpiarFiltros_);
-            document.getElementById('filtroOferta').addEventListener('change', function () {
-                soloOfertasActivo_ = this.checked;
+            document.getElementById('botonFiltroOferta').addEventListener('click', function () {
+                soloOfertasActivo_ = !soloOfertasActivo_;
                 aplicarFiltros_();
             });
 
