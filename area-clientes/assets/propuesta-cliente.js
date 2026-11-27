@@ -167,6 +167,14 @@ window.enviarPropuesta_ = async function (propuestaId) {
 // principio de supabase/functions/notificar-pedido/index.ts). Un
 // fallo aquí NUNCA deshace el pedido — ya quedó guardado en BBDD antes
 // de llamar a esto — así que solo se informa, nunca se bloquea nada.
+//
+// "keepalive: true" es imprescindible aquí — bug real encontrado al
+// probar contra el preview de verdad (27/11/2026): propuesta.html
+// navega a mis-pedidos.html 1,2s después de enviar el pedido, y sin
+// esto el navegador CANCELA esta petición a mitad si la Edge Function
+// (arranque en frío + llamada a Brevo) tarda más que eso en responder
+// — que es justo lo habitual. Con keepalive, la petición sigue viva
+// aunque la página ya haya cambiado.
 window.notificarPedidoPorCorreo_ = async function (propuestaId) {
     try {
         const cliente = window.obtenerClienteSupabase_();
@@ -176,6 +184,7 @@ window.notificarPedidoPorCorreo_ = async function (propuestaId) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sesion.session.access_token },
             body: JSON.stringify({ propuesta_id: propuestaId }),
+            keepalive: true,
         });
         const json = await resp.json().catch(function () { return {}; });
         if (!resp.ok) return { error: json.error || ('HTTP ' + resp.status) };

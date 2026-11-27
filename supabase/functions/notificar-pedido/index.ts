@@ -26,19 +26,22 @@
 //                           correo de quien está evaluando — el día
 //                           que haya un correo dedicado a pedidos,
 //                           basta con cambiar este secreto.
-//   PEDIDOS_NOTIFICAR_CLIENTE  'true' para enviar TAMBIÉN una copia de
-//                           confirmación al cliente real (su email de
-//                           perfil). 'false' (o sin definir) = no se
-//                           le envía nada al cliente todavía — útil
-//                           mientras se prueba, para no mandar avisos
-//                           a direcciones reales por error.
-//   PEDIDOS_EMAIL_PRUEBA    Si está definido, la copia "para el
-//                           cliente" (solo se envía si
-//                           PEDIDOS_NOTIFICAR_CLIENTE=true) se manda
-//                           aquí en vez de al email real del cliente —
-//                           para poder probar ese flujo de principio a
-//                           fin sin arriesgarse a avisar a un cliente
-//                           real todavía.
+//   PEDIDOS_ACTIVAR_CLIENTES_REALES  La copia de confirmación "para el
+//                           cliente" SIEMPRE se envía (no es opcional) —
+//                           lo que decide este interruptor es A QUIÉN:
+//                           'true' = al email real del cliente (su
+//                           perfil). 'false' (o sin definir, el valor
+//                           por defecto mientras se prueba) = a
+//                           PEDIDOS_EMAIL_PRUEBA_CLIENTE en su lugar,
+//                           simulando exactamente lo mismo que vería un
+//                           cliente real, sin arriesgarse a avisar a
+//                           uno de verdad todavía.
+//   PEDIDOS_EMAIL_PRUEBA_CLIENTE  Dirección de pruebas a la que llega
+//                           la copia "para el cliente" MIENTRAS
+//                           PEDIDOS_ACTIVAR_CLIENTES_REALES no esté en
+//                           'true'. Si no hay ninguna definida y el
+//                           interruptor sigue en 'false', esa copia
+//                           simplemente no se envía (nada que avisar).
 //
 // Un fallo al enviar el correo NUNCA deshace ni bloquea el envío del
 // pedido (que ya ha quedado guardado en BBDD antes de llamar aquí) —
@@ -171,8 +174,8 @@ Deno.serve(async (req) => {
   const BREVO_API_KEY = Deno.env.get('BREVO_API_KEY');
   const EMAIL_REMITENTE = Deno.env.get('PEDIDOS_EMAIL_REMITENTE');
   const EMAIL_DESTINO = Deno.env.get('PEDIDOS_EMAIL_DESTINO');
-  const NOTIFICAR_CLIENTE = (Deno.env.get('PEDIDOS_NOTIFICAR_CLIENTE') || '').toLowerCase() === 'true';
-  const EMAIL_PRUEBA = Deno.env.get('PEDIDOS_EMAIL_PRUEBA');
+  const ACTIVAR_CLIENTES_REALES = (Deno.env.get('PEDIDOS_ACTIVAR_CLIENTES_REALES') || '').toLowerCase() === 'true';
+  const EMAIL_PRUEBA_CLIENTE = Deno.env.get('PEDIDOS_EMAIL_PRUEBA_CLIENTE');
 
   if (!BREVO_API_KEY || !EMAIL_REMITENTE) {
     return responder({ error: 'Notificaciones de pedido no configuradas (faltan secretos BREVO_API_KEY/PEDIDOS_EMAIL_REMITENTE en esta función)' }, 500);
@@ -240,17 +243,22 @@ Deno.serve(async (req) => {
     resultados.interno = { ok: false, detalle: 'PEDIDOS_EMAIL_DESTINO no configurado' };
   }
 
-  if (NOTIFICAR_CLIENTE) {
-    const destinoCliente = (EMAIL_PRUEBA || emailCliente || '').trim();
-    if (destinoCliente) {
-      const htmlCliente = construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, lineas || [], total, true);
-      resultados.cliente = await enviarCorreoBrevo_(
-        BREVO_API_KEY, remitente, [{ email: destinoCliente, name: EMAIL_PRUEBA ? undefined : nombreCliente }],
-        'Hemos recibido tu pedido — Orencio Matas y Hnos', htmlCliente
-      );
-    } else {
-      resultados.cliente = { ok: false, detalle: 'Sin email de cliente ni PEDIDOS_EMAIL_PRUEBA' };
-    }
+  // La copia "para el cliente" SIEMPRE se envía (no es opcional) — lo
+  // único que decide PEDIDOS_ACTIVAR_CLIENTES_REALES es a quién: al
+  // cliente real, o (mientras se prueba) a un correo de pruebas que
+  // simula exactamente lo mismo sin arriesgarse a avisar a uno real.
+  const destinoCliente = (ACTIVAR_CLIENTES_REALES ? emailCliente : (EMAIL_PRUEBA_CLIENTE || '')).trim();
+  if (destinoCliente) {
+    const htmlCliente = construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, lineas || [], total, true);
+    resultados.cliente = await enviarCorreoBrevo_(
+      BREVO_API_KEY, remitente, [{ email: destinoCliente, name: ACTIVAR_CLIENTES_REALES ? nombreCliente : undefined }],
+      'Hemos recibido tu pedido — Orencio Matas y Hnos', htmlCliente
+    );
+  } else {
+    resultados.cliente = {
+      ok: false,
+      detalle: ACTIVAR_CLIENTES_REALES ? 'El cliente no tiene email en su perfil' : 'PEDIDOS_EMAIL_PRUEBA_CLIENTE no configurado',
+    };
   }
 
   return responder({ success: true, resultados });
