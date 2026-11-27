@@ -32,11 +32,46 @@
             <h1>Clientes</h1>
             <p class="ayuda" id="ayuda">Cargando…</p>
 
-            <div id="tablaClientes" class="tabla-scroll tabla-adaptativa" style="display:none;">
-            <table>
-                <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
-                <tbody id="cuerpoTabla"></tbody>
-            </table>
+            <div id="bloqueTabla" style="display:none;">
+                <div class="tabla-herramientas">
+                    <input type="search" id="filtroClientes" placeholder="Buscar por nombre, email, empresa, dirección, CRM…" autocomplete="off">
+                    <div class="tabla-herramientas__tamano">
+                        <label for="tamanoPagina" style="margin:0;">Por página</label>
+                        <select id="tamanoPagina">
+                            <option value="10">10</option>
+                            <option value="25" selected>25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="tablaClientes" class="tabla-scroll tabla-adaptativa">
+                <table>
+                    <thead><tr>
+                        <th data-campo="nombre">Nombre <span class="icono-orden">▾</span></th>
+                        <th data-campo="email">Email <span class="icono-orden">▾</span></th>
+                        <th data-campo="empresa">Empresa <span class="icono-orden">▾</span></th>
+                        <th data-campo="direccion">Dirección <span class="icono-orden">▾</span></th>
+                        <th data-campo="crm">CRM <span class="icono-orden">▾</span></th>
+                        <th data-campo="ultimo_acceso">Último acceso <span class="icono-orden">▾</span></th>
+                        <th data-campo="estado">Estado <span class="icono-orden">▾</span></th>
+                        <th></th>
+                    </tr></thead>
+                    <tbody id="cuerpoTabla"></tbody>
+                </table>
+                </div>
+
+                <div class="paginacion" id="paginacion">
+                    <span id="paginacionResumen"></span>
+                    <div class="paginacion__botones">
+                        <button type="button" id="botonPaginaPrimera" title="Primera página">«</button>
+                        <button type="button" id="botonPaginaAnterior" title="Página anterior">‹ Anterior</button>
+                        <span id="paginacionTexto"></span>
+                        <button type="button" id="botonPaginaSiguiente" title="Página siguiente">Siguiente ›</button>
+                        <button type="button" id="botonPaginaUltima" title="Última página">»</button>
+                    </div>
+                </div>
             </div>
 
             <div class="aviso aviso--error" id="avisoError"></div>
@@ -63,12 +98,12 @@
         window.location.href = '../index.html';
     });
 
-    const { data: clientes, error } = await cliente
+    const { data: clientesBrutos, error } = await cliente
         .from('clientes')
         // "clientes" tiene DOS referencias a "profiles" (id y
         // comercial_id) — hay que decirle a PostgREST cuál de las dos
         // seguir aquí (la del propio cliente, no la del comercial).
-        .select('id, crm_id, empresa, activo, ultimo_acceso, profiles!clientes_id_fkey(nombre, apellidos, email)')
+        .select('id, crm_id, empresa, activo, ultimo_acceso, direccion_calle, direccion_cp, direccion_poblacion, profiles!clientes_id_fkey(nombre, apellidos, email)')
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -78,42 +113,186 @@
         return;
     }
 
-    if (!clientes || clientes.length === 0) {
+    if (!clientesBrutos || clientesBrutos.length === 0) {
         ayuda.textContent = 'Todavía no hay clientes. Puedes dar de alta el primero desde el menú de la izquierda.';
         return;
     }
 
-    ayuda.textContent = clientes.length + ' cliente(s).';
-    const cuerpo = document.getElementById('cuerpoTabla');
-
     function formatearUltimoAcceso_(valor) {
-        if (!valor) return '<span style="color:var(--muted);">Nunca</span>';
+        if (!valor) return 'Nunca';
         const fecha = new Date(valor);
         return fecha.toLocaleDateString('es-ES') + ' ' + fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
     }
 
-    clientes.forEach(function (c) {
+    function direccionTexto_(c) {
+        const calle = (c.direccion_calle || '').trim();
+        const cpPoblacion = [(c.direccion_cp || '').trim(), (c.direccion_poblacion || '').trim()].filter(Boolean).join(' ');
+        return [calle, cpPoblacion].filter(Boolean).join(', ');
+    }
+
+    // Se precalcula una sola vez por cliente todo lo que hace falta
+    // para buscar/ordenar/pintar — así el filtrado y la ordenación, que
+    // se repiten en cada tecla del buscador, no tienen que rehacer
+    // estos cálculos (join de nombre, formateo de fecha…) cada vez.
+    function construirTextoBusqueda_(c) {
+        return [c.nombre, c.email, c.empresa, c.direccion, c.crm, c.activo ? 'activo' : 'desactivado bloqueado', c.ultimoAccesoTexto]
+            .join(' ').toLowerCase();
+    }
+
+    const clientesPreparados_ = clientesBrutos.map(function (c, indiceOriginal) {
+        const datos = {
+            id: c.id,
+            nombre: [c.profiles.nombre, c.profiles.apellidos].filter(Boolean).join(' ') || '(sin nombre)',
+            email: c.profiles.email || '',
+            empresa: c.empresa || '',
+            direccion: direccionTexto_(c),
+            crm: c.crm_id || '',
+            activo: c.activo !== false,
+            ultimo_acceso: c.ultimo_acceso ? new Date(c.ultimo_acceso).getTime() : -1,
+            ultimoAccesoTexto: formatearUltimoAcceso_(c.ultimo_acceso),
+            indiceOriginal: indiceOriginal,
+        };
+        datos.textoBusqueda = construirTextoBusqueda_(datos);
+        return datos;
+    });
+
+    let filtroTexto_ = '';
+    let ordenCampo_ = null;
+    let ordenAsc_ = true;
+    let paginaActual_ = 1;
+    let tamanoPagina_ = 25;
+
+    const cuerpo = document.getElementById('cuerpoTabla');
+    const filtroInput = document.getElementById('filtroClientes');
+    const tamanoSelect = document.getElementById('tamanoPagina');
+    const paginacionResumen = document.getElementById('paginacionResumen');
+    const paginacionTexto = document.getElementById('paginacionTexto');
+    const botonPrimera = document.getElementById('botonPaginaPrimera');
+    const botonAnterior = document.getElementById('botonPaginaAnterior');
+    const botonSiguiente = document.getElementById('botonPaginaSiguiente');
+    const botonUltima = document.getElementById('botonPaginaUltima');
+
+    function pintarFilaCliente_(c) {
         const fila = document.createElement('tr');
-        const nombre = [c.profiles.nombre, c.profiles.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
-        const activo = c.activo !== false;
+        fila.dataset.id = c.id;
         fila.innerHTML =
-            '<td>' + nombre + '</td>' +
-            '<td>' + c.profiles.email + '</td>' +
+            '<td>' + c.nombre + '</td>' +
+            '<td>' + c.email + '</td>' +
             '<td>' + (c.empresa || '—') + '</td>' +
-            '<td>' + (c.crm_id || '—') + '</td>' +
-            '<td>' + formatearUltimoAcceso_(c.ultimo_acceso) + '</td>' +
-            '<td><span style="font-size:0.75rem; font-weight:700; padding:3px 9px; border-radius:999px; ' +
-                (activo ? 'color:var(--ok); background:var(--ok-soft);' : 'color:var(--danger); background:var(--danger-soft);') +
-                '">' + (activo ? 'Activo' : 'Desactivado') + '</span></td>' +
+            '<td>' + (c.direccion || '—') + '</td>' +
+            '<td>' + (c.crm || '—') + '</td>' +
+            '<td>' + c.ultimoAccesoTexto + '</td>' +
+            '<td><span class="insignia-estado" style="font-size:0.75rem; font-weight:700; padding:3px 9px; border-radius:999px; ' +
+                (c.activo ? 'color:var(--ok); background:var(--ok-soft);' : 'color:var(--danger); background:var(--danger-soft);') +
+                '">' + (c.activo ? 'Activo' : 'Desactivado') + '</span></td>' +
             '<td style="white-space:nowrap;">' +
             '<a class="boton-fila" style="text-decoration:none; display:inline-block; margin-right:6px;" href="personalizar-cliente.html?id=' + c.id + '">Personalizar</a>' +
             '<button class="boton-fila" data-id="' + c.id + '" style="margin-right:6px;">Simular</button>' +
-            '<button class="boton-fila boton-estado' + (activo ? ' boton-peligro' : '') + '" data-id="' + c.id + '" data-activo="' + activo + '">' + (activo ? 'Bloquear' : 'Reactivar') + '</button>' +
+            '<button class="boton-fila boton-estado' + (c.activo ? ' boton-peligro' : '') + '" data-id="' + c.id + '" data-activo="' + c.activo + '">' + (c.activo ? 'Bloquear' : 'Reactivar') + '</button>' +
             '</td>';
-        cuerpo.appendChild(fila);
+        return fila;
+    }
+
+    // Comparador genérico: texto se compara sin mayúsculas/acentos
+    // raros con localeCompare; "ultimo_acceso" ya viene como número
+    // (timestamp, -1 = "nunca", así que "nunca" siempre queda al
+    // final al ordenar ascendente) y "estado" como booleano.
+    function comparar_(a, b, campo) {
+        if (campo === 'ultimo_acceso') return a.ultimo_acceso - b.ultimo_acceso;
+        if (campo === 'estado') return (a.activo === b.activo) ? 0 : (a.activo ? 1 : -1);
+        return String(a[campo] || '').localeCompare(String(b[campo] || ''), 'es', { sensitivity: 'base' });
+    }
+
+    function listaFiltradaYOrdenada_() {
+        let lista = clientesPreparados_;
+        if (filtroTexto_) {
+            lista = lista.filter(function (c) { return c.textoBusqueda.includes(filtroTexto_); });
+        }
+        lista = lista.slice().sort(function (a, b) {
+            if (ordenCampo_) {
+                const resultado = comparar_(a, b, ordenCampo_);
+                if (resultado !== 0) return ordenAsc_ ? resultado : -resultado;
+            }
+            // Sin orden elegido (o empate): se respeta el orden original
+            // de carga (más reciente primero).
+            return a.indiceOriginal - b.indiceOriginal;
+        });
+        return lista;
+    }
+
+    function actualizarCabecerasOrden_() {
+        document.querySelectorAll('.tabla-adaptativa th[data-campo]').forEach(function (th) {
+            const activo = th.dataset.campo === ordenCampo_;
+            th.toggleAttribute('data-orden-activo', activo);
+            th.querySelector('.icono-orden').textContent = activo ? (ordenAsc_ ? '▲' : '▼') : '▾';
+        });
+    }
+
+    function repintar_() {
+        const filtrada = listaFiltradaYOrdenada_();
+        const total = filtrada.length;
+        const totalPaginas = Math.max(1, Math.ceil(total / tamanoPagina_));
+        if (paginaActual_ > totalPaginas) paginaActual_ = totalPaginas;
+        if (paginaActual_ < 1) paginaActual_ = 1;
+
+        const inicio = (paginaActual_ - 1) * tamanoPagina_;
+        const pagina = filtrada.slice(inicio, inicio + tamanoPagina_);
+
+        cuerpo.innerHTML = '';
+        pagina.forEach(function (c) { cuerpo.appendChild(pintarFilaCliente_(c)); });
+
+        const haySinFiltrar = total !== clientesPreparados_.length;
+        ayuda.textContent = total + ' cliente(s)' + (haySinFiltrar ? ' (de ' + clientesPreparados_.length + ' en total)' : '') + '.';
+
+        if (total === 0) {
+            paginacionResumen.textContent = 'Sin resultados.';
+            paginacionTexto.textContent = '';
+        } else {
+            paginacionResumen.textContent = 'Mostrando ' + (inicio + 1) + '–' + Math.min(inicio + tamanoPagina_, total) + ' de ' + total;
+            paginacionTexto.textContent = 'Página ' + paginaActual_ + ' de ' + totalPaginas;
+        }
+        botonPrimera.disabled = botonAnterior.disabled = paginaActual_ <= 1;
+        botonUltima.disabled = botonSiguiente.disabled = paginaActual_ >= totalPaginas;
+
+        actualizarCabecerasOrden_();
+    }
+
+    document.getElementById('bloqueTabla').style.display = 'block';
+    repintar_();
+
+    let temporizadorFiltro_ = null;
+    filtroInput.addEventListener('input', function () {
+        clearTimeout(temporizadorFiltro_);
+        temporizadorFiltro_ = setTimeout(function () {
+            filtroTexto_ = filtroInput.value.trim().toLowerCase();
+            paginaActual_ = 1;
+            repintar_();
+        }, 150);
     });
 
-    document.getElementById('tablaClientes').style.display = 'block';
+    tamanoSelect.addEventListener('change', function () {
+        tamanoPagina_ = parseInt(tamanoSelect.value, 10) || 25;
+        paginaActual_ = 1;
+        repintar_();
+    });
+
+    document.querySelectorAll('.tabla-adaptativa th[data-campo]').forEach(function (th) {
+        th.addEventListener('click', function () {
+            const campo = th.dataset.campo;
+            if (ordenCampo_ === campo) {
+                ordenAsc_ = !ordenAsc_;
+            } else {
+                ordenCampo_ = campo;
+                ordenAsc_ = true;
+            }
+            repintar_();
+        });
+    });
+
+    botonPrimera.addEventListener('click', function () { paginaActual_ = 1; repintar_(); });
+    botonAnterior.addEventListener('click', function () { paginaActual_--; repintar_(); });
+    botonSiguiente.addEventListener('click', function () { paginaActual_++; repintar_(); });
+    botonUltima.addEventListener('click', function () { paginaActual_ = Infinity; repintar_(); });
 
     cuerpo.addEventListener('click', async function (ev) {
         const botonEstado = ev.target.closest('button.boton-estado');
@@ -145,15 +324,13 @@
                 return;
             }
 
-            const fila = botonEstado.closest('tr');
-            const badge = fila.querySelector('td:nth-child(6) span');
             const nuevoActivo = !activoActual;
-            badge.textContent = nuevoActivo ? 'Activo' : 'Desactivado';
-            badge.style.color = nuevoActivo ? 'var(--ok)' : 'var(--danger)';
-            badge.style.background = nuevoActivo ? 'var(--ok-soft)' : 'var(--danger-soft)';
-            botonEstado.textContent = nuevoActivo ? 'Bloquear' : 'Reactivar';
-            botonEstado.classList.toggle('boton-peligro', nuevoActivo);
-            botonEstado.dataset.activo = String(nuevoActivo);
+            const preparado = clientesPreparados_.find(function (c) { return c.id === idCliente; });
+            if (preparado) {
+                preparado.activo = nuevoActivo;
+                preparado.textoBusqueda = construirTextoBusqueda_(preparado);
+            }
+            repintar_();
             return;
         }
 

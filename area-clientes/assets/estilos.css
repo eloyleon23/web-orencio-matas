@@ -147,6 +147,18 @@ input:focus, textarea:focus {
     outline-offset: 1px;
 }
 
+select {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 16px;
+    font-family: inherit;
+    background: var(--white);
+    color: var(--dark);
+}
+
+select:focus { outline: 2px solid var(--blue); outline-offset: 1px; }
+
 button.boton-principal {
     width: 100%;
     margin-top: 20px;
@@ -339,6 +351,38 @@ th { color: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: 
 .tabla-adaptativa table { min-width: 0; table-layout: auto; }
 .tabla-adaptativa th { white-space: nowrap; }
 .tabla-adaptativa td { white-space: normal; overflow-wrap: break-word; }
+
+/* ── Barra de herramientas de una tabla: buscador + tamaño de página
+   (listado de clientes, y pensado también para cuando se vea el
+   listado tras una importación masiva). ───────────────────────────── */
+.tabla-herramientas {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin: 14px 0 4px;
+}
+.tabla-herramientas input[type="search"] { flex: 1 1 260px; width: auto; margin: 0; }
+.tabla-herramientas .tabla-herramientas__tamano { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+.tabla-herramientas select { margin: 0; width: auto; padding: 8px 10px; }
+
+/* Cabeceras ordenables — click para ordenar, de nuevo para invertir. */
+.tabla-adaptativa th[data-campo] { cursor: pointer; user-select: none; }
+.tabla-adaptativa th[data-campo]:hover { color: var(--dark); }
+.tabla-adaptativa th .icono-orden { display: inline-block; width: 1em; opacity: 0.4; }
+.tabla-adaptativa th[data-orden-activo] .icono-orden { opacity: 1; color: var(--blue); }
+
+/* ── Paginación ──────────────────────────────────────────────────── */
+.paginacion {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border);
+    font-size: 0.85rem; color: var(--muted);
+}
+.paginacion__botones { display: flex; align-items: center; gap: 6px; }
+.paginacion__botones button {
+    padding: 6px 12px; font-size: 0.8rem; font-weight: 700;
+    border: 1px solid var(--blue); color: var(--blue); background: white;
+    border-radius: 6px; cursor: pointer; width: auto; margin: 0;
+}
+.paginacion__botones button:hover:not(:disabled) { background: var(--blue-soft); }
+.paginacion__botones button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── Pantalla de login: partida en dos, look más "portal corporativo"
    que la tarjeta suelta de antes. Se apila en móvil. ─────────────── */
