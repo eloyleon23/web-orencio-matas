@@ -1060,13 +1060,26 @@ window.copiarReferencia_ = function (ref, boton) {
         const destacado = destacadoVigentePara_(p.ref);
         const precioDestacado = destacado ? calcularPrecioMayorDestacado_(p, destacado) : null;
         const hayPromoDestacado = !!(precioDestacado && precioDestacado.promoMayor !== null);
+        // Bug real reportado (27/11/2026): "hay productos que se indica
+        // que tienen un 3x2 y eso no aparece" — un destacado tipo "3x2"
+        // normalmente NO cambia el precio (no hay descuentoPorcentaje ni
+        // precioAlternativo), solo lleva texto de promoción o tipo. Antes
+        // el chip y el texto de promoción solo se pintaban si ADEMÁS
+        // había un descuento de precio real calculado — exactamente al
+        // revés de lo que pasa con un 3x2. Igual que en la web pública:
+        // basta con que el destacado tenga tipo O texto de promoción O
+        // descuento real para considerarse "una oferta real" (ver el
+        // "continue" de destacadosProductosVigentes_ en index.html).
+        const hayAlgoDestacado = !!(destacado && (destacado.tipoDestacado || destacado.textoPromocion || hayPromoDestacado));
         let chipsEsquina = '';
         let promoTextoHtml = '';
-        if (hayPromoDestacado) {
+        if (hayAlgoDestacado) {
             chipsEsquina = etiquetaDestacadoHtml_(destacado.tipoDestacado);
             if (destacado.textoPromocion) promoTextoHtml = '<span class="destacado-promo-texto">' + destacado.textoPromocion.replace(/</g, '&lt;') + '</span>';
-            precioConBase = precioDestacado.promoMayor;
-            precioSinBase = precioDestacado.promoMayorSin;
+            if (hayPromoDestacado) {
+                precioConBase = precioDestacado.promoMayor;
+                precioSinBase = precioDestacado.promoMayorSin;
+            }
         } else if (p.oferta) {
             chipsEsquina = '<span class="insignia-oferta">Oferta</span>';
         }
@@ -1620,7 +1633,8 @@ window.copiarReferencia_ = function (ref, boton) {
     function tieneOfertaOPromocion_(p) {
         if (p.oferta) return true;
         const d = destacadoVigentePara_(p.ref);
-        return !!(d && calcularPrecioMayorDestacado_(p, d).promoMayor !== null);
+        if (!d) return false;
+        return !!(d.tipoDestacado || d.textoPromocion || calcularPrecioMayorDestacado_(p, d).promoMayor !== null);
     }
 
     // ── Destacados y ofertas ──────────────────────────────────────────
