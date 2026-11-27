@@ -94,6 +94,44 @@
     .chip-filtro-activo:hover { background: var(--danger-soft); color: var(--danger); }
     .chip-filtro-activo span.cerrar { font-weight: 800; }
 
+    /* ── Bloques de descubrimiento (destacados, temporadas, novedades,
+       sigue explorando, últimos vistos) — a petición de Eloy
+       (27/11/2026), mismos módulos que ya existen en la web pública
+       (index.html), filtrados siempre por el catálogo base ya visible
+       para este cliente. Filas horizontales con scroll, no otra
+       rejilla más — para no competir visualmente con el catálogo
+       principal de debajo. ──────────────────────────────────────── */
+    .modulo-descubrimiento { margin-bottom: 26px; }
+    .modulo-descubrimiento__titulo {
+        font-family: 'Montserrat', sans-serif; font-size: 0.95rem; font-weight: 800;
+        color: var(--dark); margin: 0 0 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .modulo-descubrimiento__titulo-clicable { cursor: pointer; }
+    .modulo-descubrimiento__titulo-clicable:hover { color: var(--blue); }
+    .modulo-descubrimiento__fila {
+        display: flex; gap: 14px; overflow-x: auto; padding-bottom: 6px;
+        scroll-snap-type: x proximity;
+    }
+    .tarjeta-descubrimiento {
+        flex: 0 0 140px; scroll-snap-align: start; cursor: pointer;
+        border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
+        background: var(--white); position: relative;
+    }
+    .tarjeta-descubrimiento img {
+        width: 100%; height: 100px; object-fit: contain; background: var(--light);
+        display: block; padding: 8px;
+    }
+    .tarjeta-descubrimiento__nombre {
+        font-size: 0.72rem; font-weight: 600; color: var(--dark); padding: 6px 8px 10px;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .tarjeta-descubrimiento__quitar {
+        position: absolute; top: 4px; right: 4px; width: 22px; height: 22px;
+        border: none; border-radius: 50%; background: rgba(15,23,42,0.65); color: white;
+        font-size: 0.75rem; cursor: pointer; line-height: 1;
+    }
+    .tarjeta-descubrimiento__quitar:hover { background: var(--danger); }
+
     .grupo-familia__titulo {
         font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 800;
         color: var(--dark); margin: 28px 0 14px; padding-bottom: 6px;
@@ -284,6 +322,8 @@
         </div>
         <div class="filtros-activos" id="filtrosActivos"></div>
 
+        <div id="modulosDescubrimiento"></div>
+
         <div class="rejilla-productos" id="rejilla"></div>
         <p class="ayuda" id="sinResultados" style="display:none; text-align:center; margin-top:30px;">
             No hay productos que coincidan con la búsqueda.
@@ -384,6 +424,8 @@ function productoVisibleParaCliente_(p, personalizacion) {
 // de precio de mayor + descuento que la rejilla, así que si cambia una
 // cosa, cambia la otra (no hay dos sitios distintos calculando precios).
 window.abrirDetalleProducto_ = function (p, descuentoPct) {
+    registrarProductoVisto_(p.ref);
+    cargarUltimosVistos_();
     const imgModal = document.getElementById('modalDetalleImg');
     delete imgModal.dataset.reintentado; // es un <img> compartido entre aperturas — sin esto, el segundo producto que falle no reintentaría
     imgModal.src = urlImagenProducto_(p);
@@ -886,6 +928,257 @@ window.copiarReferencia_ = function (ref, boton) {
         actualizarSelectorFamilia_();
         actualizarSelectorSubfamilia_();
         aplicarFiltros_();
+        cargarModulosDescubrimiento_();
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // BLOQUES DE DESCUBRIMIENTO (destacados, temporadas, novedades,
+    // sigue explorando, últimos vistos) — a petición de Eloy
+    // (27/11/2026). Mismos módulos y mismas acciones de Apps Script que
+    // ya usa la web pública (index.html: cargarDestacados_,
+    // cargarTemporadas_, cargarNovedades_, cargarBloquesCategorias_,
+    // cargarUltimosVistos_) — se reutiliza la MISMA fuente de datos en
+    // vivo, sin tocar nada del servidor. Versión deliberadamente más
+    // sencilla que la pública (sin rotación automática ni carrusel: aquí
+    // basta con una fila fija con scroll horizontal) — portar también
+    // esa parte puramente decorativa no aportaba nada a la petición
+    // real de Eloy. Todos los bloques parten siempre de `productos`,
+    // que ya está filtrado por la personalización base del cliente
+    // (áreas/familias/productos visibles) — así "estarán filtrados por
+    // los filtros de base asociados al cliente" sin tener que repetir
+    // esa comprobación en cada bloque.
+    function normalizarSimple_(txt) {
+        return (txt || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    }
+
+    function construirMatchDesdePalabrasClave_(palabrasClave) {
+        const alternativas = (palabrasClave || '')
+            .split(',')
+            .map(function (alt) { return alt.split('+').map(function (p) { return normalizarSimple_(p.trim()); }).filter(Boolean); })
+            .filter(function (grupo) { return grupo.length; });
+        return function (textoNormalizado) {
+            return alternativas.some(function (grupo) { return grupo.every(function (palabra) { return textoNormalizado.indexOf(palabra) !== -1; }); });
+        };
+    }
+
+    function derivarTerminoBusqueda_(palabrasClave) {
+        const primeraAlternativa = (palabrasClave || '').split(',')[0] || '';
+        return primeraAlternativa.split('+').map(function (p) { return p.trim(); }).filter(Boolean).join(' ').trim();
+    }
+
+    function estacionActual_() {
+        const mes = new Date().getMonth();
+        if ([10, 11, 0, 1].indexOf(mes) !== -1) return 'frio';
+        if ([4, 5, 6, 7, 8].indexOf(mes) !== -1) return 'calor';
+        return null;
+    }
+
+    function campanaActivaHoy_(c) {
+        if (c.activa === false) return false;
+        if (c.permanente) return true;
+        if (!c.fechaInicio || !c.fechaFin) return false;
+        const hoy = new Date();
+        return hoy >= new Date(c.fechaInicio + 'T00:00:00') && hoy <= new Date(c.fechaFin + 'T23:59:59');
+    }
+
+    function fechaVigente_(fechaTexto) {
+        if (!fechaTexto) return true;
+        const fecha = new Date(fechaTexto);
+        if (isNaN(fecha.getTime())) return true;
+        return fecha.getTime() > Date.now();
+    }
+
+    // Parsea el formato 'dd/MM/yyyy HH:mm:ss' que usa apps_script_trigger.js
+    // para fecha_alta/fecha_registro — ver valorCelda_ en ese archivo.
+    function parseFechaSheet_(texto) {
+        if (!texto) return null;
+        const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(texto);
+        if (!m) return null;
+        return new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1])).getTime();
+    }
+
+    function crearTarjetaDescubrimiento_(p, contenedor, onQuitar) {
+        const tarjeta = document.createElement('div');
+        tarjeta.className = 'tarjeta-descubrimiento';
+        tarjeta.innerHTML =
+            '<img src="' + urlImagenProducto_(p) + '" alt="" loading="lazy" onerror="window.reintentarImagenProducto_(this)">' +
+            (onQuitar ? '<button type="button" class="tarjeta-descubrimiento__quitar" title="Quitar de vistos recientemente" aria-label="Quitar">✕</button>' : '') +
+            '<div class="tarjeta-descubrimiento__nombre">' + p.nombre.replace(/</g, '&lt;') + '</div>';
+        if (onQuitar) {
+            tarjeta.querySelector('.tarjeta-descubrimiento__quitar').addEventListener('click', function (ev) {
+                ev.stopPropagation();
+                onQuitar();
+            });
+        }
+        tarjeta.addEventListener('click', function () { window.abrirDetalleProducto_ && window.abrirDetalleProducto_(p, descuentoPct); });
+        contenedor.appendChild(tarjeta);
+    }
+
+    function renderBloqueDescubrimiento_(idBloque, titulo, listaProductos, opciones) {
+        opciones = opciones || {};
+        let bloque = document.getElementById(idBloque);
+        if (!listaProductos.length) {
+            if (bloque) bloque.remove();
+            return;
+        }
+        if (!bloque) {
+            bloque = document.createElement('div');
+            bloque.id = idBloque;
+            bloque.className = 'modulo-descubrimiento';
+            document.getElementById('modulosDescubrimiento').appendChild(bloque);
+        }
+        const claseTitulo = opciones.alClicarTitulo ? ' modulo-descubrimiento__titulo-clicable' : '';
+        bloque.innerHTML =
+            '<p class="modulo-descubrimiento__titulo' + claseTitulo + '">' + titulo + '</p>' +
+            '<div class="modulo-descubrimiento__fila"></div>';
+        if (opciones.alClicarTitulo) bloque.querySelector('.modulo-descubrimiento__titulo').addEventListener('click', opciones.alClicarTitulo);
+        const fila = bloque.querySelector('.modulo-descubrimiento__fila');
+        listaProductos.forEach(function (p) { crearTarjetaDescubrimiento_(p, fila, opciones.onQuitar ? function () { opciones.onQuitar(p); } : null); });
+    }
+
+    function cargarModulosDescubrimiento_() {
+        if (!productos.length) return;
+        cargarDestacados_();
+        cargarTemporadas_();
+        cargarNovedades_();
+        cargarBloquesCategorias_();
+        cargarUltimosVistos_();
+    }
+
+    // ── Destacados y ofertas ──────────────────────────────────────────
+    function cargarDestacados_() {
+        fetch(CATALOGO_URL_.replace('accion=obtener_productos', 'accion=obtener_destacados'), { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (datos) {
+                if (!datos.activo || !fechaVigente_(datos.fechaFin)) { renderBloqueDescubrimiento_('bloqueDestacados', '', []); return; }
+                const porRef = {};
+                productos.forEach(function (p) { porRef[p.ref] = p; });
+                const lista = (datos.productos || [])
+                    .filter(function (d) { return d.activo && fechaVigente_(d.fechaFin) && porRef[d.referencia]; })
+                    .sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); })
+                    .map(function (d) { return porRef[d.referencia]; })
+                    .slice(0, 20);
+                renderBloqueDescubrimiento_('bloqueDestacados', '🔥 Destacados y ofertas', lista);
+            })
+            .catch(function (e) { console.warn('cargarDestacados_: no se pudo cargar', e); });
+    }
+
+    // ── Temporadas (un bloque independiente por cada temporada vigente) ──
+    function cargarTemporadas_() {
+        fetch(CATALOGO_URL_.replace('accion=obtener_productos', 'accion=obtener_temporadas'), { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (datos) {
+                const temporadas = Array.isArray(datos.temporadas) ? datos.temporadas : [];
+                const vigentes = temporadas.filter(campanaActivaHoy_);
+                // Limpia bloques de una ejecución anterior que ya no estén vigentes.
+                document.querySelectorAll('[id^="bloqueTemporada-"]').forEach(function (el) {
+                    if (!vigentes.some(function (t) { return 'bloqueTemporada-' + t.id === el.id; })) el.remove();
+                });
+                vigentes.forEach(function (temporada) {
+                    const familiasSet = new Set((temporada.familias || []).map(function (f) { return f.toLowerCase(); }));
+                    const refsVistas = new Set();
+                    const lista = [];
+                    if (familiasSet.size) {
+                        productos.forEach(function (p) {
+                            if (p.familia && familiasSet.has(p.familia.toLowerCase()) && !refsVistas.has(p.ref)) { refsVistas.add(p.ref); lista.push(p); }
+                        });
+                    }
+                    (temporada.referencias || []).forEach(function (ref) {
+                        if (refsVistas.has(ref)) return;
+                        const p = productos.find(function (x) { return String(x.ref) === String(ref); });
+                        if (p) { refsVistas.add(ref); lista.push(p); }
+                    });
+                    const excluidas = new Set((temporada.excluidas || []).map(function (r) { return String(r); }));
+                    const listaFinal = (excluidas.size ? lista.filter(function (p) { return !excluidas.has(String(p.ref)); }) : lista).slice(0, 18);
+                    renderBloqueDescubrimiento_('bloqueTemporada-' + temporada.id, '🌟 ' + temporada.nombre, listaFinal);
+                });
+            })
+            .catch(function (e) { console.warn('cargarTemporadas_: no se pudo cargar', e); });
+    }
+
+    // ── Novedades (lo más reciente dado de alta, sin pedir nada al
+    // servidor — ya viene en cada producto) ──────────────────────────
+    function cargarNovedades_() {
+        const conFecha = productos
+            .map(function (p) { return { p: p, t: parseFechaSheet_(p.fecha_alta) || parseFechaSheet_(p.fecha) }; })
+            .filter(function (x) { return x.t !== null; })
+            .sort(function (a, b) { return b.t - a.t; })
+            .slice(0, 12)
+            .map(function (x) { return x.p; });
+        renderBloqueDescubrimiento_('bloqueNovedades', '🆕 Novedades', conFecha);
+    }
+
+    // ── Sigue explorando (bloques de categoría por palabras clave) ────
+    let bloquesCategoriasCache_ = null;
+    function cargarBloquesCategorias_() {
+        const continuar_ = function (defs) {
+            const estacion = estacionActual_();
+            let n = 0;
+            defs.forEach(function (def) {
+                if (n >= 8) return;
+                if (def.estacion && def.estacion !== estacion) return;
+                const candidatos = productos.filter(function (p) {
+                    return (!def.area || p.area === def.area) && def.match(normalizarSimple_([p.nombre, p.familia, p.subfamilia, p.fabricante].filter(Boolean).join(' ')));
+                });
+                if (candidatos.length < 4) { renderBloqueDescubrimiento_('bloqueCategoria-' + def.id, '', []); return; }
+                renderBloqueDescubrimiento_('bloqueCategoria-' + def.id, '✨ ' + def.titulo, candidatos.slice(0, 8), {
+                    alClicarTitulo: function () {
+                        document.getElementById('buscador').value = def.terminoBusqueda;
+                        aplicarFiltros_();
+                        document.getElementById('rejilla').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                });
+                n++;
+            });
+        };
+        if (bloquesCategoriasCache_) { continuar_(bloquesCategoriasCache_); return; }
+        fetch(CATALOGO_URL_.replace('accion=obtener_productos', 'accion=obtener_bloques_categorias'), { cache: 'no-store' })
+            .then(function (r) { return r.json(); })
+            .then(function (datos) {
+                const filas = (Array.isArray(datos) ? datos : (datos.bloques || [])).filter(function (f) { return f.activo; });
+                bloquesCategoriasCache_ = filas.map(function (fila) {
+                    return {
+                        id: fila.id,
+                        titulo: fila.titulo,
+                        match: construirMatchDesdePalabrasClave_(fila.palabrasClave),
+                        terminoBusqueda: derivarTerminoBusqueda_(fila.palabrasClave),
+                        area: fila.area || undefined,
+                        estacion: fila.estacion || undefined,
+                    };
+                });
+                continuar_(bloquesCategoriasCache_);
+            })
+            .catch(function (e) { console.warn('cargarBloquesCategorias_: no se pudo cargar', e); });
+    }
+
+    // ── Últimos productos vistos (solo en este navegador, con opción
+    // de quitarlos de uno en uno) ─────────────────────────────────────
+    const CLAVE_ULTIMOS_VISTOS_ = 'om_area_clientes_ultimos_vistos';
+    const MAX_ULTIMOS_VISTOS_ = 12;
+
+    function leerUltimosVistos_() {
+        try { return JSON.parse(localStorage.getItem(CLAVE_ULTIMOS_VISTOS_) || '[]'); } catch (e) { return []; }
+    }
+    function guardarUltimosVistos_(refs) {
+        try { localStorage.setItem(CLAVE_ULTIMOS_VISTOS_, JSON.stringify(refs)); } catch (e) { /* almacenamiento no disponible — no es crítico */ }
+    }
+    // En window: abrirDetalleProducto_ (fuera de este IIFE de carga de
+    // datos) también necesita poder llamarlas.
+    window.registrarProductoVisto_ = function (ref) {
+        let refs = leerUltimosVistos_().filter(function (r) { return r !== ref; });
+        refs.unshift(ref);
+        refs = refs.slice(0, MAX_ULTIMOS_VISTOS_);
+        guardarUltimosVistos_(refs);
+    };
+    window.cargarUltimosVistos_ = function cargarUltimosVistos_() {
+        const refs = leerUltimosVistos_();
+        const lista = refs.map(function (ref) { return productos.find(function (p) { return p.ref === ref; }); }).filter(Boolean);
+        renderBloqueDescubrimiento_('bloqueUltimosVistos', '🕓 Últimos productos vistos', lista, {
+            onQuitar: function (p) {
+                guardarUltimosVistos_(leerUltimosVistos_().filter(function (r) { return r !== p.ref; }));
+                cargarUltimosVistos_();
+            }
+        });
     }
 
     // ── Fase 1: pintado instantáneo con el JSON estático ──────────────
