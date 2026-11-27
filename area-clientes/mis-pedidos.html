@@ -34,6 +34,10 @@
     .insignia-estado-pedido--en_reparto { color: #0f766e; background: rgba(15, 118, 110, 0.14); }
     .insignia-estado-pedido--entregada { color: var(--ok); background: var(--ok-soft); }
     .tarjeta-pedido__linea-diff { font-size: 0.78rem; color: var(--danger); font-weight: 600; margin: -4px 0 6px 10px; }
+    .tarjeta-pedido__seguimiento {
+        font-size: 0.85rem; color: var(--dark); background: var(--light); border-radius: 8px;
+        padding: 8px 10px; margin-top: 10px;
+    }
     .tarjeta-pedido__detalle { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
     .tarjeta-pedido__detalle.abierto { display: block; }
     .tarjeta-pedido__linea {
@@ -97,6 +101,7 @@
         window.location.href = 'index.html';
     });
 
+    const ESTADOS_CON_SEGUIMIENTO_ = ['lista_para_enviar', 'en_reparto', 'entregada'];
     const ESTADOS_LABEL_ = {
         recibida: 'Recibida', en_preparacion: 'En preparación', lista_para_enviar: 'Lista para enviar',
         en_reparto: 'En reparto', entregada: 'Entregada',
@@ -162,6 +167,10 @@
                         (l.notas ? '<div class="tarjeta-pedido__linea-notas">↳ ' + l.notas.replace(/</g, '&lt;') + '</div>' : '') +
                         (rectificada ? '<div class="tarjeta-pedido__linea-diff">⚠ Se ha ajustado a ' + l.cantidad_confirmada + ' (pediste ' + l.cantidad + ')' + (l.motivo_rectificacion ? ' — ' + l.motivo_rectificacion.replace(/</g, '&lt;') : '') + '</div>' : '');
                     }).join('') +
+                    (ESTADOS_CON_SEGUIMIENTO_.includes(p.estado)
+                        ? '<div class="tarjeta-pedido__seguimiento"><strong>Envío:</strong> ' + (p.transportista || 'Reparto propio').replace(/</g, '&lt;') +
+                            (p.numero_seguimiento ? ' — nº de seguimiento: ' + p.numero_seguimiento.replace(/</g, '&lt;') : '') + '</div>'
+                        : '') +
                     (esBorrador
                         ? '<div class="tarjeta-pedido__acciones"><a class="boton-principal" style="text-decoration:none; display:inline-block; width:auto; padding:9px 16px;" href="propuesta.html">Ir a este pedido</a></div>'
                         : '<div class="tarjeta-pedido__acciones"><button type="button" class="boton-secundario" data-id="' + p.id + '">Reutilizar este pedido</button></div>');

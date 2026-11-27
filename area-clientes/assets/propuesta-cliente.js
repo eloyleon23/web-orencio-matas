@@ -234,7 +234,7 @@ window.listarPropuestasCliente_ = async function () {
     const cliente = window.obtenerClienteSupabase_();
     const { data, error } = await cliente
         .from('propuestas_pedido')
-        .select('id, estado, notas, creado_en, actualizado_en, enviado_en, propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion)')
+        .select('id, estado, notas, creado_en, actualizado_en, enviado_en, transportista, numero_seguimiento, propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion)')
         .order('creado_en', { ascending: false });
     if (error) return { error: error.message };
     return {

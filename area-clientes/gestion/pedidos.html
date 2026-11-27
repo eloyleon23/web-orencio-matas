@@ -54,6 +54,17 @@
     .modal-pedido-gestion__acciones { margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; }
     .modal-pedido-gestion__acciones button, .modal-pedido-gestion__acciones a { width: auto; }
     .modal-pedido-gestion__cerrar { position: sticky; top: 0; }
+
+    .bloque-seguimiento {
+        margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+    }
+    .bloque-seguimiento__titulo { font-weight: 700; font-size: 0.88rem; margin-bottom: 8px; }
+    .bloque-seguimiento__fila { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 8px; }
+    .bloque-seguimiento__campo { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+    .bloque-seguimiento__campo label { font-size: 0.76rem; color: var(--muted); }
+    .bloque-seguimiento__campo input, .bloque-seguimiento__campo select { margin: 0; }
+    .bloque-seguimiento__solo-lectura { font-size: 0.85rem; }
+    .bloque-seguimiento__solo-lectura strong { font-weight: 700; }
 </style>
 </head>
 <body>
@@ -171,7 +182,7 @@
 
     const { data: pedidosBrutos, error } = await cliente
         .from('propuestas_pedido')
-        .select('id, estado, notas, creado_en, enviado_en, clientes(empresa, profiles!clientes_id_fkey(nombre, apellidos, email)), propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion)')
+        .select('id, estado, notas, creado_en, enviado_en, transportista, numero_seguimiento, clientes(empresa, profiles!clientes_id_fkey(nombre, apellidos, email)), propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion)')
         .neq('estado', 'borrador')
         .order('enviado_en', { ascending: false });
 
@@ -198,6 +209,7 @@
         }, 0);
         return {
             id: p.id, estado: p.estado, notas: p.notas, creado_en: p.creado_en, enviado_en: p.enviado_en,
+            transportista: p.transportista || 'Reparto propio', numero_seguimiento: p.numero_seguimiento || '',
             lineas: lineas, totalImporte: totalImporte,
             clienteNombre: [perfilCliente.nombre, perfilCliente.apellidos].filter(Boolean).join(' ') || '(sin nombre)',
             clienteEmail: perfilCliente.email || '',
@@ -277,9 +289,13 @@
         overlay.classList.add('activo');
     }
 
+    const ESTADOS_CON_SEGUIMIENTO_ = ['lista_para_enviar', 'en_reparto', 'entregada'];
+
     function pintarModal_(p) {
         const puedeRectificar = (rol === 'almacen' || rol === 'administrador') && p.estado === 'en_preparacion';
         const siguienteEstado = (TRANSICION_POR_ROL_[rol] || {})[p.estado];
+        const mostrarSeguimiento = ESTADOS_CON_SEGUIMIENTO_.includes(p.estado);
+        const puedeEditarSeguimiento = mostrarSeguimiento && (rol === 'almacen' || rol === 'administrador');
 
         const lineasHtml = p.lineas.map(function (l) {
             const haySubtotal = l.precio_unitario !== null && l.precio_unitario !== undefined;
@@ -308,9 +324,32 @@
         if (puedeRectificar) {
             accionesHtml += '<button type="button" class="boton-secundario" id="botonGuardarRectificacion">Guardar rectificación</button>';
         }
+        if (puedeEditarSeguimiento) {
+            accionesHtml += '<button type="button" class="boton-secundario" id="botonGuardarSeguimiento">Guardar seguimiento</button>';
+        }
         if (siguienteEstado) {
             accionesHtml += '<button type="button" class="boton-principal" id="botonAvanzarEstado" data-siguiente="' + siguienteEstado + '">Pasar a «' + ESTADOS_LABEL_[siguienteEstado] + '»</button>';
         }
+
+        const seguimientoHtml = !mostrarSeguimiento ? '' : (
+            '<div class="bloque-seguimiento">' +
+                '<div class="bloque-seguimiento__titulo">Envío</div>' +
+                (puedeEditarSeguimiento
+                    ? '<div class="bloque-seguimiento__fila">' +
+                        '<div class="bloque-seguimiento__campo">' +
+                            '<label for="inputTransportista">Transportista</label>' +
+                            '<input type="text" id="inputTransportista" value="' + escapar_(p.transportista) + '" placeholder="Reparto propio">' +
+                        '</div>' +
+                        '<div class="bloque-seguimiento__campo">' +
+                            '<label for="inputSeguimiento">Nº de seguimiento (si aplica)</label>' +
+                            '<input type="text" id="inputSeguimiento" value="' + escapar_(p.numero_seguimiento) + '" placeholder="Opcional — solo con transporte externo">' +
+                        '</div>' +
+                      '</div>'
+                    : '<div class="bloque-seguimiento__solo-lectura"><strong>' + escapar_(p.transportista) + '</strong>' +
+                        (p.numero_seguimiento ? ' — nº seguimiento: ' + escapar_(p.numero_seguimiento) : '') +
+                      '</div>')
+            + '</div>'
+        );
 
         contenido.innerHTML =
             '<div class="modal-pedido-gestion__cabecera">' +
@@ -323,6 +362,7 @@
             (p.notas ? '<div class="modal-pedido-gestion__notas-generales"><strong>Instrucciones generales:</strong> ' + escapar_(p.notas) + '</div>' : '') +
             lineasHtml +
             '<div class="modal-pedido-gestion__resumen"><span>Total</span><span>' + formatearEuros_(p.totalImporte) + '</span></div>' +
+            seguimientoHtml +
             '<div class="aviso aviso--error" id="modalAvisoError"></div>' +
             '<div class="aviso aviso--ok" id="modalAvisoOk"></div>' +
             '<div class="modal-pedido-gestion__acciones">' +
@@ -366,6 +406,31 @@
                     return;
                 }
                 modalAvisoOk.textContent = 'Rectificación guardada.';
+                modalAvisoOk.classList.add('activo');
+                pintarModal_(p);
+            });
+        }
+
+        if (puedeEditarSeguimiento) {
+            document.getElementById('botonGuardarSeguimiento').addEventListener('click', async function () {
+                const boton = this;
+                boton.disabled = true;
+                modalAvisoError.classList.remove('activo');
+                const nuevoTransportista = (document.getElementById('inputTransportista').value || '').trim() || 'Reparto propio';
+                const nuevoSeguimiento = (document.getElementById('inputSeguimiento').value || '').trim() || null;
+                const { error: errorSeguimiento } = await cliente
+                    .from('propuestas_pedido')
+                    .update({ transportista: nuevoTransportista, numero_seguimiento: nuevoSeguimiento })
+                    .eq('id', p.id);
+                boton.disabled = false;
+                if (errorSeguimiento) {
+                    modalAvisoError.textContent = 'No se ha podido guardar el seguimiento: ' + errorSeguimiento.message;
+                    modalAvisoError.classList.add('activo');
+                    return;
+                }
+                p.transportista = nuevoTransportista;
+                p.numero_seguimiento = nuevoSeguimiento || '';
+                modalAvisoOk.textContent = 'Seguimiento guardado.';
                 modalAvisoOk.classList.add('activo');
                 pintarModal_(p);
             });
