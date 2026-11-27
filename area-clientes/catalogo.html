@@ -30,10 +30,20 @@
        hueco libre a los lados sin motivo. */
     .catalogo-cuerpo { max-width: 1800px; margin: 0 auto; padding: 22px 32px 60px; }
 
+    /* A petición de Eloy (27/11/2026): "si haces scroll, los chips de
+       filtros aplicados no se ven y te obliga a subir arriba del todo
+       para poderlos quitar. En PC prefiero que sean accesibles en todo
+       momento" — se hace sticky el CONTENEDOR conjunto (barra de
+       filtros + chips activos), no solo la barra, para que ambos se
+       queden pegados arriba juntos al hacer scroll. Solo en PC: en
+       móvil, justo lo contrario ("que no ocupe espacio"), ver el
+       @media de abajo donde se vuelve a position:static. */
+    #contenedorFiltrosSuperior {
+        position: sticky; top: 0; z-index: 5; background: var(--light);
+    }
     .barra-filtros {
-        display: flex; gap: 10px; align-items: center; margin: 0 0 18px;
-        flex-wrap: wrap; position: sticky; top: 0; z-index: 5;
-        background: var(--light); padding: 10px 0;
+        display: flex; gap: 10px; align-items: center; margin: 0 0 10px;
+        flex-wrap: wrap; padding: 10px 0 0;
     }
     .barra-filtros__toggle { display: none; }
     .barra-filtros__contenido { display: contents; }
@@ -103,7 +113,7 @@
     .multi-select__sin-resultados { font-size: 0.8rem; color: var(--muted); padding: 6px 4px; }
 
     /* ── Chips de filtros activos (quitables de uno en uno) ──────────── */
-    .filtros-activos { display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 16px; }
+    .filtros-activos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding-bottom: 14px; }
     .filtros-activos:empty { display: none; margin: 0; }
     .chip-filtro-activo {
         display: inline-flex; align-items: center; gap: 6px;
@@ -355,6 +365,13 @@
         .catalogo-cuerpo { padding-left: 16px; padding-right: 16px; }
         .rejilla-productos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 
+        /* En móvil, lo contrario que en PC: los chips de filtros
+           activos NO se quedan fijos (ocuparían demasiada pantalla) —
+           solo la barra de filtros/buscador se queda pegada arriba,
+           igual que antes. */
+        #contenedorFiltrosSuperior { position: static; }
+        .barra-filtros { position: sticky; top: 0; z-index: 5; background: var(--light); padding-top: 10px; }
+
         /* estilos.css oculta .navbar-om__etiqueta en móvil (ahí era solo
            la marca "Mi catálogo", redundante con el logo) — pero aquí
            esta misma clase también muestra el saludo "Hola, {nombre}",
@@ -417,32 +434,34 @@
 
     <div id="contenido" style="display:none;">
         <p class="catalogo-resumen" id="aviso">Cargando tu catálogo…</p>
-        <div class="barra-filtros" id="barraFiltros">
-            <div class="barra-buscador">
-                <input type="search" id="buscador" placeholder="Buscar por nombre o referencia…" autocomplete="off">
-                <div id="sugerenciasBuscador" class="sugerencias-busqueda"></div>
+        <div id="contenedorFiltrosSuperior">
+            <div class="barra-filtros" id="barraFiltros">
+                <div class="barra-buscador">
+                    <input type="search" id="buscador" placeholder="Buscar por nombre o referencia…" autocomplete="off">
+                    <div id="sugerenciasBuscador" class="sugerencias-busqueda"></div>
+                </div>
+                <button type="button" class="barra-filtros__toggle" id="botonToggleFiltros">
+                    <span>Filtros y orden</span>
+                    <span class="barra-filtros__toggle-flecha">▾</span>
+                </button>
+                <div class="barra-filtros__contenido">
+                    <select id="orden">
+                        <option value="nombre_asc">Nombre (A-Z)</option>
+                        <option value="nombre_desc">Nombre (Z-A)</option>
+                        <option value="precio_asc">Precio (menor a mayor)</option>
+                        <option value="precio_desc">Precio (mayor a menor)</option>
+                        <option value="familia_orden">Ordenar por familia</option>
+                        <option value="familia" selected>Agrupar por familia</option>
+                    </select>
+                    <div class="multi-select" id="multiFamilia"></div>
+                    <div class="multi-select" id="multiSubfamilia"></div>
+                    <button type="button" class="chip-filtro" id="botonFiltroOferta">Solo ofertas y promociones</button>
+                    <div id="chipsAreas"></div>
+                    <button type="button" class="chip-filtro chip-filtro--limpiar" id="botonLimpiarFiltros" style="display:none;">✕ Limpiar filtros</button>
+                </div>
             </div>
-            <button type="button" class="barra-filtros__toggle" id="botonToggleFiltros">
-                <span>Filtros y orden</span>
-                <span class="barra-filtros__toggle-flecha">▾</span>
-            </button>
-            <div class="barra-filtros__contenido">
-                <select id="orden">
-                    <option value="nombre_asc">Nombre (A-Z)</option>
-                    <option value="nombre_desc">Nombre (Z-A)</option>
-                    <option value="precio_asc">Precio (menor a mayor)</option>
-                    <option value="precio_desc">Precio (mayor a menor)</option>
-                    <option value="familia_orden">Ordenar por familia</option>
-                    <option value="familia" selected>Agrupar por familia</option>
-                </select>
-                <div class="multi-select" id="multiFamilia"></div>
-                <div class="multi-select" id="multiSubfamilia"></div>
-                <button type="button" class="chip-filtro" id="botonFiltroOferta">Solo ofertas y promociones</button>
-                <div id="chipsAreas"></div>
-                <button type="button" class="chip-filtro chip-filtro--limpiar" id="botonLimpiarFiltros" style="display:none;">✕ Limpiar filtros</button>
-            </div>
+            <div class="filtros-activos" id="filtrosActivos"></div>
         </div>
-        <div class="filtros-activos" id="filtrosActivos"></div>
 
         <div id="modulosDescubrimiento">
             <div id="bloqueDestacados" class="modulo-descubrimiento" style="display:none;"></div>
@@ -461,9 +480,13 @@
         </div>
 
         <div class="rejilla-productos" id="rejilla"></div>
-        <p class="ayuda" id="sinResultados" style="display:none; text-align:center; margin-top:30px;">
-            No hay productos que coincidan con la búsqueda.
-        </p>
+        <div class="ayuda" id="sinResultados" style="display:none; text-align:center; margin-top:30px;">
+            <div id="sinResultadosCargando" style="display:none;">
+                <span class="cargando-spinner" style="border-top-color:var(--blue); width:18px; height:18px; border-width:2px; display:inline-block; vertical-align:middle; margin-right:8px;"></span>
+                Todavía cargando el catálogo completo…
+            </div>
+            <div id="sinResultadosTexto">No hay productos que coincidan con la búsqueda.</div>
+        </div>
     </div>
 
     <div class="aviso aviso--error" id="avisoError"></div>
@@ -713,13 +736,17 @@ window.copiarReferencia_ = function (ref, boton) {
         document.body.prepend(banda);
         document.body.style.paddingTop = '34px';
         // La banda es position:fixed y el padding-top de arriba la
-        // compensa para el contenido normal del flujo — pero
-        // .barra-filtros es position:sticky con top:0, así que al
-        // hacer scroll se quedaba pegada bajo la banda, tapada por
-        // ella (z-index más alto). Hay que desplazar también su punto
-        // de anclaje del sticky, no solo el padding inicial.
-        const barraFiltrosSimulacion_ = document.querySelector('.barra-filtros');
-        if (barraFiltrosSimulacion_) barraFiltrosSimulacion_.style.top = '34px';
+        // compensa para el contenido normal del flujo — pero el
+        // contenedor sticky (#contenedorFiltrosSuperior en PC,
+        // .barra-filtros directamente en móvil — ver el @media) se
+        // quedaba pegado bajo la banda, tapada por ella (z-index más
+        // alto). Hay que desplazar también su punto de anclaje del
+        // sticky, no solo el padding inicial — en los dos posibles
+        // elementos, da igual cuál sea el realmente sticky ahora mismo.
+        ['#contenedorFiltrosSuperior', '.barra-filtros'].forEach(function (sel) {
+            const el = document.querySelector(sel);
+            if (el) el.style.top = '34px';
+        });
 
         const { data } = await cliente.auth.getSession();
         if (!data.session) {
@@ -1137,7 +1164,13 @@ window.copiarReferencia_ = function (ref, boton) {
     function pintar_(lista, orden, contenedorDestino) {
         const destino = contenedorDestino || rejilla;
         destino.innerHTML = '';
-        if (destino === rejilla) sinResultados.style.display = lista.length ? 'none' : 'block';
+        if (destino === rejilla) {
+            sinResultados.style.display = lista.length ? 'none' : 'block';
+            if (!lista.length) {
+                document.getElementById('sinResultadosCargando').style.display = catalogoProvisional_ ? 'block' : 'none';
+                document.getElementById('sinResultadosTexto').style.display = catalogoProvisional_ ? 'none' : 'block';
+            }
+        }
 
         if (orden === 'familia') {
             const familias = Array.from(new Set(lista.map(function (p) { return p.familia || '(sin familia)'; })))
@@ -1352,8 +1385,18 @@ window.copiarReferencia_ = function (ref, boton) {
         if (typeof cargarModulosDescubrimiento_ === 'function') cargarModulosDescubrimiento_();
     }
 
+    // Bug real reportado (27/11/2026): "si por detrás se está
+    // procesando hay que incluir un spinner antes de indicar que no
+    // hay productos" — con el catálogo completo todavía sin llegar
+    // (fase 1, solo el JSON estático reducido), un filtro o búsqueda
+    // podía dar "0 resultados" con datos parciales y un instante
+    // después mostrar los resultados reales de golpe al llegar la
+    // fase 2 — un parpadeo real, no un error de filtrado.
+    let catalogoProvisional_ = true;
+
     function mostrarContenidoInicial_(listaProductos, provisional) {
         productos = listaProductos;
+        catalogoProvisional_ = !!provisional;
         document.getElementById('cargando').style.display = 'none';
         document.getElementById('contenido').style.display = 'block';
         document.getElementById('aviso').textContent = productos.length + ' producto(s) en tu catálogo.' + (provisional ? ' Calculando precios…' : '');
