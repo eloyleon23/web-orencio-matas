@@ -275,11 +275,12 @@ a.enlace-discreto:hover { text-decoration: underline; }
 .panel-contenido {
     flex: 1;
     padding: 32px;
-    /* 1200px, no 920px: con la columna de Estado + los tres botones de
-       acción, el listado de clientes necesitaba más ancho real del
-       que había — en vez de usar el hueco libre de la pantalla,
-       terminaba haciendo scroll horizontal sin necesidad. */
-    max-width: 1200px;
+    /* Sin max-width a propósito (antes 1200px): con la columna de
+       Último acceso + Estado + los botones de acción, el listado de
+       clientes necesitaba más ancho real del que había — en vez de
+       usar todo el hueco libre de la pantalla, se quedaba corto y
+       ocultaba columnas. El bloque de contenido ocupa ahora todo el
+       ancho disponible junto al menú lateral. */
     min-width: 0; /* para que una tabla ancha dentro pueda hacer su propio scroll en vez de ensanchar la columna */
 }
 
@@ -328,6 +329,16 @@ th { color: var(--muted); font-weight: 700; font-size: 0.75rem; text-transform: 
 /* Envoltorio para que una tabla ancha haga scroll horizontal propio
    en vez de desbordar o encoger el resto de la página en móvil. */
 .tabla-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* Variante sin scroll horizontal ni "nowrap" forzado — a petición de
+   Eloy (27/11/2026): el listado de clientes ocultaba columnas en vez
+   de aprovechar el ancho real de la pantalla. Las celdas envuelven su
+   contenido y las columnas se reparten el ancho disponible del propio
+   contenedor (que ya ocupa toda la pantalla, ver .panel-contenido),
+   en vez de desbordar hacia un scroll horizontal. */
+.tabla-adaptativa table { min-width: 0; table-layout: auto; }
+.tabla-adaptativa th { white-space: nowrap; }
+.tabla-adaptativa td { white-space: normal; overflow-wrap: break-word; }
 
 /* ── Pantalla de login: partida en dos, look más "portal corporativo"
    que la tarjeta suelta de antes. Se apila en móvil. ─────────────── */
