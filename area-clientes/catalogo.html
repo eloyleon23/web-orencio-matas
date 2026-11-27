@@ -43,6 +43,22 @@
         content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
         font-size: 0.85rem; opacity: 0.5;
     }
+    /* Desplegable de sugerencias (estilo Amazon) — mismo aspecto que
+       #sugerencias-busqueda en la web pública. */
+    .sugerencias-busqueda {
+        display: none; position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+        background: #fff; border: 1px solid var(--border); border-radius: 10px;
+        box-shadow: 0 10px 28px rgba(0,0,0,.14); z-index: 20; max-height: 320px; overflow-y: auto;
+    }
+    .sugerencias-busqueda.visible { display: block; }
+    .sugerencia-item {
+        padding: 10px 14px; font-size: 0.85rem; color: var(--dark); cursor: pointer;
+        display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f1f1f1;
+    }
+    .sugerencia-item:last-child { border-bottom: none; }
+    .sugerencia-item:hover { background: var(--light); }
+    .sugerencia-item i { color: var(--muted); font-size: 0.8rem; flex-shrink: 0; }
+    .sugerencia-item strong { font-weight: 700; }
     .barra-filtros select { width: auto; margin: 0; min-width: 150px; max-width: 220px; font-size: 0.85rem; }
     .chip-filtro {
         border: 1px solid var(--border); background: var(--white); color: var(--muted);
@@ -404,7 +420,8 @@
         <p class="catalogo-resumen" id="aviso">Cargando tu catálogo…</p>
         <div class="barra-filtros" id="barraFiltros">
             <div class="barra-buscador">
-                <input type="search" id="buscador" placeholder="Buscar por nombre…">
+                <input type="search" id="buscador" placeholder="Buscar por nombre o referencia…" autocomplete="off">
+                <div id="sugerenciasBuscador" class="sugerencias-busqueda"></div>
             </div>
             <button type="button" class="barra-filtros__toggle" id="botonToggleFiltros">
                 <span>Filtros y orden</span>
@@ -487,7 +504,8 @@
         </div>
         <div class="modal-temporada__filtros">
             <div class="barra-buscador">
-                <input type="search" id="modalTemporadaBuscador" placeholder="Buscar en esta temporada…">
+                <input type="search" id="modalTemporadaBuscador" placeholder="Buscar en esta temporada…" autocomplete="off">
+                <div id="sugerenciasModalTemporada" class="sugerencias-busqueda"></div>
             </div>
             <div class="multi-select" id="modalTemporadaFamilia"></div>
             <select id="modalTemporadaOrden">
@@ -795,14 +813,209 @@ window.copiarReferencia_ = function (ref, boton) {
         };
     }
 
+    function escapeHtml(str) {
+        const d = document.createElement('div');
+        d.textContent = str || '';
+        return d.innerHTML;
+    }
+
+    // ══════════════════════════════════════════════════════════════
+    // MOTOR DE BÚSQUEDA — a petición de Eloy (27/11/2026): "sigue sin
+    // mostrar sugerencias... y no tiene el diccionario cargado... estos
+    // detalles del buscador tienen que estar igual en la modal de ver
+    // la temporada". Mismo motor, mismo diccionario de abreviaturas y
+    // sinónimos, y las mismas sugerencias tipo Amazon que ya tiene la
+    // web pública (index.html) — portado tal cual, sin reinventar
+    // nada: ABREVIATURAS_CATALOGO/SINONIMOS_CATALOGO/normalizar/
+    // levenshtein/coincide/coincideReferencia son el mismo código.
+    const ABREVIATURAS_CATALOGO = {
+        imp: 'imprimacion', esm: 'esmalte', limp: 'limpiador', desinf: 'desinfectante',
+        protec: 'proteccion', deterg: 'detergente', suaviz: 'suavizante', sint: 'sintetico',
+        incol: 'incoloro', elect: 'electrico', perf: 'perfumado', revest: 'revestimiento',
+        efect: 'efecto', prof: 'profesional', concent: 'concentrado', acond: 'acondicionador',
+        est: 'estuche', vap: 'vaporizador', desod: 'desodorante', desmaq: 'desmaquillante',
+        antisept: 'antiseptico', pest: 'pestañas', afeit: 'afeitado', dosif: 'dosificador',
+        hidrat: 'hidratante', hid: 'hidratante', corp: 'corporal', reaf: 'reafirmante',
+        cep: 'cepillo', liq: 'liquido', poliuret: 'poliuretano', acril: 'acrilico al agua',
+        sat: 'satinado',
+    };
+    const SINONIMOS_CATALOGO = {
+        antioxidante: ['anticorrosion', 'antioxido'],
+        bombilla: ['lampara'], friegaplatos: ['lavavajillas'], bateria: ['pila'],
+        dentifrico: ['dental'], carrocero: ['enmascarar'], cuchilla: ['hojas'],
+        veneno: ['raticida', 'insecticida'], rimel: ['mascara'], pintalabios: ['labios'],
+        kleenex: ['panuelos'], coche: ['vehiculo'], vehiculo: ['coche'],
+        colutorio: ['bucal'], hilo: ['seda'], antitranspirante: ['desodorante'],
+        alguicida: ['antialgas'], algicida: ['antialgas'], mechero: ['encendedor'],
+        naftalina: ['polilla'], edc: ['colonia'],
+    };
+    const normalizarCache_ = new Map();
+    function normalizarBusqueda_(txt) {
+        const clave = txt == null ? '' : String(txt);
+        const cacheado = normalizarCache_.get(clave);
+        if (cacheado !== undefined) return cacheado;
+        const base = clave.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+        const palabras = base.split(/[^a-z0-9áéíóúñ]+/i).filter(Boolean);
+        const extra = [];
+        palabras.forEach(function (p) {
+            const expandida = ABREVIATURAS_CATALOGO[p];
+            if (expandida && palabras.indexOf(expandida) === -1) extra.push(expandida);
+        });
+        const resultado = extra.length ? base + ' ' + extra.join(' ') : base;
+        if (normalizarCache_.size > 20000) normalizarCache_.clear();
+        normalizarCache_.set(clave, resultado);
+        return resultado;
+    }
+    const levenshteinCache_ = new Map();
+    function levenshtein_(a, b) {
+        const clave = a + '\u0001' + b;
+        const cacheado = levenshteinCache_.get(clave);
+        if (cacheado !== undefined) return cacheado;
+        const matrix = [];
+        for (let i = 0; i <= b.length; i++) matrix[i] = [i];
+        for (let j = 0; j <= a.length; j++) matrix[0][j] = j;
+        for (let i = 1; i <= b.length; i++) {
+            for (let j = 1; j <= a.length; j++) {
+                matrix[i][j] = b.charAt(i - 1) === a.charAt(j - 1)
+                    ? matrix[i - 1][j - 1]
+                    : Math.min(matrix[i - 1][j - 1] + 1, matrix[i][j - 1] + 1, matrix[i - 1][j] + 1);
+            }
+        }
+        const resultado = matrix[b.length][a.length];
+        if (levenshteinCache_.size > 20000) levenshteinCache_.clear();
+        levenshteinCache_.set(clave, resultado);
+        return resultado;
+    }
+    function maxErroresPermitidos_(longitud) {
+        if (longitud <= 3) return 0;
+        if (longitud <= 6) return 1;
+        if (longitud <= 9) return 2;
+        return 3;
+    }
+    function coincideUnaPalabra_(pBusqueda, palabrasTexto) {
+        if (palabrasTexto.some(function (pTexto) { return pTexto.includes(pBusqueda); })) return true;
+        if (pBusqueda.length <= 3) return false;
+        const maxErr = maxErroresPermitidos_(pBusqueda.length);
+        return palabrasTexto.some(function (pTexto) {
+            if (Math.abs(pTexto.length - pBusqueda.length) > maxErr) return false;
+            return levenshtein_(pTexto, pBusqueda) <= maxErr;
+        });
+    }
+    function palabraCoincide_(pBusqueda, palabrasTexto) {
+        if (coincideUnaPalabra_(pBusqueda, palabrasTexto)) return true;
+        const sinonimos = SINONIMOS_CATALOGO[pBusqueda];
+        if (sinonimos) return sinonimos.some(function (s) { return coincideUnaPalabra_(s, palabrasTexto); });
+        return false;
+    }
+    function coincide_(texto, busqueda) {
+        if (!busqueda) return true;
+        const t = normalizarBusqueda_(texto);
+        const b = normalizarBusqueda_(busqueda);
+        if (t.includes(b)) return true;
+        const bSinSep = b.replace(/[^a-z0-9]/g, '');
+        if (bSinSep.length >= 3) {
+            const tSinSep = t.replace(/[^a-z0-9]/g, '');
+            const i = tSinSep.indexOf(bSinSep);
+            if (i !== -1 && !/\d/.test(tSinSep.charAt(i + bSinSep.length) || '')) return true;
+        }
+        const palabrasBusqueda = b.split(/\s+/).filter(Boolean);
+        if (!palabrasBusqueda.length) return true;
+        const palabrasTexto = t.split(/\s+/).filter(Boolean);
+        return palabrasBusqueda.every(function (p) { return palabraCoincide_(p, palabrasTexto); });
+    }
+    function esBusquedaNumerica_(busqueda) {
+        const limpio = busqueda.replace(/\s+/g, '');
+        if (!limpio) return false;
+        const digitos = (limpio.match(/\d/g) || []).length;
+        return digitos / limpio.length >= 0.7;
+    }
+    function coincideReferencia_(referencia, busqueda) {
+        if (!busqueda) return true;
+        const r = normalizarBusqueda_(referencia).replace(/[^a-z0-9]/g, '');
+        const b = normalizarBusqueda_(busqueda).replace(/[^a-z0-9]/g, '');
+        if (!b) return true;
+        return r.includes(b);
+    }
+
     // Bug real reportado (27/11/2026): "he copiado una referencia y la
     // he pegado en el buscador y no filtra por ese producto" — el
-    // buscador solo comparaba contra el nombre, nunca contra la
-    // referencia (a diferencia del buscador público, que sí la
-    // incluye). Compartido por el grid principal, los bloques de
-    // descubrimiento y la modal de temporada.
+    // buscador solo comparaba contra el nombre con un simple
+    // .includes(), nunca de forma difusa ni contra la referencia,
+    // familia o subfamilia. Ahora usa el mismo motor que la web
+    // pública (coincide_/coincideReferencia_): un término
+    // predominantemente numérico se trata como código, el resto como
+    // texto libre con tolerancia a erratas, abreviaturas y sinónimos.
     function coincideBusqueda_(p, termino) {
-        return p.nombre.toLowerCase().includes(termino) || p.ref.toLowerCase().includes(termino);
+        if (esBusquedaNumerica_(termino)) return coincideReferencia_(p.ref, termino) || coincide_(p.nombre, termino);
+        return coincide_(p.nombre, termino) || coincide_(p.ref, termino) || coincide_(p.familia, termino) || coincide_(p.subfamilia, termino);
+    }
+
+    // ── Sugerencias de búsqueda (autocompletar estilo Amazon) ────────
+    const PALABRAS_IGNORADAS_SUGERENCIA_ = new Set([
+        'ml', 'l', 'kg', 'g', 'gr', 'cm', 'mm', 'uds', 'ud',
+        'de', 'del', 'la', 'el', 'los', 'las', 'y', 'con', 'para', 'sin', 'al', 'en',
+    ]);
+    let sugerenciasIndice_ = [];
+    function construirIndiceSugerencias_() {
+        const frecuencia = new Map();
+        const sumar = function (texto) { if (texto) frecuencia.set(texto, (frecuencia.get(texto) || 0) + 1); };
+        productos.forEach(function (p) {
+            if (p.familia) sumar(normalizarBusqueda_(p.familia));
+            if (p.subfamilia) sumar(normalizarBusqueda_(p.subfamilia));
+            const palabras = normalizarBusqueda_(p.nombre)
+                .split(/[^a-z0-9ñ]+/i)
+                .filter(function (w) { return w.length >= 3 && !/^\d+$/.test(w) && !PALABRAS_IGNORADAS_SUGERENCIA_.has(w); });
+            for (let i = 0; i < palabras.length; i++) {
+                sumar(palabras[i]);
+                if (i + 1 < palabras.length) sumar(palabras[i] + ' ' + palabras[i + 1]);
+                if (i + 2 < palabras.length) sumar(palabras[i] + ' ' + palabras[i + 1] + ' ' + palabras[i + 2]);
+            }
+        });
+        sugerenciasIndice_ = Array.from(frecuencia.entries())
+            .filter(function (e) { return e[1] >= 3; })
+            .sort(function (a, b) { return b[1] - a[1]; })
+            .map(function (e) { return { texto: e[0], frecuencia: e[1] }; });
+    }
+    function obtenerSugerencias_(textoInput) {
+        const q = normalizarBusqueda_(textoInput.trim());
+        if (!q) return [];
+        return sugerenciasIndice_.filter(function (s) { return s.texto.startsWith(q) && s.texto !== q; }).slice(0, 8);
+    }
+
+    // Conecta un <input> de búsqueda con su propio desplegable de
+    // sugerencias — reutilizable tanto para el buscador principal como
+    // para el de la modal "ver todos" de temporada, a petición expresa
+    // de Eloy ("estos detalles del buscador tienen que estar igual en
+    // la modal de ver la temporada").
+    function activarSugerencias_(input, idContenedor, alSeleccionar) {
+        const cont = document.getElementById(idContenedor);
+        function render_(lista, textoInput) {
+            if (!lista.length) { cont.classList.remove('visible'); cont.innerHTML = ''; return; }
+            const q = normalizarBusqueda_(textoInput.trim());
+            cont.innerHTML = lista.map(function (s) {
+                const resto = s.texto.slice(q.length);
+                return '<div class="sugerencia-item" data-texto="' + escapeHtml(s.texto) + '">' +
+                    '<i class="fa-solid fa-magnifying-glass"></i>' +
+                    '<span>' + escapeHtml(q) + '<strong>' + escapeHtml(resto) + '</strong></span>' +
+                '</div>';
+            }).join('');
+            cont.classList.add('visible');
+        }
+        function ocultar_() { cont.classList.remove('visible'); }
+        input.addEventListener('input', debounce_(function () {
+            const valor = input.value;
+            if (valor.trim().length >= 2) render_(obtenerSugerencias_(valor), valor); else ocultar_();
+        }, 120));
+        cont.addEventListener('click', function (e) {
+            const item = e.target.closest('.sugerencia-item');
+            if (!item) return;
+            input.value = item.dataset.texto;
+            ocultar_();
+            alSeleccionar();
+        });
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.barra-buscador')) ocultar_();
+        });
     }
 
     function precioOrdenable_(p) {
@@ -1136,6 +1349,7 @@ window.copiarReferencia_ = function (ref, boton) {
         document.getElementById('aviso').textContent = productos.length + ' producto(s) en tu catálogo.' + (provisional ? ' Calculando precios…' : '');
 
         areasPresentes = Array.from(new Set(productos.map(function (p) { return p.area; }).filter(Boolean)));
+        construirIndiceSugerencias_();
 
         if (!huboPintadoInicial) {
             // Bug real reportado (27/11/2026): llamaba a aplicarFiltros_
@@ -1146,6 +1360,7 @@ window.copiarReferencia_ = function (ref, boton) {
             // escribir y, sobre todo, al borrar varios caracteres
             // seguidos (cada borrado repintaba la rejilla entera).
             document.getElementById('buscador').addEventListener('input', debounce_(aplicarFiltros_, 200));
+            activarSugerencias_(document.getElementById('buscador'), 'sugerenciasBuscador', aplicarFiltros_);
             document.getElementById('orden').addEventListener('change', aplicarFiltros_);
             document.getElementById('botonLimpiarFiltros').addEventListener('click', limpiarFiltros_);
             document.getElementById('filtroOferta').addEventListener('change', function () {
@@ -1509,6 +1724,15 @@ window.copiarReferencia_ = function (ref, boton) {
         const buscador = document.getElementById('modalTemporadaBuscador');
         buscador.value = '';
         buscador.oninput = debounce_(function () { terminoActual = buscador.value.trim().toLowerCase(); repintar_(); }, 200);
+        // activarSugerencias_ se conecta UNA sola vez (más abajo, fuera de
+        // esta función) para no acumular listeners en cada apertura de la
+        // modal — esta variable es la indirección que le dice, en todo
+        // momento, qué hacer al elegir una sugerencia PARA LA TEMPORADA
+        // QUE ESTÉ ABIERTA AHORA MISMO.
+        manejarSeleccionSugerenciaTemporada_ = function () {
+            terminoActual = buscador.value.trim().toLowerCase();
+            repintar_();
+        };
 
         const orden = document.getElementById('modalTemporadaOrden');
         orden.value = 'nombre_asc';
@@ -1517,6 +1741,12 @@ window.copiarReferencia_ = function (ref, boton) {
         repintar_();
         document.getElementById('modalTemporadaOverlay').classList.add('activo');
     }
+    // Indirección para las sugerencias de la modal de temporada — ver el
+    // porqué junto a donde se reasigna, dentro de abrirModalTemporada_.
+    let manejarSeleccionSugerenciaTemporada_ = function () {};
+    activarSugerencias_(document.getElementById('modalTemporadaBuscador'), 'sugerenciasModalTemporada', function () {
+        manejarSeleccionSugerenciaTemporada_();
+    });
     document.getElementById('modalTemporadaCerrar').addEventListener('click', function () {
         document.getElementById('modalTemporadaOverlay').classList.remove('activo');
     });
