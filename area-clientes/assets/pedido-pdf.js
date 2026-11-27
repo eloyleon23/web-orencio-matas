@@ -26,13 +26,14 @@ window.generarPedidoPdf_ = async function (pedido, estadoLabel) {
         }
     }
 
-    // El logo es un PNG público ya usado en los correos de pedido — se
-    // intenta cargar, pero si falla (sin red, CORS…) el PDF se genera
-    // igual, solo que sin logo — nunca debe bloquear la descarga.
+    // Logo del propio sitio (misma ruta que usa la barra de navegación
+    // del área de clientes) — del mismo origen que la página, así que
+    // nunca choca con CORS como pasaría con el dominio público. Si aun
+    // así falla por lo que sea, el PDF se genera igual, solo sin logo
+    // — nunca debe bloquear la descarga.
     try {
         const logoDataUrl = await new Promise(function (resolve, reject) {
             const img = new Image();
-            img.crossOrigin = 'anonymous';
             img.onload = function () {
                 const canvas = document.createElement('canvas');
                 canvas.width = img.naturalWidth;
@@ -41,7 +42,12 @@ window.generarPedidoPdf_ = async function (pedido, estadoLabel) {
                 resolve(canvas.toDataURL('image/png'));
             };
             img.onerror = reject;
-            img.src = 'https://orenciomatas.es/assets/logos/logo-orencio.png';
+            // Se reutiliza la URL ya resuelta por el navegador del logo
+            // que hay en la propia barra de navegación de la página —
+            // así este archivo no tiene que adivinar cuántos "../" hacen
+            // falta según desde qué página se llame.
+            const logoEnNavbar = document.querySelector('.navbar-om__logo');
+            img.src = logoEnNavbar ? logoEnNavbar.currentSrc || logoEnNavbar.src : 'assets/logo-orencio.png';
         });
         const alturaLogo = 36;
         const anchoLogo = alturaLogo; // el logo es prácticamente cuadrado
