@@ -160,6 +160,31 @@ window.enviarPropuesta_ = async function (propuestaId) {
     return { error: error ? error.message : null };
 };
 
+// Aviso por correo de que se ha recibido el pedido — Edge Function
+// aparte (notificar-pedido), con su propia configuración de
+// remitente/destino en Supabase, deliberadamente independiente de
+// cualquier otro envío de correo del proyecto (ver comentario al
+// principio de supabase/functions/notificar-pedido/index.ts). Un
+// fallo aquí NUNCA deshace el pedido — ya quedó guardado en BBDD antes
+// de llamar a esto — así que solo se informa, nunca se bloquea nada.
+window.notificarPedidoPorCorreo_ = async function (propuestaId) {
+    try {
+        const cliente = window.obtenerClienteSupabase_();
+        const { data: sesion } = await cliente.auth.getSession();
+        if (!sesion.session) return { error: 'Sin sesión' };
+        const resp = await fetch(window.SUPABASE_URL + '/functions/v1/notificar-pedido', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sesion.session.access_token },
+            body: JSON.stringify({ propuesta_id: propuestaId }),
+        });
+        const json = await resp.json().catch(function () { return {}; });
+        if (!resp.ok) return { error: json.error || ('HTTP ' + resp.status) };
+        return { data: json };
+    } catch (e) {
+        return { error: e && e.message };
+    }
+};
+
 // Historial completo del cliente (para "Mis pedidos"), con el total de
 // líneas y el importe ya calculado — todo en una sola consulta anidada
 // en vez de una petición por pedido.

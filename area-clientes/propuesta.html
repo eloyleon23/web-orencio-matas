@@ -266,6 +266,12 @@
         }
         avisoOk.textContent = '¡Pedido enviado! Puedes verlo en "Mis pedidos".';
         avisoOk.classList.add('activo');
+        // El pedido YA está enviado (guardado en BBDD) — el aviso por
+        // correo es un extra que nunca debe bloquear ni deshacer esto
+        // si falla, solo se registra para depurar.
+        window.notificarPedidoPorCorreo_(borrador.id).then(function (resultado) {
+            if (resultado.error) console.warn('Aviso por correo del pedido no enviado:', resultado.error);
+        });
         setTimeout(function () { window.location.href = 'mis-pedidos.html'; }, 1200);
     });
 })();
