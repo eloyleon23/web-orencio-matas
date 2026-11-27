@@ -347,7 +347,15 @@ window.abrirDetalleProducto_ = function (p, descuentoPct) {
     if (p.area) meta.push('<span>' + p.area + '</span>');
     if (p.familia) meta.push('<span>' + p.familia + '</span>');
     if (p.subfamilia) meta.push('<span>' + p.subfamilia + '</span>');
-    if (p.fabricante) meta.push('<span>' + p.fabricante + '</span>');
+    // Bug real reportado (27/11/2026): en algunos productos la columna
+    // "marca" del Sheet lleva por error el nombre completo del
+    // producto en vez de la marca real — se veía como el nombre
+    // repetido justo debajo del propio título. No se toca el dato en
+    // el Sheet (no es cosa de esta pantalla); simplemente no se pinta
+    // el chip cuando coincide con el nombre, venga de donde venga.
+    if (p.fabricante && p.fabricante.trim().toLowerCase() !== (p.nombre || '').trim().toLowerCase()) {
+        meta.push('<span>' + p.fabricante + '</span>');
+    }
     if (p.oferta) meta.push('<span style="background:var(--danger-soft); color:var(--danger); font-weight:700;">Oferta</span>');
     document.getElementById('modalDetalleMeta').innerHTML = meta.join(' ');
 
