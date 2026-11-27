@@ -4002,6 +4002,39 @@ function procesarSincronizarCacheCompleto(data) {
     const datos = JSON.parse(data.contenido);
     const total = (datos.productos || []).length;
 
+    // Incidente real del 27/11/2026: data/productos.json (lo que manda
+    // este workflow de GitHub) NUNCA lleva precio_mayor_sin/precio_mayor_con
+    // — a propósito, por seguridad: ese archivo es público, sin
+    // autenticación, servido tal cual por GitHub Pages/IONOS (ver el
+    // porqué en generar_productos_json.py). Sobrescribir la caché de
+    // Drive en vivo con este contenido TAL CUAL borraba también el
+    // precio mayor de ahí — el mismo archivo que lee el Área de Clientes
+    // (área que SÍ tiene derecho a verlo, vía token de Supabase
+    // verificado en obtener_productos). Cada ejecución programada de
+    // este workflow (cron horario) volvía a dejar a los clientes sin
+    // precio mayor, aunque regenerarCacheCompletaManual() lo hubiera
+    // restaurado bien a mano justo antes. Se corrige aquí, no en Python
+    // ni en el JSON público: antes de sobrescribir, se recupera
+    // precio_mayor_sin/precio_mayor_con de la caché TODAVÍA vigente (por
+    // referencia) y se reinyecta en los productos entrantes — así este
+    // dato solo puede perderse si de verdad se pierde en el propio
+    // Sheet, nunca por esta vía.
+    try {
+      const cacheActual_ = leerCacheProductos_();
+      const precioMayorPorRef_ = {};
+      (cacheActual_.productos || []).forEach(p => {
+        if (p && p.ref && (p.precio_mayor_sin !== undefined || p.precio_mayor_con !== undefined)) {
+          precioMayorPorRef_[p.ref] = { precio_mayor_sin: p.precio_mayor_sin, precio_mayor_con: p.precio_mayor_con };
+        }
+      });
+      (datos.productos || []).forEach(p => {
+        const previo = p && p.ref ? precioMayorPorRef_[p.ref] : undefined;
+        if (previo) Object.assign(p, previo);
+      });
+    } catch (err) {
+      console.error('procesarSincronizarCacheCompleto: no se pudo preservar el precio mayor de la caché anterior (se continúa igualmente):', err);
+    }
+
     // Incidente real del 26/11/2026: esta vía nunca tuvo el guard que
     // sí tiene regenerarCacheCompletaDesdeSheet_ — si
     // generar_productos_json.py generaba un productos.json casi vacío
