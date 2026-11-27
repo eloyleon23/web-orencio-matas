@@ -38,12 +38,12 @@
     .barra-filtros__toggle { display: none; }
     .barra-filtros__contenido { display: contents; }
     .barra-buscador { position: relative; flex: 1 1 220px; max-width: 280px; }
-    .barra-buscador input { margin: 0; padding-left: 36px; }
+    .barra-buscador input { margin: 0; padding-left: 36px; font-size: 0.85rem; }
     .barra-buscador::before {
         content: '🔍'; position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
         font-size: 0.85rem; opacity: 0.5;
     }
-    .barra-filtros select { width: auto; margin: 0; min-width: 150px; max-width: 220px; }
+    .barra-filtros select { width: auto; margin: 0; min-width: 150px; max-width: 220px; font-size: 0.85rem; }
     .chip-filtro {
         border: 1px solid var(--border); background: var(--white); color: var(--muted);
         border-radius: 999px; padding: 7px 14px; font-size: 0.8rem; font-weight: 600;
@@ -51,6 +51,9 @@
     }
     .chip-filtro:hover { border-color: var(--blue); color: var(--blue); }
     .chip-filtro.activo { background: var(--dark); color: white; border-color: var(--dark); }
+    .chip-toggle { display: inline-flex; align-items: center; gap: 6px; user-select: none; }
+    .chip-toggle input { margin: 0; width: auto; accent-color: var(--dark); }
+    .chip-toggle.activo { background: var(--danger); color: white; border-color: var(--danger); }
 
     /* ── Selector múltiple con buscador interno (familia/subfamilia) ── */
     .multi-select { position: relative; }
@@ -171,7 +174,7 @@
     .modal-temporada__cabecera h2 { margin: 0; font-size: 1.2rem; }
     .modal-temporada__filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
     .modal-temporada__filtros .barra-buscador { max-width: 240px; }
-    .modal-temporada__filtros select { width: auto; min-width: 150px; max-width: 220px; margin: 0; }
+    .modal-temporada__filtros select { width: auto; min-width: 150px; max-width: 220px; margin: 0; font-size: 0.85rem; }
     .modal-temporada__cuerpo { max-height: 65vh; overflow-y: auto; }
 
     @media (max-width: 600px) {
@@ -242,6 +245,32 @@
     .insignia-ahorro {
         display: inline-block; margin-top: 4px; font-size: 0.68rem; font-weight: 800;
         color: var(--ok); background: var(--ok-soft); border-radius: 5px; padding: 2px 6px;
+    }
+
+    /* ── Destacados con descuento/promoción — mismo aspecto que la web
+       pública (destacado-chip/destacado-precio-*), a petición de Eloy:
+       "los productos que tienen ofertas... como los que aparecen en
+       destacados no muestran nada... deben aparecer también en el
+       grid de productos generales". ───────────────────────────────── */
+    .destacado-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        font-size: 0.62rem; font-weight: 800; text-transform: uppercase;
+        letter-spacing: .3px; padding: 3px 8px; border-radius: 6px; color: #fff;
+        position: absolute; top: 8px; left: 8px; z-index: 2;
+    }
+    .destacado-chip--oferta { background: var(--ok); }
+    .destacado-chip--oportunidad { background: var(--blue); }
+    .destacado-chip--liquidacion { background: var(--danger); }
+    .destacado-promo-texto {
+        display: inline-block; background: #fef3c7; color: #78350f;
+        font-size: 0.68rem; font-weight: 800; padding: 2px 7px; border-radius: 6px; margin-top: 4px;
+    }
+    .destacado-precio-descuento { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+    .destacado-precio-original { color: var(--muted); text-decoration: line-through; font-size: 0.78rem; }
+    .destacado-precio-promo { color: var(--danger); font-weight: 800; font-size: 1.1rem; }
+    .destacado-precio-pct {
+        background: var(--danger); color: #fff; font-size: 0.65rem; font-weight: 800;
+        padding: 2px 6px; border-radius: 5px;
     }
 
     /* ── Modal de detalle de producto ──────────────────────────────── */
@@ -392,6 +421,9 @@
                 </select>
                 <div class="multi-select" id="multiFamilia"></div>
                 <div class="multi-select" id="multiSubfamilia"></div>
+                <label class="chip-filtro chip-toggle" id="etiquetaFiltroOferta">
+                    <input type="checkbox" id="filtroOferta"> Solo ofertas y promociones
+                </label>
                 <div id="chipsAreas"></div>
                 <button type="button" class="chip-filtro" id="botonLimpiarFiltros" style="display:none;">✕ Limpiar filtros</button>
             </div>
@@ -751,6 +783,8 @@ window.copiarReferencia_ = function (ref, boton) {
     let areasActivas = new Set();
     let familiasActivas = new Set();
     let subfamiliasActivas = new Set();
+    // Filtro "Solo ofertas/promociones" (a petición de Eloy, 27/11/2026).
+    let soloOfertasActivo_ = false;
 
     function debounce_(fn, ms) {
         let temporizador;
@@ -759,6 +793,16 @@ window.copiarReferencia_ = function (ref, boton) {
             clearTimeout(temporizador);
             temporizador = setTimeout(function () { fn.apply(null, args); }, ms);
         };
+    }
+
+    // Bug real reportado (27/11/2026): "he copiado una referencia y la
+    // he pegado en el buscador y no filtra por ese producto" — el
+    // buscador solo comparaba contra el nombre, nunca contra la
+    // referencia (a diferencia del buscador público, que sí la
+    // incluye). Compartido por el grid principal, los bloques de
+    // descubrimiento y la modal de temporada.
+    function coincideBusqueda_(p, termino) {
+        return p.nombre.toLowerCase().includes(termino) || p.ref.toLowerCase().includes(termino);
     }
 
     function precioOrdenable_(p) {
@@ -788,11 +832,31 @@ window.copiarReferencia_ = function (ref, boton) {
         // llegó y de verdad no hay precio de mayor para ese producto,
         // se avisa.
         const hayPrecioMayor = p.precio_mayor_con !== undefined && p.precio_mayor_con !== null && p.precio_mayor_con !== '';
-        const precioConBase = numeroDesdePrecio_(p.precio_mayor_con);
-        const precioSinBase = numeroDesdePrecio_(p.precio_mayor_sin);
+        let precioConBase = numeroDesdePrecio_(p.precio_mayor_con);
+        let precioSinBase = numeroDesdePrecio_(p.precio_mayor_sin);
         const tarjeta = document.createElement('div');
         tarjeta.className = 'producto-tarjeta';
         tarjeta.dataset.ref = p.ref;
+
+        // Destacado vigente con descuento/promoción real (igual que la
+        // web pública) — si lo hay, el precio de partida para el
+        // descuento del cliente ya no es el de mayor normal, sino el
+        // rebajado: los dos descuentos se acumulan (primero el de la
+        // promoción, después el propio del cliente), igual que ya
+        // ocurría entre precio normal y precio de mayor.
+        const destacado = destacadoVigentePara_(p.ref);
+        const precioDestacado = destacado ? calcularPrecioMayorDestacado_(p, destacado) : null;
+        const hayPromoDestacado = !!(precioDestacado && precioDestacado.promoMayor !== null);
+        let chipsEsquina = '';
+        let promoTextoHtml = '';
+        if (hayPromoDestacado) {
+            chipsEsquina = etiquetaDestacadoHtml_(destacado.tipoDestacado);
+            if (destacado.textoPromocion) promoTextoHtml = '<span class="destacado-promo-texto">' + destacado.textoPromocion.replace(/</g, '&lt;') + '</span>';
+            precioConBase = precioDestacado.promoMayor;
+            precioSinBase = precioDestacado.promoMayorSin;
+        } else if (p.oferta) {
+            chipsEsquina = '<span class="insignia-oferta">Oferta</span>';
+        }
 
         let htmlPrecio;
         if (p._precioProvisional) {
@@ -804,19 +868,28 @@ window.copiarReferencia_ = function (ref, boton) {
         } else {
             const precioConFinal = descuentoPct > 0 ? (precioConBase * (1 - descuentoPct / 100)) : precioConBase;
             const precioSinFinal = (precioSinBase !== null && descuentoPct > 0) ? (precioSinBase * (1 - descuentoPct / 100)) : precioSinBase;
+            // Precio tachado: el de mayor normal si hay promoción de
+            // destacado (prioridad) o, si no, el de antes del descuento
+            // propio del cliente — nunca los dos acumulados en el
+            // tachado, solo el precio final sí lleva ambos aplicados.
+            const precioTachadoTxt = hayPromoDestacado
+                ? precioDestacado.originalMayor.toFixed(2).replace('.', ',')
+                : (descuentoPct > 0 ? p.precio_mayor_con : null);
             htmlPrecio =
                 '<div class="producto-tarjeta__etiqueta-precio">Precio de mayor</div>' +
+                promoTextoHtml +
                 '<div class="producto-tarjeta__precio-fila">' +
-                    (descuentoPct > 0 ? '<span class="producto-tarjeta__precio-original">' + p.precio_mayor_con + ' €</span>' : '') +
+                    (precioTachadoTxt !== null ? '<span class="producto-tarjeta__precio-original">' + precioTachadoTxt + ' €</span>' : '') +
                     '<span class="producto-tarjeta__precio">' + precioConFinal.toFixed(2).replace('.', ',') + ' €</span>' +
                 '</div>' +
                 (precioSinFinal !== null ? '<div class="producto-tarjeta__precio-sin">' + precioSinFinal.toFixed(2).replace('.', ',') + ' € sin IVA</div>' : '') +
-                (descuentoPct > 0 ? '<span class="insignia-ahorro">-' + descuentoPct + '%</span>' : '');
+                (hayPromoDestacado && precioDestacado.pct ? '<span class="destacado-precio-pct">-' + precioDestacado.pct + '%</span>' : '') +
+                (descuentoPct > 0 ? '<span class="insignia-ahorro">-' + descuentoPct + '% adicional</span>' : '');
         }
 
         tarjeta.innerHTML =
             '<div class="producto-tarjeta__img-envoltorio">' +
-                (p.oferta ? '<span class="insignia-oferta">Oferta</span>' : '') +
+                chipsEsquina +
                 '<img src="' + urlImagenProducto_(p) + '" alt="" loading="lazy" onerror="window.reintentarImagenProducto_(this)">' +
             '</div>' +
             '<div class="producto-tarjeta__cuerpo">' +
@@ -986,7 +1059,9 @@ window.copiarReferencia_ = function (ref, boton) {
         familiasActivas.forEach(function (f) { chips.push({ texto: f, quitar: function () { familiasActivas.delete(f); } }); });
         subfamiliasActivas.forEach(function (s) { chips.push({ texto: s, quitar: function () { subfamiliasActivas.delete(s); } }); });
         if (termino) chips.push({ texto: '“' + termino + '”', quitar: function () { document.getElementById('buscador').value = ''; } });
+        if (soloOfertasActivo_) chips.push({ texto: 'Solo ofertas y promociones', quitar: function () { soloOfertasActivo_ = false; document.getElementById('filtroOferta').checked = false; } });
 
+        document.getElementById('etiquetaFiltroOferta').classList.toggle('activo', soloOfertasActivo_);
         contenedor.innerHTML = '';
         chips.forEach(function (c) {
             const chip = document.createElement('button');
@@ -1009,6 +1084,8 @@ window.copiarReferencia_ = function (ref, boton) {
         areasActivas.clear();
         familiasActivas.clear();
         subfamiliasActivas.clear();
+        soloOfertasActivo_ = false;
+        document.getElementById('filtroOferta').checked = false;
         document.getElementById('buscador').value = '';
         document.getElementById('orden').value = 'familia';
         pintarChipsArea_();
@@ -1024,7 +1101,8 @@ window.copiarReferencia_ = function (ref, boton) {
         if (areasActivas.size) lista = lista.filter(function (p) { return areasActivas.has(p.area); });
         if (familiasActivas.size) lista = lista.filter(function (p) { return familiasActivas.has(p.familia); });
         if (subfamiliasActivas.size) lista = lista.filter(function (p) { return subfamiliasActivas.has(p.subfamilia); });
-        if (termino) lista = lista.filter(function (p) { return p.nombre.toLowerCase().includes(termino); });
+        if (termino) lista = lista.filter(function (p) { return coincideBusqueda_(p, termino); });
+        if (soloOfertasActivo_) lista = lista.filter(tieneOfertaOPromocion_);
 
         if (orden === 'nombre_desc') lista.sort(function (a, b) { return b.nombre.localeCompare(a.nombre); });
         else if (orden === 'precio_asc') lista.sort(function (a, b) { return precioOrdenable_(a) - precioOrdenable_(b); });
@@ -1070,6 +1148,10 @@ window.copiarReferencia_ = function (ref, boton) {
             document.getElementById('buscador').addEventListener('input', debounce_(aplicarFiltros_, 200));
             document.getElementById('orden').addEventListener('change', aplicarFiltros_);
             document.getElementById('botonLimpiarFiltros').addEventListener('click', limpiarFiltros_);
+            document.getElementById('filtroOferta').addEventListener('change', function () {
+                soloOfertasActivo_ = this.checked;
+                aplicarFiltros_();
+            });
 
             // Solo tiene efecto visual en móvil (ver @media en el
             // <style>) — en escritorio el botón ni se muestra.
@@ -1169,7 +1251,8 @@ window.copiarReferencia_ = function (ref, boton) {
         if (areasActivas.size) lista = lista.filter(function (p) { return areasActivas.has(p.area); });
         if (familiasActivas.size) lista = lista.filter(function (p) { return familiasActivas.has(p.familia); });
         if (subfamiliasActivas.size) lista = lista.filter(function (p) { return subfamiliasActivas.has(p.subfamilia); });
-        if (termino) lista = lista.filter(function (p) { return p.nombre.toLowerCase().includes(termino); });
+        if (termino) lista = lista.filter(function (p) { return coincideBusqueda_(p, termino); });
+        if (soloOfertasActivo_) lista = lista.filter(tieneOfertaOPromocion_);
         return lista;
     }
 
@@ -1264,6 +1347,67 @@ window.copiarReferencia_ = function (ref, boton) {
         repintarUltimosVistos_();
     }
 
+    // Resuelve si un producto está destacado y vigente AHORA MISMO,
+    // independientemente de cualquier filtro — usado tanto por el
+    // bloque de Destacados como por CUALQUIER tarjeta del grid general
+    // (a petición de Eloy: "esos detalles deben aparecer también en el
+    // grid de productos generales", no solo dentro del propio bloque).
+    function destacadoVigentePara_(ref) {
+        if (!destacadosRaw_ || !destacadosRaw_.activo || !fechaVigente_(destacadosRaw_.fechaFin)) return null;
+        const d = (destacadosRaw_.productos || []).find(function (x) {
+            return String(x.referencia) === String(ref) && x.activo && fechaVigente_(x.fechaFin);
+        });
+        return d || null;
+    }
+
+    function etiquetaDestacadoHtml_(tipo) {
+        const mapa = {
+            oferta: ['Oferta', 'destacado-chip--oferta'],
+            oportunidad: ['Oportunidad', 'destacado-chip--oportunidad'],
+            liquidacion: ['Liquidación', 'destacado-chip--liquidacion'],
+        };
+        const entrada = mapa[tipo];
+        return entrada ? '<span class="destacado-chip ' + entrada[1] + '">' + entrada[0] + '</span>' : '';
+    }
+
+    // Mismo criterio que calcularPrecioDestacado_ en index.html, pero
+    // resuelto directamente sobre el precio AL POR MAYOR (aquí no hay
+    // perfil público/profesional distinto: el área de clientes siempre
+    // parte del precio de mayor) — precioAlternativo se define contra
+    // el precio público (precio_con), así que la fracción de descuento
+    // que representa se deriva de ahí y LUEGO se aplica también al
+    // mayorista, igual que "promoMayor" en la web pública.
+    function calcularPrecioMayorDestacado_(p, d) {
+        const vacio = { originalMayor: null, promoMayor: null, promoMayorSin: null, pct: null };
+        const originalMayor = numeroDesdePrecio_(p.precio_mayor_con);
+        if (originalMayor === null) return vacio;
+
+        let fraccionDescuento = null;
+        if (d.precioAlternativo !== null && d.precioAlternativo !== undefined && d.precioAlternativo !== '') {
+            const original = numeroDesdePrecio_(p.precio_con);
+            const alt = parseFloat(d.precioAlternativo);
+            if (original !== null && isFinite(alt) && alt >= 0 && alt < original) fraccionDescuento = 1 - (alt / original);
+        } else if (d.descuentoPorcentaje !== null && d.descuentoPorcentaje !== undefined && d.descuentoPorcentaje !== '') {
+            const pct = parseFloat(d.descuentoPorcentaje);
+            if (isFinite(pct) && pct > 0 && pct <= 100) fraccionDescuento = pct / 100;
+        }
+        if (fraccionDescuento === null) return vacio;
+
+        const promoMayor = originalMayor * (1 - fraccionDescuento);
+        const sinBase = numeroDesdePrecio_(p.precio_mayor_sin);
+        const promoMayorSin = sinBase !== null ? sinBase * (1 - fraccionDescuento) : null;
+        return { originalMayor: originalMayor, promoMayor: promoMayor, promoMayorSin: promoMayorSin, pct: Math.round(fraccionDescuento * 100) };
+    }
+
+    // "¿Tiene oferta o promoción?" — oferta genérica del producto O
+    // destacado vigente con descuento real (usado por el filtro "Solo
+    // ofertas/promociones").
+    function tieneOfertaOPromocion_(p) {
+        if (p.oferta) return true;
+        const d = destacadoVigentePara_(p.ref);
+        return !!(d && calcularPrecioMayorDestacado_(p, d).promoMayor !== null);
+    }
+
     // ── Destacados y ofertas ──────────────────────────────────────────
     function repintarDestacados_() {
         if (!destacadosRaw_ || !destacadosRaw_.activo || !fechaVigente_(destacadosRaw_.fechaFin)) {
@@ -1348,7 +1492,7 @@ window.copiarReferencia_ = function (ref, boton) {
         function listaFiltrada_() {
             let lista = listaCompleta;
             if (familiasSeleccion.size) lista = lista.filter(function (p) { return familiasSeleccion.has(p.familia); });
-            if (terminoActual) lista = lista.filter(function (p) { return p.nombre.toLowerCase().includes(terminoActual); });
+            if (terminoActual) lista = lista.filter(function (p) { return coincideBusqueda_(p, terminoActual); });
             lista = lista.slice();
             if (ordenActual === 'precio_asc') lista.sort(function (a, b) { return precioOrdenable_(a) - precioOrdenable_(b); });
             else if (ordenActual === 'precio_desc') lista.sort(function (a, b) { return precioOrdenable_(b) - precioOrdenable_(a); });
