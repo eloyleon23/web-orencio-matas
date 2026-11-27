@@ -34,7 +34,7 @@
 
             <div id="tablaClientes" class="tabla-scroll" style="display:none;">
             <table>
-                <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th>Estado</th><th></th></tr></thead>
+                <thead><tr><th>Nombre</th><th>Email</th><th>Empresa</th><th>CRM</th><th>Último acceso</th><th>Estado</th><th></th></tr></thead>
                 <tbody id="cuerpoTabla"></tbody>
             </table>
             </div>
@@ -68,7 +68,7 @@
         // "clientes" tiene DOS referencias a "profiles" (id y
         // comercial_id) — hay que decirle a PostgREST cuál de las dos
         // seguir aquí (la del propio cliente, no la del comercial).
-        .select('id, crm_id, empresa, activo, profiles!clientes_id_fkey(nombre, apellidos, email)')
+        .select('id, crm_id, empresa, activo, ultimo_acceso, profiles!clientes_id_fkey(nombre, apellidos, email)')
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -86,6 +86,12 @@
     ayuda.textContent = clientes.length + ' cliente(s).';
     const cuerpo = document.getElementById('cuerpoTabla');
 
+    function formatearUltimoAcceso_(valor) {
+        if (!valor) return '<span style="color:var(--muted);">Nunca</span>';
+        const fecha = new Date(valor);
+        return fecha.toLocaleDateString('es-ES') + ' ' + fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    }
+
     clientes.forEach(function (c) {
         const fila = document.createElement('tr');
         const nombre = [c.profiles.nombre, c.profiles.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
@@ -95,6 +101,7 @@
             '<td>' + c.profiles.email + '</td>' +
             '<td>' + (c.empresa || '—') + '</td>' +
             '<td>' + (c.crm_id || '—') + '</td>' +
+            '<td>' + formatearUltimoAcceso_(c.ultimo_acceso) + '</td>' +
             '<td><span style="font-size:0.75rem; font-weight:700; padding:3px 9px; border-radius:999px; ' +
                 (activo ? 'color:var(--ok); background:var(--ok-soft);' : 'color:var(--danger); background:var(--danger-soft);') +
                 '">' + (activo ? 'Activo' : 'Desactivado') + '</span></td>' +
@@ -139,7 +146,7 @@
             }
 
             const fila = botonEstado.closest('tr');
-            const badge = fila.querySelector('td:nth-child(5) span');
+            const badge = fila.querySelector('td:nth-child(6) span');
             const nuevoActivo = !activoActual;
             badge.textContent = nuevoActivo ? 'Activo' : 'Desactivado';
             badge.style.color = nuevoActivo ? 'var(--ok)' : 'var(--danger)';

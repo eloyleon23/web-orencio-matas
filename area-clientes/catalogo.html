@@ -782,6 +782,13 @@ window.copiarReferencia_ = function (ref, boton) {
         document.getElementById('saludo').textContent = 'Hola, ' + perfil.nombre;
     }
 
+    // Registro de "último acceso" para que comercial/administrador lo
+    // vean en el panel de gestión — nunca durante una simulación (eso
+    // no es una visita real del cliente). No bloquea nada si falla.
+    if (!enSimulacion) {
+        try { await cliente.rpc('registrar_ultimo_acceso_'); } catch (e) { /* no crítico */ }
+    }
+
     const { data: datosCliente, error: errorCliente } = await cliente
         .from('clientes')
         .select('familias_visibles, areas_visibles, productos_visibles, descuento_pct, activo')
