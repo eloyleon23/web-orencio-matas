@@ -174,25 +174,41 @@ create policy "administrador rectifica lineas en preparacion"
 -- propuestas. Se limita a los clientes que tengan al menos un pedido
 -- no-borrador (igual criterio que su política de propuestas_pedido),
 -- no a todos los clientes sin más.
+-- OJO: la primera versión de estas dos políticas comprobaba "id in
+-- (select cliente_id from propuestas_pedido where ...)" directamente
+-- — eso causaba una recursión infinita de RLS con la política de
+-- comercial sobre propuestas_pedido (que a su vez lee "clientes").
+-- Arreglado aquí mismo con una función security definer (misma receta
+-- que ya usa rol_actual_() desde la Fase 2 para este mismo problema) —
+-- si ya habías ejecutado la versión anterior de este archivo, basta
+-- con ejecutar de nuevo este bloque (o el archivo
+-- area_clientes_schema_fase5c_fix_recursion.sql, que es justo esto).
+create or replace function public.cliente_tiene_pedido_activo_(id_cliente uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.propuestas_pedido
+    where cliente_id = id_cliente and estado <> 'borrador'
+  );
+$$;
+
 drop policy if exists "almacen ve clientes con pedidos activos" on public.clientes;
 create policy "almacen ve clientes con pedidos activos"
   on public.clientes
   for select
   to authenticated
-  using (
-    public.rol_actual_() = 'almacen'
-    and id in (select cliente_id from public.propuestas_pedido where estado <> 'borrador')
-  );
+  using (public.rol_actual_() = 'almacen' and public.cliente_tiene_pedido_activo_(id));
 
 drop policy if exists "almacen ve el perfil de clientes con pedidos activos" on public.profiles;
 create policy "almacen ve el perfil de clientes con pedidos activos"
   on public.profiles
   for select
   to authenticated
-  using (
-    public.rol_actual_() = 'almacen'
-    and id in (select cliente_id from public.propuestas_pedido where estado <> 'borrador')
-  );
+  using (public.rol_actual_() = 'almacen' and public.cliente_tiene_pedido_activo_(id));
 
 -- Nota sobre cómo dar de alta el primer usuario "almacen" (no hay
 -- formulario propio todavía, igual que ya pasaba con comercial/
