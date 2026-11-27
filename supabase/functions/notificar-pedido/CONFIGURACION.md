@@ -28,6 +28,7 @@ cambiarlos no afecta a nada más del proyecto.
 | `PEDIDOS_EMAIL_DESTINO` | No* | A qué dirección(es) llega el aviso **interno** de cada pedido (gestión/comercial). Admite varias separadas por comas. **Mientras se están haciendo pruebas, aquí va el correo de quien esté evaluando** — el día que haya un buzón dedicado a pedidos, basta con cambiar este único valor. Si se deja vacío, simplemente no se manda el aviso interno (no da error). |
 | `PEDIDOS_ACTIVAR_CLIENTES_REALES` | No | La copia de confirmación "para el cliente" **siempre se envía** (no es opcional) — este interruptor decide solo A QUIÉN. `true` = al email real del cliente (su perfil). Cualquier otro valor, o no definirlo (el estado por defecto, pensado para la fase de pruebas), = se manda en su lugar a `PEDIDOS_EMAIL_PRUEBA_CLIENTE`, simulando exactamente lo mismo que vería un cliente real sin arriesgarse a avisar a uno de verdad. |
 | `PEDIDOS_EMAIL_PRUEBA_CLIENTE` | No* | Dirección de pruebas que recibe la copia "para el cliente" mientras `PEDIDOS_ACTIVAR_CLIENTES_REALES` no esté en `true`. Si se deja vacío y el interruptor sigue en `false`, esa copia simplemente no se envía (no da error, solo queda sin destino). |
+| `AREA_CLIENTES_URL` | No | Raíz pública del Área de Clientes (sin barra final) — p. ej. `https://eloyleon23.github.io/web-orencio-matas-preview/area-clientes` mientras se prueba contra el preview, o `https://clientes.orenciomatas.es` el día que tenga subdominio propio. Se usa para el botón "Ir al pedido"/"Ver cliente" del correo. Sin este secreto, el correo sale sin botón (nunca es motivo para no enviarlo). |
 
 \* Técnicamente opcional (la función no falla si no está), pero sin él
 no llega ningún aviso a nadie del lado interno — en la práctica, para
@@ -41,6 +42,7 @@ PEDIDOS_EMAIL_REMITENTE=correo@orenciomatas.es
 PEDIDOS_EMAIL_DESTINO=eloyleon23@gmail.com
 PEDIDOS_ACTIVAR_CLIENTES_REALES=false
 PEDIDOS_EMAIL_PRUEBA_CLIENTE=eloyleon23@gmail.com
+AREA_CLIENTES_URL=https://eloyleon23.github.io/web-orencio-matas-preview/area-clientes
 ```
 (con esto, TODO lo que generaría un pedido — tanto el aviso interno
 como la copia "simulando ser el cliente" — llega a tu correo, sin

@@ -42,6 +42,15 @@
 //                           'true'. Si no hay ninguna definida y el
 //                           interruptor sigue en 'false', esa copia
 //                           simplemente no se envía (nada que avisar).
+//   AREA_CLIENTES_URL       Raíz pública del Área de Clientes (sin
+//                           barra final), p. ej.
+//                           "https://eloyleon23.github.io/web-orencio-matas-preview/area-clientes"
+//                           mientras se prueba, o
+//                           "https://clientes.orenciomatas.es" el día
+//                           que tenga subdominio propio. Se usa para
+//                           el botón "Ir al pedido" del correo — sin
+//                           este secreto, el correo sale sin botón
+//                           (nunca falla el envío por su ausencia).
 //
 // Un fallo al enviar el correo NUNCA deshace ni bloquea el envío del
 // pedido (que ya ha quedado guardado en BBDD antes de llamar aquí) —
@@ -118,10 +127,47 @@ function textoCantidadLinea_(l: Record<string, unknown>): string {
   return l.cantidad + ' unidad' + (Number(l.cantidad) === 1 ? '' : 'es');
 }
 
+// Logotipo real de la empresa, ya público en producción (lo usa el
+// propio sitio público — ver "logo" en el JSON-LD de index.html) — por
+// eso no hace falta ningún secreto nuevo para esto, a diferencia de la
+// URL del Área de Clientes (que todavía no tiene dominio fijo).
+const LOGO_URL_ = 'https://orenciomatas.es/assets/logos/logo-orencio.png';
+
+// Plantilla común (cabecera con logo, tarjeta de contenido, botón de
+// acción y pie) — envuelve el contenido concreto de cada correo
+// (construirHtmlPedido_) para que todos los correos de pedidos se vean
+// igual de cuidados, en vez de HTML suelto sin cabecera ni marca.
+function construirEmailProfesional_(contenidoHtml: string, boton: { texto: string; url: string } | null): string {
+  const botonHtml = boton
+    ? '<table role="presentation" cellpadding="0" cellspacing="0" style="margin:22px 0 4px;"><tr><td style="border-radius:8px; background:#1976D2;">' +
+      '<a href="' + escapeHtml_(boton.url) + '" target="_blank" rel="noopener" ' +
+      'style="display:inline-block; padding:12px 26px; font-family:Arial,sans-serif; font-size:15px; font-weight:bold; color:#ffffff; text-decoration:none; border-radius:8px;">' +
+      escapeHtml_(boton.texto) + ' →</a></td></tr></table>'
+    : '';
+
+  return (
+    '<div style="background:#f1f5f9; padding:28px 12px; font-family:Arial,sans-serif;">' +
+    '<div style="max-width:560px; margin:0 auto; background:#ffffff; border-radius:12px; overflow:hidden; box-shadow:0 2px 10px rgba(15,23,42,0.08);">' +
+    '<div style="background:#0f172a; padding:22px 28px; text-align:center;">' +
+    '<img src="' + LOGO_URL_ + '" alt="Orencio Matas y Hnos" height="42" style="height:42px; width:auto;">' +
+    '</div>' +
+    '<div style="padding:28px 28px 8px; color:#1e293b; font-size:15px; line-height:1.5;">' +
+    contenidoHtml +
+    botonHtml +
+    '</div>' +
+    '<div style="padding:18px 28px; border-top:1px solid #e2e8f0; color:#94a3b8; font-size:12px; text-align:center;">' +
+    'Orencio Matas y Hnos, S.L. — Área de Clientes' +
+    '</div>' +
+    '</div>' +
+    '</div>'
+  );
+}
+
 function construirHtmlPedido_(
   nombreCliente: string,
   emailCliente: string,
   empresa: string | null,
+  notasGenerales: string | null,
   lineas: Record<string, unknown>[],
   total: number,
   paraCliente: boolean
@@ -132,10 +178,12 @@ function construirHtmlPedido_(
       const subtotal = precioConocido ? Number(l.precio_unitario) * Number(l.cantidad) : null;
       return (
         '<tr>' +
-        '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0;">' + escapeHtml_(l.nombre) + '<br>' +
-        '<span style="color:#64748b; font-size:0.85em;">Ref. ' + escapeHtml_(l.ref) + '</span></td>' +
-        '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0;">' + escapeHtml_(textoCantidadLinea_(l)) + '</td>' +
-        '<td style="padding:6px 10px; border-bottom:1px solid #e2e8f0; text-align:right;">' +
+        '<td style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">' + escapeHtml_(l.nombre) + '<br>' +
+        '<span style="color:#64748b; font-size:0.85em;">Ref. ' + escapeHtml_(l.ref) + '</span>' +
+        (l.notas ? '<br><span style="color:#1976D2; font-size:0.85em;">↳ ' + escapeHtml_(l.notas) + '</span>' : '') +
+        '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid #e2e8f0;">' + escapeHtml_(textoCantidadLinea_(l)) + '</td>' +
+        '<td style="padding:8px 10px; border-bottom:1px solid #e2e8f0; text-align:right;">' +
         (subtotal !== null ? formatearEuros_(subtotal) : '—') +
         '</td></tr>'
       );
@@ -143,25 +191,30 @@ function construirHtmlPedido_(
     .join('');
 
   const cabecera = paraCliente
-    ? '<p>Hemos recibido tu pedido. Tu comercial se pondrá en contacto para confirmarlo.</p>'
-    : '<p>Nuevo pedido recibido en el Área de Clientes.</p>' +
-      '<p><strong>Cliente:</strong> ' + escapeHtml_(nombreCliente) + ' (' + escapeHtml_(emailCliente) + ')' +
+    ? '<h2 style="margin:0 0 8px; font-size:19px;">¡Hemos recibido tu pedido!</h2>' +
+      '<p style="margin:0 0 4px; color:#475569;">Tu comercial se pondrá en contacto para confirmarlo.</p>'
+    : '<h2 style="margin:0 0 8px; font-size:19px;">Nuevo pedido recibido</h2>' +
+      '<p style="margin:0 0 4px; color:#475569;"><strong>Cliente:</strong> ' + escapeHtml_(nombreCliente) + ' (' + escapeHtml_(emailCliente) + ')' +
       (empresa ? ' — ' + escapeHtml_(empresa) : '') + '</p>';
 
+  const notasHtml = notasGenerales
+    ? '<div style="margin-top:14px; background:#eff6ff; border-radius:8px; padding:10px 14px; font-size:0.92em;">' +
+      '<strong>Instrucciones generales:</strong> ' + escapeHtml_(notasGenerales) + '</div>'
+    : '';
+
   return (
-    '<div style="font-family:Arial,sans-serif; color:#1e293b;">' +
     cabecera +
-    '<table style="border-collapse:collapse; width:100%; margin-top:10px;">' +
+    notasHtml +
+    '<table style="border-collapse:collapse; width:100%; margin-top:16px;">' +
     '<thead><tr style="background:#f8fafc;">' +
-    '<th style="padding:6px 10px; text-align:left;">Producto</th>' +
-    '<th style="padding:6px 10px; text-align:left;">Cantidad</th>' +
-    '<th style="padding:6px 10px; text-align:right;">Importe</th>' +
+    '<th style="padding:8px 10px; text-align:left; font-size:0.85em; color:#64748b;">Producto</th>' +
+    '<th style="padding:8px 10px; text-align:left; font-size:0.85em; color:#64748b;">Cantidad</th>' +
+    '<th style="padding:8px 10px; text-align:right; font-size:0.85em; color:#64748b;">Importe</th>' +
     '</tr></thead><tbody>' + filas + '</tbody>' +
-    '<tfoot><tr><td colspan="2" style="padding:8px 10px; font-weight:bold;">Total (con IVA)</td>' +
-    '<td style="padding:8px 10px; text-align:right; font-weight:bold;">' + formatearEuros_(total) + '</td></tr></tfoot>' +
+    '<tfoot><tr><td colspan="2" style="padding:10px; font-weight:bold;">Total (con IVA)</td>' +
+    '<td style="padding:10px; text-align:right; font-weight:bold;">' + formatearEuros_(total) + '</td></tr></tfoot>' +
     '</table>' +
-    '<p style="color:#64748b; font-size:0.85em; margin-top:14px;">Los precios son orientativos — el pedido definitivo lo confirma tu comercial.</p>' +
-    '</div>'
+    '<p style="color:#94a3b8; font-size:0.82em; margin-top:14px;">Los precios son orientativos — el pedido definitivo lo confirma tu comercial.</p>'
   );
 }
 
@@ -176,6 +229,7 @@ Deno.serve(async (req) => {
   const EMAIL_DESTINO = Deno.env.get('PEDIDOS_EMAIL_DESTINO');
   const ACTIVAR_CLIENTES_REALES = (Deno.env.get('PEDIDOS_ACTIVAR_CLIENTES_REALES') || '').toLowerCase() === 'true';
   const EMAIL_PRUEBA_CLIENTE = Deno.env.get('PEDIDOS_EMAIL_PRUEBA_CLIENTE');
+  const AREA_CLIENTES_URL = (Deno.env.get('AREA_CLIENTES_URL') || '').replace(/\/+$/, '');
 
   if (!BREVO_API_KEY || !EMAIL_REMITENTE) {
     return responder({ error: 'Notificaciones de pedido no configuradas (faltan secretos BREVO_API_KEY/PEDIDOS_EMAIL_REMITENTE en esta función)' }, 500);
@@ -202,7 +256,7 @@ Deno.serve(async (req) => {
   // borrador ajeno ni uno que todavía no se ha enviado de verdad.
   const { data: propuesta, error: errorPropuesta } = await admin
     .from('propuestas_pedido')
-    .select('id, cliente_id, estado, clientes(empresa, profiles!clientes_id_fkey(nombre, apellidos, email))')
+    .select('id, cliente_id, estado, notas, clientes(empresa, profiles!clientes_id_fkey(nombre, apellidos, email))')
     .eq('id', propuestaId)
     .eq('cliente_id', clienteId)
     .eq('estado', 'recibida')
@@ -214,7 +268,7 @@ Deno.serve(async (req) => {
 
   const { data: lineas, error: errorLineas } = await admin
     .from('propuesta_pedido_lineas')
-    .select('ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo')
+    .select('ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas')
     .eq('propuesta_id', propuestaId);
   if (errorLineas) return responder({ error: errorLineas.message }, 500);
 
@@ -235,9 +289,23 @@ Deno.serve(async (req) => {
   const remitente = { name: 'Orencio Matas y Hnos — Área de Clientes', email: EMAIL_REMITENTE };
   const resultados: Record<string, unknown> = {};
 
+  const notasGenerales = (propuesta as any).notas || null;
+
+  // Sin AREA_CLIENTES_URL configurado, los correos simplemente salen
+  // sin botón (nunca es motivo para no enviar el aviso). El botón
+  // interno lleva, de momento, a la ficha del cliente en el panel de
+  // gestión — no hay todavía una pantalla de "detalle del pedido" para
+  // comercial/administrador (eso es Fase 5); en cuanto exista, este
+  // enlace pasa a apuntar directamente al pedido.
+  const botonInterno = AREA_CLIENTES_URL ? { texto: 'Ver cliente', url: AREA_CLIENTES_URL + '/gestion/clientes.html' } : null;
+  const botonCliente = AREA_CLIENTES_URL ? { texto: 'Ir a mi pedido', url: AREA_CLIENTES_URL + '/mis-pedidos.html' } : null;
+
   if (EMAIL_DESTINO) {
     const asuntoInterno = 'Nuevo pedido — ' + nombreCliente + (empresaAnidada ? ' (' + empresaAnidada + ')' : '');
-    const htmlInterno = construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, lineas || [], total, false);
+    const htmlInterno = construirEmailProfesional_(
+      construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, notasGenerales, lineas || [], total, false),
+      botonInterno
+    );
     resultados.interno = await enviarCorreoBrevo_(BREVO_API_KEY, remitente, listaDestinatarios_(EMAIL_DESTINO), asuntoInterno, htmlInterno);
   } else {
     resultados.interno = { ok: false, detalle: 'PEDIDOS_EMAIL_DESTINO no configurado' };
@@ -249,7 +317,10 @@ Deno.serve(async (req) => {
   // simula exactamente lo mismo sin arriesgarse a avisar a uno real.
   const destinoCliente = (ACTIVAR_CLIENTES_REALES ? emailCliente : (EMAIL_PRUEBA_CLIENTE || '')).trim();
   if (destinoCliente) {
-    const htmlCliente = construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, lineas || [], total, true);
+    const htmlCliente = construirEmailProfesional_(
+      construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, notasGenerales, lineas || [], total, true),
+      botonCliente
+    );
     resultados.cliente = await enviarCorreoBrevo_(
       BREVO_API_KEY, remitente, [{ email: destinoCliente, name: ACTIVAR_CLIENTES_REALES ? nombreCliente : undefined }],
       'Hemos recibido tu pedido — Orencio Matas y Hnos', htmlCliente
