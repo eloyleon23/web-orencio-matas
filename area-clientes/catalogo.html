@@ -290,6 +290,23 @@
         border-radius: 50%; animation: girar 0.7s linear infinite;
     }
 
+    /* Botón flotante "subir arriba" — mismo estilo que #btn-subir-arriba
+       en la web pública (index.html). */
+    #btnSubirArriba {
+        display: none; position: fixed; right: 22px; bottom: 22px; z-index: 40;
+        width: 46px; height: 46px; border-radius: 50%; border: none;
+        background: var(--dark); color: #fff; font-size: 1.1rem;
+        align-items: center; justify-content: center; cursor: pointer;
+        box-shadow: 0 4px 14px rgba(0,0,0,.25);
+        opacity: 0; transform: translateY(8px);
+        transition: opacity .2s, transform .2s, background .15s;
+    }
+    #btnSubirArriba.visible { display: flex; opacity: 1; transform: translateY(0); }
+    #btnSubirArriba:hover { background: var(--blue); }
+    @media (max-width: 640px) {
+        #btnSubirArriba { right: 14px; bottom: 14px; width: 36px; height: 36px; font-size: 0.9rem; }
+    }
+
     @media (max-width: 600px) {
         .catalogo-cuerpo { padding-left: 16px; padding-right: 16px; }
         .rejilla-productos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
@@ -341,6 +358,12 @@
         <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
     </div>
 </nav>
+
+<!-- Botón flotante "subir arriba" — mismo estilo que la web pública
+     (ver #btn-subir-arriba en index.html). -->
+<button id="btnSubirArriba" title="Subir arriba" aria-label="Subir arriba">
+    <i class="fa-solid fa-arrow-up"></i>
+</button>
 
 <div class="catalogo-cuerpo">
     <div class="spinner-pagina" id="cargando">
@@ -609,6 +632,22 @@ window.copiarReferencia_ = function (ref, boton) {
         document.body.removeChild(areaTemporal);
     }
 };
+
+// Botón flotante "subir arriba" — mismo umbral y comportamiento que la
+// web pública (ver #btn-subir-arriba en index.html): aparece a partir
+// de 400px de scroll, throttle con requestAnimationFrame.
+(function () {
+    const btn = document.getElementById('btnSubirArriba');
+    let ticking = false;
+    function actualizar() {
+        btn.classList.toggle('visible', window.scrollY > 400);
+        ticking = false;
+    }
+    window.addEventListener('scroll', function () {
+        if (!ticking) { requestAnimationFrame(actualizar); ticking = true; }
+    }, { passive: true });
+    btn.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+})();
 
 (async function () {
     // ?simulacion=1 — abierto desde simular.html: usamos la sesión
@@ -1372,7 +1411,20 @@ window.copiarReferencia_ = function (ref, boton) {
         }
     }
 
+    // Bug real reportado (27/11/2026): "al hacer scroll en algunos
+    // momentos da trompicones". La única tarea que se repite sola en
+    // esta página es esta rotación (cada 6s) — sustituye una tarjeta
+    // entera del DOM (con sus propios listeners), lo que fuerza un
+    // reflow de toda la fila; si eso coincide justo con el momento en
+    // que el usuario está desplazándose, se nota como un tirón. Se
+    // evita saltándose el turno mientras hay scroll activo (y hasta
+    // 400ms después de que pare) — no hace falta más: el siguiente
+    // intervalo ya lo retoma.
+    let ultimoScrollTs_ = 0;
+    window.addEventListener('scroll', function () { ultimoScrollTs_ = Date.now(); }, { passive: true });
+
     function rotarUnaNovedad_(visibles) {
+        if (Date.now() - ultimoScrollTs_ < 400) return;
         const fila = document.querySelector('#bloqueNovedades .modulo-descubrimiento__fila');
         if (!fila) { if (novedadesTimer_) clearInterval(novedadesTimer_); return; }
         const refsVisibles = new Set(visibles.map(function (p) { return p.ref; }));
