@@ -1,0 +1,109 @@
+name: Backup de Supabase
+
+# Copia de seguridad diaria de la base de datos de Supabase (el mismo
+# proyecto que usa el Área de Clientes — ver supabase/area_clientes_schema*.sql
+# y supabase/BACKUPS.md). El plan de Supabase en uso es "Free", que NO
+# incluye backups automáticos ni restauración point-in-time — así que
+# esta es la única copia de seguridad que existe de los datos de
+# clientes, perfiles y solicitudes de acceso. Ejecuta pg_dump contra la
+# base de datos, cifra el volcado (nunca se sube en claro, son datos
+# personales de clientes) y lo guarda como artefacto de esta ejecución.
+#
+# Los workflows con "schedule" SOLO se disparan desde la rama por
+# defecto del repositorio (main) — por eso este archivo vive aquí y no
+# en feature/area-clientes, aunque los datos que protege sean los del
+# Área de Clientes.
+#
+# Requiere dos secretos del repositorio (Settings → Secrets and
+# variables → Actions), ver supabase/BACKUPS.md para cómo obtenerlos:
+#   SUPABASE_DB_URL        Cadena de conexión Postgres (conexión directa,
+#                           puerto 5432 — no el "connection pooler").
+#   BACKUP_GPG_PASSPHRASE   Frase de cifrado elegida por Eloy/el equipo,
+#                           guardada SOLO como secreto de GitHub.
+
+on:
+  schedule:
+    # 03:21 UTC cada día — fuera de horas punta de Supabase/GitHub y
+    # evitando la hora/media en punto, donde se acumulan más jobs
+    # programados de otros repositorios.
+    - cron: '21 3 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Comprobar que los secretos necesarios existen
+        run: |
+          if [ -z "${{ secrets.SUPABASE_DB_URL }}" ]; then
+            echo "::error::Falta el secreto SUPABASE_DB_URL — ver supabase/BACKUPS.md"
+            exit 1
+          fi
+          if [ -z "${{ secrets.BACKUP_GPG_PASSPHRASE }}" ]; then
+            echo "::error::Falta el secreto BACKUP_GPG_PASSPHRASE — ver supabase/BACKUPS.md"
+            exit 1
+          fi
+
+      # ubuntu-latest trae una versión de postgresql-client que puede
+      # no entender el formato del Postgres de Supabase (más reciente)
+      # — se añade el repositorio oficial de PostgreSQL para instalar
+      # una versión moderna y evitar errores de "server version
+      # mismatch" al hacer pg_dump.
+      - name: Instalar cliente de PostgreSQL (versión reciente)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl ca-certificates gnupg
+          sudo install -d /usr/share/postgresql-common/pgdg
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            | sudo gpg --dearmor -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client-16 gnupg
+
+      - name: Volcar la base de datos (pg_dump)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          # Esquemas "public" (todas las tablas de la app: clientes,
+          # profiles, solicitudes_acceso, simulaciones_acceso, analítica
+          # del buscador, Centro de Soluciones…) y "auth" (usuarios de
+          # Supabase Auth — sin esto, restaurar "clientes"/"profiles" en
+          # un proyecto nuevo dejaría filas huérfanas, porque
+          # profiles.id referencia auth.users). Se excluyen a propósito
+          # los esquemas internos de Supabase (storage, realtime,
+          # extensions…), que no son responsabilidad nuestra y pueden
+          # romper el volcado si se incluyen.
+          pg_dump "$SUPABASE_DB_URL" \
+            --format=custom \
+            --schema=public \
+            --schema=auth \
+            --no-owner \
+            --no-privileges \
+            --file=backup_supabase.dump
+
+      - name: Cifrar el volcado (contiene datos personales de clientes)
+        env:
+          BACKUP_GPG_PASSPHRASE: ${{ secrets.BACKUP_GPG_PASSPHRASE }}
+        run: |
+          set -euo pipefail
+          gpg --batch --yes --symmetric --cipher-algo AES256 \
+            --passphrase "$BACKUP_GPG_PASSPHRASE" \
+            --output "backup-supabase-$(date -u +'%Y-%m-%d').dump.gpg" \
+            backup_supabase.dump
+          rm -f backup_supabase.dump
+
+      - name: Subir el backup cifrado como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-supabase-${{ github.run_id }}
+          path: backup-supabase-*.dump.gpg
+          # 90 días es el máximo que permite GitHub para artefactos de
+          # Actions — ver supabase/BACKUPS.md si hace falta retención
+          # más larga (habría que mover el backup a un almacenamiento
+          # propio en vez de/además de este artefacto).
+          retention-days: 90
+          if-no-files-found: error
