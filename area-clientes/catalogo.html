@@ -603,9 +603,20 @@ function numeroDesdePrecio_(texto) {
 
 function productoVisibleParaCliente_(p, personalizacion) {
     const { familias, areas, productos } = personalizacion;
-    const sinRestriccion = familias.length === 0 && areas.length === 0 && productos.length === 0;
-    if (sinRestriccion) return true;
-    return familias.includes(p.familia) || areas.includes(p.area) || productos.includes(p.ref);
+    // "Referencias concretas" es un añadido que SIEMPRE se ve, por
+    // encima de cualquier restricción de área/familia (bug reportado
+    // por Eloy, 27/11/2026: antes se combinaban las tres listas con OR
+    // puro e independiente, así que con área Y familia rellenas a la
+    // vez, la restricción de área —al ser más amplia— dejaba ver TODA
+    // esa área sin que la familia llegase a acotar nada). Área y
+    // familia ahora se acotan entre sí (intersección), igual que ya
+    // sugería el propio formulario de personalización ("Familias
+    // visibles — se acotan a las áreas de arriba").
+    if (productos.includes(p.ref)) return true;
+    if (!areas.length && !familias.length) return productos.length === 0;
+    if (areas.length && !areas.includes(p.area)) return false;
+    if (familias.length && !familias.includes(p.familia)) return false;
+    return true;
 }
 
 // Vista de detalle — se abre al pulsar cualquier tarjeta. Misma lógica
