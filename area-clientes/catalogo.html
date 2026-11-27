@@ -383,17 +383,42 @@
     }
 
     /* ── Controles de "añadir al pedido" en la tarjeta del grid y en el
-       modal de detalle. ────────────────────────────────────────────── */
-    .anadir-pedido {
-        display: flex; align-items: center; gap: 6px; margin-top: 10px;
+       modal de detalle — mismo criterio que la "lista de la compra" de
+       la web pública (unidades sueltas o por caja/envase, selector
+       SIEMPRE visible aunque el producto no tenga formato de envase
+       informado; ver .lista-compra-modo en buscador.html), con los
+       colores propios del área de clientes (azul, nunca rojo). ──────── */
+    .anadir-pedido { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .anadir-pedido__modo {
+        display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
     }
+    .anadir-pedido__modo-btn {
+        flex: 1; border: none; background: var(--light); color: var(--dark);
+        font-size: 0.7rem; font-weight: 700; padding: 5px 6px; cursor: pointer; white-space: nowrap;
+    }
+    .anadir-pedido__modo-btn:not(:last-child) { border-right: 1px solid var(--border); }
+    .anadir-pedido__modo-btn:hover { background: #e2e8f0; }
+    .anadir-pedido__modo-btn.activo { background: var(--blue); color: #fff; }
+    .anadir-pedido__equivalencia { margin: 0; font-size: 0.68rem; color: var(--muted); text-align: center; }
+    .anadir-pedido__fila { display: flex; align-items: stretch; gap: 6px; }
+    .anadir-pedido__stepper-grupo {
+        display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    }
+    .anadir-pedido__stepper {
+        width: 28px; border: none; background: var(--light); color: var(--dark);
+        font-size: 0.95rem; font-weight: 700; cursor: pointer; padding: 6px 0;
+    }
+    .anadir-pedido__stepper:hover:not(:disabled) { background: #e2e8f0; }
+    .anadir-pedido__stepper:disabled { opacity: 0.4; cursor: not-allowed; }
     .anadir-pedido__cantidad {
-        width: 52px; text-align: center; padding: 6px 4px; font-size: 0.85rem;
+        width: 40px; border: none; border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+        text-align: center; padding: 6px 2px; font-size: 0.85rem; -moz-appearance: textfield;
     }
+    .anadir-pedido__cantidad::-webkit-outer-spin-button,
+    .anadir-pedido__cantidad::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .anadir-pedido__boton {
         flex: 1; background: var(--blue); color: #fff; border: none; border-radius: 8px;
-        font-size: 0.78rem; font-weight: 700; padding: 8px 8px; cursor: pointer;
-        white-space: nowrap;
+        font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
     .anadir-pedido__boton:hover { background: var(--blue-dark); }
     .anadir-pedido__boton.anadir-pedido__boton--ok { background: var(--ok); }
@@ -551,10 +576,7 @@
                 <h2 class="modal-detalle__nombre" id="modalDetalleNombre"></h2>
                 <div class="modal-detalle__meta" id="modalDetalleMeta"></div>
                 <div class="modal-detalle__precio-bloque" id="modalDetallePrecio"></div>
-                <div class="anadir-pedido" id="modalDetalleAnadirPedido" style="display:none; max-width:260px;">
-                    <input type="number" class="anadir-pedido__cantidad" id="modalDetalleCantidad" min="1" step="1" value="1" aria-label="Cantidad">
-                    <button type="button" class="anadir-pedido__boton" id="modalDetalleBotonAnadir">Añadir al pedido</button>
-                </div>
+                <div id="modalDetalleAnadirPedido" style="display:none; max-width:260px;"></div>
             </div>
         </div>
     </div>
@@ -735,25 +757,18 @@ window.abrirDetalleProducto_ = function (p, descuentoPct) {
             (descuentoPct > 0 ? '<div style="font-size:0.78rem; color:var(--muted); text-decoration:line-through; margin-top:4px;">' + p.precio_mayor_con + ' € antes del descuento</div>' : '');
     }
 
-    // Fase 4: "añadir al pedido" — nunca en simulación.
+    // Fase 4: "añadir al pedido" — nunca en simulación. Se reconstruye
+    // entero en cada apertura del modal (como la tarjeta del grid) en
+    // vez de reutilizar un control fijo, para no arrastrar el modo
+    // sueltas/caja o la cantidad del producto anterior.
     const bloqueAnadirModal = document.getElementById('modalDetalleAnadirPedido');
-    if (window.enSimulacionAreaClientes_) {
-        bloqueAnadirModal.style.display = 'none';
+    bloqueAnadirModal.innerHTML = '';
+    const controlAnadirModal = window.crearControlAnadirPedido_(p, precioFinalParaPedido);
+    if (controlAnadirModal) {
+        bloqueAnadirModal.appendChild(controlAnadirModal);
+        bloqueAnadirModal.style.display = 'block';
     } else {
-        bloqueAnadirModal.style.display = 'flex';
-        const inputCantidadModal = document.getElementById('modalDetalleCantidad');
-        inputCantidadModal.value = '1';
-        const botonAnadirModal = document.getElementById('modalDetalleBotonAnadir');
-        botonAnadirModal.disabled = false;
-        botonAnadirModal.textContent = 'Añadir al pedido';
-        botonAnadirModal.classList.remove('anadir-pedido__boton--ok');
-        botonAnadirModal.onclick = function () {
-            window.anadirProductoAPedido_(
-                { ref: p.ref, nombre: p.nombre, precio_unitario: precioFinalParaPedido },
-                Math.max(1, parseInt(inputCantidadModal.value, 10) || 1),
-                botonAnadirModal
-            );
-        };
+        bloqueAnadirModal.style.display = 'none';
     }
 
     document.getElementById('modalDetalleOverlay').classList.add('activo');
@@ -804,37 +819,40 @@ window.copiarReferencia_ = function (ref, boton) {
 // ── Fase 4: "añadir al pedido" — usado por la tarjeta del grid y por
 // el modal de detalle. window.propuestaBorradorId_ se rellena al
 // cargar la página (ver más abajo, fuera de simulación); si por lo que
-// sea todavía no está listo (carga lenta), se crea aquí mismo.
-window.anadirProductoAPedido_ = async function (producto, cantidad, botonOrigen) {
+// sea todavía no está listo (carga lenta), se crea aquí mismo. El
+// botón es solo icono (petición de Eloy, 27/11/2026: "lo ideal sería
+// un icono de carrito de la compra") — el feedback de "añadido"/error
+// se da cambiando el propio icono un instante, no el texto.
+window.anadirProductoAPedido_ = async function (producto, cantidad, modoCompra, botonOrigen) {
     if (window.enSimulacionAreaClientes_) return;
-    if (botonOrigen) { botonOrigen.disabled = true; botonOrigen.textContent = 'Añadiendo…'; }
+    const icono = botonOrigen ? botonOrigen.querySelector('i') : null;
+    if (botonOrigen) { botonOrigen.disabled = true; }
     try {
         if (!window.propuestaBorradorId_) {
             const { data: borrador, error } = await window.obtenerOCrearBorradorPropuesta_();
             if (error || !borrador) {
-                if (botonOrigen) { botonOrigen.disabled = false; botonOrigen.textContent = 'Error — reinténtalo'; }
+                if (icono) icono.className = 'fa-solid fa-triangle-exclamation';
+                if (botonOrigen) botonOrigen.disabled = false;
                 return;
             }
             window.propuestaBorradorId_ = borrador.id;
         }
-        const { error: errorLinea } = await window.incrementarCantidadLinea_(window.propuestaBorradorId_, producto, cantidad);
+        const { error: errorLinea } = await window.incrementarCantidadLinea_(window.propuestaBorradorId_, producto, cantidad, modoCompra);
+        if (icono) {
+            icono.className = errorLinea ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-check';
+        }
         if (botonOrigen) {
-            if (errorLinea) {
+            botonOrigen.classList.toggle('anadir-pedido__boton--ok', !errorLinea);
+            setTimeout(function () {
                 botonOrigen.disabled = false;
-                botonOrigen.textContent = 'Error — reinténtalo';
-            } else {
-                botonOrigen.classList.add('anadir-pedido__boton--ok');
-                botonOrigen.textContent = '✓ Añadido';
-                setTimeout(function () {
-                    botonOrigen.disabled = false;
-                    botonOrigen.textContent = 'Añadir al pedido';
-                    botonOrigen.classList.remove('anadir-pedido__boton--ok');
-                }, 1200);
-            }
+                botonOrigen.classList.remove('anadir-pedido__boton--ok');
+                if (icono) icono.className = 'fa-solid fa-cart-shopping';
+            }, 1200);
         }
         if (!errorLinea) await window.actualizarContadorPedido_();
     } catch (e) {
-        if (botonOrigen) { botonOrigen.disabled = false; botonOrigen.textContent = 'Error — reinténtalo'; }
+        if (icono) icono.className = 'fa-solid fa-triangle-exclamation';
+        if (botonOrigen) botonOrigen.disabled = false;
     }
 };
 
@@ -1234,6 +1252,109 @@ window.actualizarContadorPedido_ = async function () {
     // .mas-buscados__lista reutiliza el mismo .producto-card del grid
     // principal, solo que en una fila con scroll horizontal en vez de
     // una rejilla.
+    // Control "añadir al pedido" (Fase 4), compartido por la tarjeta del
+    // grid y el modal de detalle — mismo criterio que la "lista de la
+    // compra" de la web pública: selector de modo (sueltas/caja)
+    // SIEMPRE visible, tenga o no el producto formato de envase
+    // informado (con la etiqueta genérica "Cajas" si no lo tiene, y sin
+    // mostrar ninguna equivalencia en unidades inventada). Devuelve
+    // null en modo simulación (no se puede actuar en nombre del
+    // cliente — ver comentario en crearTarjetaProducto_).
+    function crearControlAnadirPedido_(p, precioFinalParaPedido) {
+        if (window.enSimulacionAreaClientes_) return null;
+
+        const tieneEnvase = !!(p.envase_cantidad && Number(p.envase_cantidad) > 0 && p.envase_unidad && p.envase_tipo);
+        let etiquetaEnvase = 'Cajas';
+        if (tieneEnvase) {
+            const tipo = p.envase_tipo.trim();
+            const tipoCap = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+            etiquetaEnvase = tipoCap.endsWith('s') ? tipoCap : tipoCap + 's';
+        }
+
+        const contenedor = document.createElement('div');
+        contenedor.className = 'anadir-pedido';
+        contenedor.innerHTML =
+            '<div class="anadir-pedido__modo">' +
+                '<button type="button" class="anadir-pedido__modo-btn activo" data-modo="unidad">Sueltas</button>' +
+                '<button type="button" class="anadir-pedido__modo-btn" data-modo="envase">' + etiquetaEnvase + '</button>' +
+            '</div>' +
+            '<p class="anadir-pedido__equivalencia" style="display:none;"></p>' +
+            '<div class="anadir-pedido__fila">' +
+                '<div class="anadir-pedido__stepper-grupo">' +
+                    '<button type="button" class="anadir-pedido__stepper" data-delta="-1" aria-label="Quitar uno">−</button>' +
+                    '<input type="number" class="anadir-pedido__cantidad" min="1" step="1" value="1" aria-label="Cantidad">' +
+                    '<button type="button" class="anadir-pedido__stepper" data-delta="1" aria-label="Añadir uno">+</button>' +
+                '</div>' +
+                '<button type="button" class="anadir-pedido__boton" title="Añadir al pedido" aria-label="Añadir al pedido"><i class="fa-solid fa-cart-shopping"></i></button>' +
+            '</div>';
+        contenedor.addEventListener('click', function (ev) { ev.stopPropagation(); }); // no abrir el detalle
+
+        let modoActual = 'unidad';
+        const botonesModo = contenedor.querySelectorAll('.anadir-pedido__modo-btn');
+        const inputCantidad = contenedor.querySelector('.anadir-pedido__cantidad');
+        const equivalencia = contenedor.querySelector('.anadir-pedido__equivalencia');
+        const botonMenos = contenedor.querySelector('[data-delta="-1"]');
+
+        function actualizarEquivalencia_() {
+            if (modoActual === 'envase' && tieneEnvase) {
+                const n = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
+                equivalencia.textContent = '= ' + (n * Number(p.envase_cantidad)) + ' ' + p.envase_unidad.trim();
+                equivalencia.style.display = '';
+            } else {
+                equivalencia.style.display = 'none';
+            }
+        }
+        function actualizarBotonMenos_() { botonMenos.disabled = (parseInt(inputCantidad.value, 10) || 1) <= 1; }
+
+        botonesModo.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                modoActual = btn.dataset.modo;
+                botonesModo.forEach(function (b) { b.classList.toggle('activo', b === btn); });
+                // Al cambiar de modo, la cantidad se reinicia a 1 DEL
+                // NUEVO modo — igual que la web pública: mezclar
+                // sueltas y cajas no da un número exacto.
+                inputCantidad.value = '1';
+                actualizarBotonMenos_();
+                actualizarEquivalencia_();
+            });
+        });
+
+        contenedor.querySelectorAll('.anadir-pedido__stepper').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const delta = parseInt(btn.dataset.delta, 10);
+                const actual = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
+                inputCantidad.value = String(Math.max(1, actual + delta));
+                actualizarBotonMenos_();
+                actualizarEquivalencia_();
+            });
+        });
+        inputCantidad.addEventListener('input', function () {
+            if (!inputCantidad.value || parseInt(inputCantidad.value, 10) < 1) inputCantidad.value = '1';
+            actualizarBotonMenos_();
+            actualizarEquivalencia_();
+        });
+
+        const botonAnadir = contenedor.querySelector('.anadir-pedido__boton');
+        botonAnadir.addEventListener('click', function () {
+            const cantidad = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
+            window.anadirProductoAPedido_(
+                {
+                    ref: p.ref, nombre: p.nombre, precio_unitario: precioFinalParaPedido,
+                    envase_cantidad: p.envase_cantidad || null, envase_unidad: p.envase_unidad || null, envase_tipo: p.envase_tipo || null,
+                },
+                cantidad, modoActual, botonAnadir
+            );
+        });
+
+        actualizarBotonMenos_();
+        return contenedor;
+    }
+    // window.abrirDetalleProducto_ vive FUERA de este IIFE — sin este
+    // enganche no vería crearControlAnadirPedido_ (mismo motivo por el
+    // que registrarProductoVisto_/repintarUltimosVistos_ se cuelgan de
+    // window más abajo).
+    window.crearControlAnadirPedido_ = crearControlAnadirPedido_;
+
     function crearTarjetaProducto_(p) {
         // El catálogo de clientes siempre parte del precio de mayor (a
         // petición de Eloy) — nunca del precio normal. Si todavía no ha
@@ -1328,16 +1449,6 @@ window.actualizarContadorPedido_ = async function () {
                     '<button type="button" class="producto-tarjeta__ref-copiar" title="Copiar referencia" aria-label="Copiar referencia">📋</button>' +
                 '</div>' +
                 '<div class="producto-tarjeta__precios">' + htmlPrecio + '</div>' +
-                // Nunca en modo simulación (banda arriba: "no se puede
-                // actuar en nombre del cliente") — el comercial/admin
-                // viendo la simulación comparte el mismo auth.uid() que
-                // el cliente real, así que tocar el pedido aquí tocaría
-                // de verdad SU pedido.
-                (window.enSimulacionAreaClientes_ ? '' :
-                    '<div class="anadir-pedido">' +
-                        '<input type="number" class="anadir-pedido__cantidad" min="1" step="1" value="1" aria-label="Cantidad">' +
-                        '<button type="button" class="anadir-pedido__boton">Añadir al pedido</button>' +
-                    '</div>') +
             '</div>';
         tarjeta.querySelector('.producto-tarjeta__ref-copiar').addEventListener('click', function (ev) {
             ev.stopPropagation(); // no abrir el detalle al copiar
@@ -1345,19 +1456,12 @@ window.actualizarContadorPedido_ = async function () {
         });
         tarjeta.addEventListener('click', function () { window.abrirDetalleProducto_ && window.abrirDetalleProducto_(p, descuentoPct); });
 
-        const bloqueAnadir = tarjeta.querySelector('.anadir-pedido');
-        if (bloqueAnadir) {
-            const inputCantidad = bloqueAnadir.querySelector('.anadir-pedido__cantidad');
-            const botonAnadir = bloqueAnadir.querySelector('.anadir-pedido__boton');
-            bloqueAnadir.addEventListener('click', function (ev) { ev.stopPropagation(); }); // no abrir el detalle
-            botonAnadir.addEventListener('click', function () {
-                window.anadirProductoAPedido_(
-                    { ref: p.ref, nombre: p.nombre, precio_unitario: precioFinalParaPedido },
-                    Math.max(1, parseInt(inputCantidad.value, 10) || 1),
-                    botonAnadir
-                );
-            });
-        }
+        // Nunca en modo simulación (banda arriba: "no se puede actuar
+        // en nombre del cliente") — el comercial/admin viendo la
+        // simulación comparte el mismo auth.uid() que el cliente real,
+        // así que tocar el pedido aquí tocaría de verdad SU pedido.
+        const controlAnadir = crearControlAnadirPedido_(p, precioFinalParaPedido);
+        if (controlAnadir) tarjeta.querySelector('.producto-tarjeta__cuerpo').appendChild(controlAnadir);
         return tarjeta;
     }
 
