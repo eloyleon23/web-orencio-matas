@@ -424,7 +424,7 @@
        formato/cantidad/nota). Verde cuando el producto YA está en el
        pedido. ─────────────────────────────────────────────────────── */
     .boton-carrito-anadir {
-        position: absolute; top: 8px; right: 8px; z-index: 2;
+        position: absolute; bottom: 8px; right: 8px; z-index: 2;
         width: 30px; height: 30px; border-radius: 50%;
         background: rgba(255,255,255,0.92); border: 1px solid var(--border);
         color: var(--muted); cursor: pointer;
@@ -1402,6 +1402,14 @@ document.getElementById('modalPedidoEnviar').addEventListener('click', async fun
     }
     if (perfil && perfil.nombre) {
         document.getElementById('saludo').textContent = 'Hola, ' + perfil.nombre;
+        // Además del nombre del usuario, se muestra el nombre del
+        // cliente (empresa) al que pertenece esa cuenta — útil para
+        // comerciales simulando o cuentas con varios usuarios de la
+        // misma empresa.
+        const { data: clienteFicha } = await cliente.from('clientes').select('empresa').eq('id', sesion.user.id).maybeSingle();
+        if (clienteFicha && clienteFicha.empresa) {
+            document.getElementById('saludo').textContent += ' — ' + clienteFicha.empresa;
+        }
     }
 
     // Registro de "último acceso" para que comercial/administrador lo

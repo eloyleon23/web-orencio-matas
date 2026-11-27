@@ -188,7 +188,9 @@
                 '">' + (c.activo ? 'Activo' : 'Desactivado') + '</span></td>' +
             '<td style="white-space:nowrap;">' +
             '<a class="boton-fila" style="text-decoration:none; display:inline-block; margin-right:6px;" href="personalizar-cliente.html?id=' + c.id + '">Personalizar</a>' +
+            '<a class="boton-fila" style="text-decoration:none; display:inline-block; margin-right:6px;" href="pedidos.html?cliente=' + c.id + '">Ver pedidos</a>' +
             '<button class="boton-fila" data-id="' + c.id + '" style="margin-right:6px;">Simular</button>' +
+            '<button class="boton-fila boton-reset" data-id="' + c.id + '" data-email="' + c.email + '" style="margin-right:6px;">Restablecer contraseña</button>' +
             '<button class="boton-fila boton-estado' + (c.activo ? ' boton-peligro' : '') + '" data-id="' + c.id + '" data-activo="' + c.activo + '">' + (c.activo ? 'Bloquear' : 'Reactivar') + '</button>' +
             '</td>';
         return fila;
@@ -332,6 +334,37 @@
                 preparado.textoBusqueda = construirTextoBusqueda_(preparado);
             }
             repintar_();
+            return;
+        }
+
+        const botonReset = ev.target.closest('button.boton-reset');
+        if (botonReset) {
+            const email = botonReset.dataset.email;
+            const confirmado = await window.confirmarModal_(
+                'Restablecer contraseña',
+                'Se enviará un correo a ' + email + ' con un enlace para que elija una contraseña nueva. El enlace caduca solo y no afecta a su sesión actual si sigue conectado.',
+                'Enviar correo',
+                false
+            );
+            if (!confirmado) return;
+
+            botonReset.disabled = true;
+            const textoOriginal = botonReset.textContent;
+            botonReset.textContent = 'Enviando…';
+            const { error: errorReset } = await cliente.auth.resetPasswordForEmail(email, {
+                redirectTo: window.location.origin + window.location.pathname.replace(/gestion\/clientes\.html$/, 'establecer-contrasena.html'),
+            });
+            botonReset.disabled = false;
+
+            if (errorReset) {
+                botonReset.textContent = textoOriginal;
+                avisoError.textContent = 'No se ha podido enviar el correo: ' + errorReset.message;
+                avisoError.classList.add('activo');
+                return;
+            }
+            avisoError.classList.remove('activo');
+            botonReset.textContent = 'Correo enviado ✓';
+            setTimeout(function () { botonReset.textContent = textoOriginal; }, 2500);
             return;
         }
 
