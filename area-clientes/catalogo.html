@@ -50,6 +50,50 @@
     .chip-filtro:hover { border-color: var(--blue); color: var(--blue); }
     .chip-filtro.activo { background: var(--dark); color: white; border-color: var(--dark); }
 
+    /* ── Selector múltiple con buscador interno (familia/subfamilia) ── */
+    .multi-select { position: relative; }
+    .multi-select__boton {
+        display: flex; align-items: center; gap: 6px; width: auto; margin: 0;
+        min-width: 150px; max-width: 220px; padding: 10px 12px;
+        border: 1px solid var(--border); border-radius: 8px; background: var(--white);
+        color: var(--dark); font-size: 0.85rem; font-family: inherit; cursor: pointer;
+        white-space: nowrap;
+    }
+    .multi-select__boton-contador {
+        background: var(--blue); color: white; border-radius: 999px;
+        font-size: 0.68rem; font-weight: 800; padding: 1px 7px; margin-left: auto;
+    }
+    .multi-select__panel {
+        display: none; position: absolute; top: calc(100% + 6px); left: 0; z-index: 10;
+        background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+        box-shadow: var(--sombra); width: 260px; max-width: 80vw; padding: 10px;
+    }
+    .multi-select.abierto .multi-select__panel { display: block; }
+    .multi-select__buscador {
+        width: 100%; margin: 0 0 8px; padding: 8px 10px; font-size: 0.85rem;
+        border: 1px solid var(--border); border-radius: 6px; font-family: inherit;
+    }
+    .multi-select__lista { max-height: 220px; overflow-y: auto; }
+    .multi-select__opcion {
+        display: flex; align-items: center; gap: 8px; padding: 6px 4px;
+        font-size: 0.85rem; cursor: pointer; border-radius: 6px;
+    }
+    .multi-select__opcion:hover { background: var(--light); }
+    .multi-select__opcion input { margin: 0; width: auto; }
+    .multi-select__sin-resultados { font-size: 0.8rem; color: var(--muted); padding: 6px 4px; }
+
+    /* ── Chips de filtros activos (quitables de uno en uno) ──────────── */
+    .filtros-activos { display: flex; flex-wrap: wrap; gap: 8px; margin: -8px 0 16px; }
+    .filtros-activos:empty { display: none; margin: 0; }
+    .chip-filtro-activo {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: var(--blue-soft); color: var(--blue); border: none;
+        border-radius: 999px; padding: 6px 8px 6px 14px; font-size: 0.78rem;
+        font-weight: 600; cursor: pointer;
+    }
+    .chip-filtro-activo:hover { background: var(--danger-soft); color: var(--danger); }
+    .chip-filtro-activo span.cerrar { font-weight: 800; }
+
     .grupo-familia__titulo {
         font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 800;
         color: var(--dark); margin: 28px 0 14px; padding-bottom: 6px;
@@ -187,6 +231,9 @@
         .barra-filtros.filtros-abiertos .barra-filtros__contenido { display: flex; }
         .barra-buscador { max-width: none; flex: 1 1 100%; }
         .barra-filtros select { max-width: none; width: 100%; }
+        .multi-select { width: 100%; }
+        .multi-select__boton { max-width: none; width: 100%; }
+        .multi-select__panel { width: 100%; max-width: none; }
         #chipsAreas { display: flex; flex-wrap: wrap; gap: 8px; }
     }
 </style>
@@ -229,11 +276,13 @@
                     <option value="familia_orden">Ordenar por familia</option>
                     <option value="familia" selected>Agrupar por familia</option>
                 </select>
-                <select id="filtroFamilia"><option value="">Todas las familias</option></select>
-                <select id="filtroSubfamilia"><option value="">Todas las subfamilias</option></select>
+                <div class="multi-select" id="multiFamilia"></div>
+                <div class="multi-select" id="multiSubfamilia"></div>
                 <div id="chipsAreas"></div>
+                <button type="button" class="chip-filtro" id="botonLimpiarFiltros" style="display:none;">✕ Limpiar filtros</button>
             </div>
         </div>
+        <div class="filtros-activos" id="filtrosActivos"></div>
 
         <div class="rejilla-productos" id="rejilla"></div>
         <p class="ayuda" id="sinResultados" style="display:none; text-align:center; margin-top:30px;">
@@ -520,7 +569,12 @@ window.copiarReferencia_ = function (ref, boton) {
 
     const rejilla = document.getElementById('rejilla');
     const sinResultados = document.getElementById('sinResultados');
-    let areaActiva = null;
+    // Multiselección (a petición de Eloy, 27/11/2026): antes solo se
+    // podía elegir una sola área a la vez (o ninguna). familia y
+    // subfamilia usan el mismo criterio (ver construirMultiSelect_).
+    let areasActivas = new Set();
+    let familiasActivas = new Set();
+    let subfamiliasActivas = new Set();
 
     function precioOrdenable_(p) {
         const base = numeroDesdePrecio_(p.precio_mayor_con);
@@ -612,35 +666,164 @@ window.copiarReferencia_ = function (ref, boton) {
         }
     }
 
-    function poblarSelectorFamilia_(lista) {
-        const select = document.getElementById('filtroFamilia');
-        const valorActual = select.value;
-        const familias = Array.from(new Set(lista.map(function (p) { return p.familia; }).filter(Boolean)))
-            .sort(function (a, b) { return ordenFamilia_(a) - ordenFamilia_(b); });
-        select.innerHTML = '<option value="">Todas las familias</option>' +
-            familias.map(function (f) { return '<option value="' + f.replace(/"/g, '&quot;') + '">' + f + '</option>'; }).join('');
-        if (familias.includes(valorActual)) select.value = valorActual;
+    // ── Selector múltiple con buscador interno, reutilizado para
+    // familia y subfamilia — a petición de Eloy (27/11/2026): antes
+    // eran <select> de una sola opción, sin forma de filtrar por texto
+    // ni de combinar varias a la vez.
+    function construirMultiSelect_(idContenedor, opciones, seleccionSet, etiqueta, alCambiar) {
+        const contenedor = document.getElementById(idContenedor);
+        const estabaAbierto = contenedor.classList.contains('abierto');
+        contenedor.innerHTML =
+            '<button type="button" class="multi-select__boton">' +
+                '<span>' + etiqueta + '</span>' +
+                (seleccionSet.size ? '<span class="multi-select__boton-contador">' + seleccionSet.size + '</span>' : '') +
+            '</button>' +
+            '<div class="multi-select__panel">' +
+                '<input type="search" class="multi-select__buscador" placeholder="Buscar ' + etiqueta.toLowerCase() + '…">' +
+                '<div class="multi-select__lista"></div>' +
+            '</div>';
+
+        const boton = contenedor.querySelector('.multi-select__boton');
+        const buscadorPanel = contenedor.querySelector('.multi-select__buscador');
+        const lista = contenedor.querySelector('.multi-select__lista');
+
+        function pintarLista_() {
+            const termino = buscadorPanel.value.trim().toLowerCase();
+            const filtradas = termino ? opciones.filter(function (o) { return o.toLowerCase().includes(termino); }) : opciones;
+            if (!filtradas.length) {
+                lista.innerHTML = '<div class="multi-select__sin-resultados">Sin resultados</div>';
+                return;
+            }
+            lista.innerHTML = filtradas.map(function (o) {
+                const seguro = o.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                return '<label class="multi-select__opcion"><input type="checkbox" data-valor="' + o.replace(/"/g, '&quot;') + '"' +
+                    (seleccionSet.has(o) ? ' checked' : '') + '>' + seguro + '</label>';
+            }).join('');
+            lista.querySelectorAll('input[type="checkbox"]').forEach(function (chk) {
+                chk.addEventListener('change', function () {
+                    if (this.checked) seleccionSet.add(this.dataset.valor); else seleccionSet.delete(this.dataset.valor);
+                    const contador = boton.querySelector('.multi-select__boton-contador');
+                    if (seleccionSet.size) {
+                        if (contador) contador.textContent = seleccionSet.size;
+                        else boton.insertAdjacentHTML('beforeend', '<span class="multi-select__boton-contador">' + seleccionSet.size + '</span>');
+                    } else if (contador) {
+                        contador.remove();
+                    }
+                    alCambiar();
+                });
+            });
+        }
+        pintarLista_();
+        buscadorPanel.addEventListener('input', pintarLista_);
+
+        boton.addEventListener('click', function (ev) {
+            ev.stopPropagation();
+            document.querySelectorAll('.multi-select.abierto').forEach(function (el) { if (el !== contenedor) el.classList.remove('abierto'); });
+            contenedor.classList.toggle('abierto');
+        });
+        contenedor.querySelector('.multi-select__panel').addEventListener('click', function (ev) { ev.stopPropagation(); });
+
+        if (estabaAbierto) contenedor.classList.add('abierto');
     }
 
-    function poblarSelectorSubfamilia_(lista, familiaElegida) {
-        const select = document.getElementById('filtroSubfamilia');
-        const valorActual = select.value;
-        const base = familiaElegida ? lista.filter(function (p) { return p.familia === familiaElegida; }) : lista;
+    // Cierra cualquier panel de selector múltiple abierto al clicar
+    // fuera — una sola vez, no en cada reconstrucción.
+    document.addEventListener('click', function () {
+        document.querySelectorAll('.multi-select.abierto').forEach(function (el) { el.classList.remove('abierto'); });
+    });
+
+    function actualizarSelectorFamilia_() {
+        const base = areasActivas.size ? productos.filter(function (p) { return areasActivas.has(p.area); }) : productos;
+        const familias = Array.from(new Set(base.map(function (p) { return p.familia; }).filter(Boolean)))
+            .sort(function (a, b) { return ordenFamilia_(a) - ordenFamilia_(b); });
+        Array.from(familiasActivas).forEach(function (f) { if (!familias.includes(f)) familiasActivas.delete(f); });
+        construirMultiSelect_('multiFamilia', familias, familiasActivas, 'Familia', function () {
+            actualizarSelectorSubfamilia_();
+            aplicarFiltros_();
+        });
+    }
+
+    function actualizarSelectorSubfamilia_() {
+        let base = areasActivas.size ? productos.filter(function (p) { return areasActivas.has(p.area); }) : productos;
+        if (familiasActivas.size) base = base.filter(function (p) { return familiasActivas.has(p.familia); });
         const subfamilias = Array.from(new Set(base.map(function (p) { return p.subfamilia; }).filter(Boolean))).sort();
-        select.innerHTML = '<option value="">Todas las subfamilias</option>' +
-            subfamilias.map(function (s) { return '<option value="' + s.replace(/"/g, '&quot;') + '">' + s + '</option>'; }).join('');
-        if (subfamilias.includes(valorActual)) select.value = valorActual;
+        Array.from(subfamiliasActivas).forEach(function (s) { if (!subfamilias.includes(s)) subfamiliasActivas.delete(s); });
+        construirMultiSelect_('multiSubfamilia', subfamilias, subfamiliasActivas, 'Subfamilia', aplicarFiltros_);
+    }
+
+    // Chips de área — multiselección (antes era "una o todas"), a
+    // petición explícita de Eloy. Solo se muestran si el catálogo del
+    // cliente abarca más de una área.
+    let areasPresentes = [];
+    function pintarChipsArea_() {
+        const contenedorChips = document.getElementById('chipsAreas');
+        if (areasPresentes.length <= 1) { contenedorChips.innerHTML = ''; return; }
+        contenedorChips.innerHTML = '';
+        areasPresentes.forEach(function (area) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip-filtro' + (areasActivas.has(area) ? ' activo' : '');
+            chip.textContent = area;
+            chip.addEventListener('click', function () {
+                if (areasActivas.has(area)) areasActivas.delete(area); else areasActivas.add(area);
+                pintarChipsArea_();
+                actualizarSelectorFamilia_();
+                aplicarFiltros_();
+            });
+            contenedorChips.appendChild(chip);
+        });
+    }
+
+    // Chips de filtros ya aplicados (área/familia/subfamilia/búsqueda),
+    // quitables de uno en uno sin tener que reabrir cada selector — y
+    // botón para limpiarlos todos de golpe y volver al estado por
+    // defecto, a petición de Eloy.
+    function pintarFiltrosActivos_() {
+        const contenedor = document.getElementById('filtrosActivos');
+        const termino = document.getElementById('buscador').value.trim();
+        const chips = [];
+        areasActivas.forEach(function (a) { chips.push({ texto: a, quitar: function () { areasActivas.delete(a); } }); });
+        familiasActivas.forEach(function (f) { chips.push({ texto: f, quitar: function () { familiasActivas.delete(f); } }); });
+        subfamiliasActivas.forEach(function (s) { chips.push({ texto: s, quitar: function () { subfamiliasActivas.delete(s); } }); });
+        if (termino) chips.push({ texto: '“' + termino + '”', quitar: function () { document.getElementById('buscador').value = ''; } });
+
+        contenedor.innerHTML = '';
+        chips.forEach(function (c) {
+            const chip = document.createElement('button');
+            chip.type = 'button';
+            chip.className = 'chip-filtro-activo';
+            chip.innerHTML = c.texto.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + ' <span class="cerrar">✕</span>';
+            chip.addEventListener('click', function () {
+                c.quitar();
+                pintarChipsArea_();
+                actualizarSelectorFamilia_();
+                actualizarSelectorSubfamilia_();
+                aplicarFiltros_();
+            });
+            contenedor.appendChild(chip);
+        });
+        document.getElementById('botonLimpiarFiltros').style.display = chips.length ? 'inline-flex' : 'none';
+    }
+
+    function limpiarFiltros_() {
+        areasActivas.clear();
+        familiasActivas.clear();
+        subfamiliasActivas.clear();
+        document.getElementById('buscador').value = '';
+        document.getElementById('orden').value = 'familia';
+        pintarChipsArea_();
+        actualizarSelectorFamilia_();
+        actualizarSelectorSubfamilia_();
+        aplicarFiltros_();
     }
 
     function aplicarFiltros_() {
         const termino = document.getElementById('buscador').value.trim().toLowerCase();
         const orden = document.getElementById('orden').value;
-        const familiaElegida = document.getElementById('filtroFamilia').value;
-        const subfamiliaElegida = document.getElementById('filtroSubfamilia').value;
         let lista = productos.slice();
-        if (areaActiva) lista = lista.filter(function (p) { return p.area === areaActiva; });
-        if (familiaElegida) lista = lista.filter(function (p) { return p.familia === familiaElegida; });
-        if (subfamiliaElegida) lista = lista.filter(function (p) { return p.subfamilia === subfamiliaElegida; });
+        if (areasActivas.size) lista = lista.filter(function (p) { return areasActivas.has(p.area); });
+        if (familiasActivas.size) lista = lista.filter(function (p) { return familiasActivas.has(p.familia); });
+        if (subfamiliasActivas.size) lista = lista.filter(function (p) { return subfamiliasActivas.has(p.subfamilia); });
         if (termino) lista = lista.filter(function (p) { return p.nombre.toLowerCase().includes(termino); });
 
         if (orden === 'nombre_desc') lista.sort(function (a, b) { return b.nombre.localeCompare(a.nombre); });
@@ -658,6 +841,7 @@ window.copiarReferencia_ = function (ref, boton) {
         else if (orden !== 'familia') lista.sort(function (a, b) { return a.nombre.localeCompare(b.nombre); }); // nombre_asc, por defecto
 
         pintar_(lista, orden);
+        pintarFiltrosActivos_();
     }
 
     function mostrarContenidoInicial_(listaProductos, provisional) {
@@ -666,38 +850,12 @@ window.copiarReferencia_ = function (ref, boton) {
         document.getElementById('contenido').style.display = 'block';
         document.getElementById('aviso').textContent = productos.length + ' producto(s) en tu catálogo.' + (provisional ? ' Calculando precios…' : '');
 
-        if (!huboPintadoInicial) {
-            // Chips de área — solo si el catálogo del cliente abarca
-            // más de una, para poder acotar rápido sin escribir.
-            const areasPresentes = Array.from(new Set(productos.map(function (p) { return p.area; }).filter(Boolean)));
-            if (areasPresentes.length > 1) {
-                const contenedorChips = document.getElementById('chipsAreas');
-                function pintarChips_() {
-                    contenedorChips.innerHTML = '';
-                    [null].concat(areasPresentes).forEach(function (area) {
-                        const chip = document.createElement('button');
-                        chip.type = 'button';
-                        chip.className = 'chip-filtro' + (area === areaActiva ? ' activo' : '');
-                        chip.textContent = area === null ? 'Todas las áreas' : area;
-                        chip.addEventListener('click', function () {
-                            areaActiva = area;
-                            pintarChips_();
-                            poblarSelectorFamilia_(areaActiva ? productos.filter(function (p) { return p.area === areaActiva; }) : productos);
-                            aplicarFiltros_();
-                        });
-                        contenedorChips.appendChild(chip);
-                    });
-                }
-                pintarChips_();
-            }
+        areasPresentes = Array.from(new Set(productos.map(function (p) { return p.area; }).filter(Boolean)));
 
-            document.getElementById('filtroFamilia').addEventListener('change', function () {
-                poblarSelectorSubfamilia_(areaActiva ? productos.filter(function (p) { return p.area === areaActiva; }) : productos, this.value);
-                aplicarFiltros_();
-            });
-            document.getElementById('filtroSubfamilia').addEventListener('change', aplicarFiltros_);
+        if (!huboPintadoInicial) {
             document.getElementById('buscador').addEventListener('input', aplicarFiltros_);
             document.getElementById('orden').addEventListener('change', aplicarFiltros_);
+            document.getElementById('botonLimpiarFiltros').addEventListener('click', limpiarFiltros_);
 
             // Solo tiene efecto visual en móvil (ver @media en el
             // <style>) — en escritorio el botón ni se muestra.
@@ -708,8 +866,9 @@ window.copiarReferencia_ = function (ref, boton) {
             huboPintadoInicial = true;
         }
 
-        poblarSelectorFamilia_(productos);
-        poblarSelectorSubfamilia_(productos, document.getElementById('filtroFamilia').value);
+        pintarChipsArea_();
+        actualizarSelectorFamilia_();
+        actualizarSelectorSubfamilia_();
         aplicarFiltros_();
     }
 
