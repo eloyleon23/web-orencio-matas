@@ -382,13 +382,12 @@
         #btnMiPedido { left: 14px; bottom: 14px; padding: 10px 14px 10px 12px; font-size: 0.8rem; }
     }
 
-    /* ── Controles de "añadir al pedido" en la tarjeta del grid y en el
-       modal de detalle — mismo criterio que la "lista de la compra" de
-       la web pública (unidades sueltas o por caja/envase, selector
-       SIEMPRE visible aunque el producto no tenga formato de envase
-       informado; ver .lista-compra-modo en buscador.html), con los
-       colores propios del área de clientes (azul, nunca rojo). ──────── */
-    .anadir-pedido { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    /* ── Controles de la modal "añadir/editar producto del pedido" —
+       mismo criterio que la "lista de la compra" de la web pública
+       (unidades sueltas o por caja/envase, selector SIEMPRE visible
+       aunque el producto no tenga formato de envase informado; ver
+       .lista-compra-modo en buscador.html), con los colores propios
+       del área de clientes (azul, nunca rojo). ─────────────────────── */
     .anadir-pedido__modo {
         display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
     }
@@ -416,12 +415,66 @@
     }
     .anadir-pedido__cantidad::-webkit-outer-spin-button,
     .anadir-pedido__cantidad::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    .anadir-pedido__boton {
-        flex: 1; background: var(--blue); color: #fff; border: none; border-radius: 8px;
-        font-size: 1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+
+    /* ── Botón "añadir al pedido" de la tarjeta/detalle (Fase 4,
+       rediseñado 27/11/2026 a petición de Eloy: antes el control
+       entero —selector + stepper + botón— vivía siempre desplegado en
+       la tarjeta y "llamaba demasiado la atención"; ahora es solo este
+       icono discreto, que abre una modal aparte para elegir
+       formato/cantidad/nota). Verde cuando el producto YA está en el
+       pedido. ─────────────────────────────────────────────────────── */
+    .boton-carrito-anadir {
+        position: absolute; top: 8px; right: 8px; z-index: 2;
+        width: 30px; height: 30px; border-radius: 50%;
+        background: rgba(255,255,255,0.92); border: 1px solid var(--border);
+        color: var(--muted); cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.85rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
-    .anadir-pedido__boton:hover { background: var(--blue-dark); }
-    .anadir-pedido__boton.anadir-pedido__boton--ok { background: var(--ok); }
+    .boton-carrito-anadir:hover { border-color: var(--blue); color: var(--blue); }
+    .boton-carrito-anadir__mas {
+        position: absolute; bottom: -2px; right: -2px;
+        width: 14px; height: 14px; border-radius: 50%;
+        background: var(--blue); color: #fff; font-size: 0.62rem; font-weight: 800;
+        display: flex; align-items: center; justify-content: center; line-height: 1;
+    }
+    .boton-carrito-anadir.boton-carrito-anadir--en-pedido {
+        border-color: var(--ok); color: var(--ok); background: var(--ok-soft);
+    }
+    .boton-carrito-anadir.boton-carrito-anadir--en-pedido .boton-carrito-anadir__mas { background: var(--ok); }
+    /* Variante más grande con texto, para la vista de detalle (hay sitio
+       de sobra ahí) — mismo criterio de color/sutileza, solo cambia el
+       tamaño. */
+    .boton-carrito-anadir--detalle {
+        position: static; width: auto; height: auto; border-radius: 8px;
+        padding: 10px 16px; font-size: 0.85rem; font-weight: 700; gap: 8px;
+        margin-top: 10px; box-shadow: none;
+    }
+    .boton-carrito-anadir--detalle .boton-carrito-anadir__mas { position: static; width: auto; height: auto; background: none; color: inherit; font-size: inherit; }
+
+    /* ── Modal compartida: añadir/editar un producto en el pedido ──── */
+    .modal-anadir-pedido { max-width: 360px; }
+    .modal-anadir-pedido__titulo { font-size: 1.02rem; font-weight: 800; margin: 0 26px 14px 0; }
+    .modal-anadir-pedido label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--muted); margin: 14px 0 6px; }
+    #modalAnadirPedidoNotas { font-size: 0.88rem; min-height: 56px; resize: vertical; }
+    .modal-anadir-pedido__acciones { display: flex; gap: 10px; margin-top: 18px; }
+    .modal-anadir-pedido__acciones button { width: auto; flex: 1; margin: 0; }
+    .modal-anadir-pedido__quitar {
+        display: block; width: 100%; text-align: center; margin-top: 10px;
+        background: none; border: none; color: var(--danger); font-size: 0.82rem;
+        font-weight: 600; cursor: pointer; padding: 6px;
+    }
+    .modal-anadir-pedido__quitar:hover { text-decoration: underline; }
+
+    /* ── Modal compartida: detalle del pedido en curso (sustituye la
+       navegación a propuesta.html desde el catálogo, a petición de
+       Eloy: "quiero que los detalles del pedido se vean en una
+       ventana modal para hacer menos clicks" — propuesta.html se
+       mantiene igual para quien llegue desde "Mis pedidos"). ──────── */
+    .modal-pedido { max-width: 640px; }
+    .modal-pedido__titulo { font-size: 1.15rem; font-weight: 800; margin: 0 26px 14px 0; }
+    .modal-pedido__cuerpo { max-height: 50vh; overflow-y: auto; margin-right: -8px; padding-right: 8px; }
+    .modal-pedido .acciones-propuesta { margin-top: 18px; }
 
     @media (max-width: 600px) {
         .catalogo-cuerpo { padding-left: 16px; padding-right: 16px; }
@@ -490,12 +543,16 @@
 </button>
 
 <!-- Botón flotante "Mi pedido" (Fase 4) — oculto hasta saber si hay
-     sesión de cliente real (nunca en simulación: ver más abajo). -->
-<a href="propuesta.html" id="btnMiPedido" title="Ver mi pedido">
+     sesión de cliente real (nunca en simulación: ver más abajo). Abre
+     la modal de pedido (ver #modalPedidoOverlay) en vez de navegar a
+     propuesta.html, a petición de Eloy (27/11/2026) para ahorrar
+     clics — propuesta.html se conserva igual para quien llegue desde
+     "Mis pedidos". -->
+<button type="button" id="btnMiPedido" title="Ver mi pedido">
     <i class="fa-solid fa-cart-shopping"></i>
     <span>Mi pedido</span>
     <span id="btnMiPedido__contador" style="display:none;">0</span>
-</a>
+</button>
 
 <div class="catalogo-cuerpo">
     <div class="spinner-pagina" id="cargando">
@@ -576,7 +633,11 @@
                 <h2 class="modal-detalle__nombre" id="modalDetalleNombre"></h2>
                 <div class="modal-detalle__meta" id="modalDetalleMeta"></div>
                 <div class="modal-detalle__precio-bloque" id="modalDetallePrecio"></div>
-                <div id="modalDetalleAnadirPedido" style="display:none; max-width:260px;"></div>
+                <button type="button" class="boton-carrito-anadir boton-carrito-anadir--detalle" id="modalDetalleBotonCarrito" style="display:none;">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span class="modal-detalle__boton-carrito-texto">Añadir al pedido</span>
+                    <span class="boton-carrito-anadir__mas">+</span>
+                </button>
             </div>
         </div>
     </div>
@@ -584,6 +645,63 @@
 
 <div class="lightbox-imagen-overlay" id="lightboxImagenOverlay">
     <img id="lightboxImagenImg" src="" alt="">
+</div>
+
+<!-- Modal compartida: añadir/editar un producto en el pedido (grid y
+     detalle) — Fase 4, rediseñada 27/11/2026. -->
+<div class="modal-detalle-overlay" id="modalAnadirPedidoOverlay">
+    <div class="modal-detalle modal-anadir-pedido">
+        <button class="modal-detalle__cerrar" id="modalAnadirPedidoCerrar" aria-label="Cerrar">✕</button>
+        <h3 class="modal-anadir-pedido__titulo" id="modalAnadirPedidoTitulo"></h3>
+        <div class="anadir-pedido__modo" id="modalAnadirPedidoModo">
+            <button type="button" class="anadir-pedido__modo-btn activo" data-modo="unidad">Sueltas</button>
+            <button type="button" class="anadir-pedido__modo-btn" data-modo="envase">Cajas</button>
+        </div>
+        <p class="anadir-pedido__equivalencia" id="modalAnadirPedidoEquivalencia" style="display:none;"></p>
+        <div class="anadir-pedido__stepper-grupo" id="modalAnadirPedidoStepperGrupo" style="margin-top:10px; width:fit-content;">
+            <button type="button" class="anadir-pedido__stepper" data-delta="-1" aria-label="Quitar uno">−</button>
+            <input type="number" class="anadir-pedido__cantidad" id="modalAnadirPedidoCantidad" min="1" step="1" value="1" aria-label="Cantidad">
+            <button type="button" class="anadir-pedido__stepper" data-delta="1" aria-label="Añadir uno">+</button>
+        </div>
+        <label for="modalAnadirPedidoNotas">Información adicional para el comercial (opcional)</label>
+        <textarea id="modalAnadirPedidoNotas" placeholder="Por ejemplo: color concreto, alternativa si no hay stock…"></textarea>
+        <button type="button" class="modal-anadir-pedido__quitar" id="modalAnadirPedidoQuitar" style="display:none;">Quitar del pedido</button>
+        <div class="modal-anadir-pedido__acciones">
+            <button type="button" class="boton-secundario" id="modalAnadirPedidoCancelar">Cancelar</button>
+            <button type="button" class="boton-principal" id="modalAnadirPedidoConfirmar">Añadir al carrito</button>
+        </div>
+        <div class="aviso aviso--error" id="modalAnadirPedidoError"></div>
+    </div>
+</div>
+
+<!-- Modal compartida: detalle del pedido en curso ("Mi pedido" desde
+     el catálogo) — Fase 4, rediseñada 27/11/2026. -->
+<div class="modal-detalle-overlay" id="modalPedidoOverlay">
+    <div class="modal-detalle modal-pedido">
+        <button class="modal-detalle__cerrar" id="modalPedidoCerrar" aria-label="Cerrar">✕</button>
+        <h3 class="modal-pedido__titulo">Mi pedido</h3>
+        <p class="ayuda" id="modalPedidoAyuda">Cargando…</p>
+        <div id="modalPedidoBloqueLineas" style="display:none;">
+            <div class="modal-pedido__cuerpo" id="modalPedidoLista"></div>
+            <div class="resumen-propuesta">
+                <span>Total (con IVA)</span>
+                <span id="modalPedidoTotal">0,00 €</span>
+            </div>
+            <div class="notas-pedido-general">
+                <label for="modalPedidoNotasGenerales">Instrucciones generales para el comercial (opcional)</label>
+                <textarea id="modalPedidoNotasGenerales" placeholder="Por ejemplo: entregar en el almacén, llamar antes de venir…"></textarea>
+            </div>
+            <div class="acciones-propuesta">
+                <button type="button" class="boton-secundario" id="modalPedidoVaciar">Vaciar pedido</button>
+                <button type="button" class="boton-principal" id="modalPedidoEnviar">Enviar pedido</button>
+            </div>
+        </div>
+        <div class="vacio-propuesta" id="modalPedidoVacio" style="display:none;">
+            Todavía no has añadido ningún producto.
+        </div>
+        <div class="aviso aviso--error" id="modalPedidoAvisoError"></div>
+        <div class="aviso aviso--ok" id="modalPedidoAvisoOk"></div>
+    </div>
 </div>
 
 <!-- Modal "ver todos" de una temporada — con filtros propios, igual
@@ -757,18 +875,18 @@ window.abrirDetalleProducto_ = function (p, descuentoPct) {
             (descuentoPct > 0 ? '<div style="font-size:0.78rem; color:var(--muted); text-decoration:line-through; margin-top:4px;">' + p.precio_mayor_con + ' € antes del descuento</div>' : '');
     }
 
-    // Fase 4: "añadir al pedido" — nunca en simulación. Se reconstruye
-    // entero en cada apertura del modal (como la tarjeta del grid) en
-    // vez de reutilizar un control fijo, para no arrastrar el modo
-    // sueltas/caja o la cantidad del producto anterior.
-    const bloqueAnadirModal = document.getElementById('modalDetalleAnadirPedido');
-    bloqueAnadirModal.innerHTML = '';
-    const controlAnadirModal = window.crearControlAnadirPedido_(p, precioFinalParaPedido);
-    if (controlAnadirModal) {
-        bloqueAnadirModal.appendChild(controlAnadirModal);
-        bloqueAnadirModal.style.display = 'block';
+    // Fase 4: botón "añadir al pedido" — nunca en simulación. Un botón
+    // fijo (no uno nuevo por apertura: solo hay un detalle abierto a
+    // la vez) al que se le actualiza la referencia y el estado
+    // verde/gris en cada apertura.
+    const botonCarritoDetalle = document.getElementById('modalDetalleBotonCarrito');
+    if (window.enSimulacionAreaClientes_) {
+        botonCarritoDetalle.style.display = 'none';
     } else {
-        bloqueAnadirModal.style.display = 'none';
+        botonCarritoDetalle.style.display = 'inline-flex';
+        botonCarritoDetalle.dataset.ref = p.ref;
+        botonCarritoDetalle.classList.toggle('boton-carrito-anadir--en-pedido', !!window.lineasEnPedido_[p.ref]);
+        botonCarritoDetalle.onclick = function () { window.abrirModalAnadirPedido_(p, precioFinalParaPedido); };
     }
 
     document.getElementById('modalDetalleOverlay').classList.add('activo');
@@ -816,45 +934,153 @@ window.copiarReferencia_ = function (ref, boton) {
     }
 };
 
-// ── Fase 4: "añadir al pedido" — usado por la tarjeta del grid y por
-// el modal de detalle. window.propuestaBorradorId_ se rellena al
-// cargar la página (ver más abajo, fuera de simulación); si por lo que
-// sea todavía no está listo (carga lenta), se crea aquí mismo. El
-// botón es solo icono (petición de Eloy, 27/11/2026: "lo ideal sería
-// un icono de carrito de la compra") — el feedback de "añadido"/error
-// se da cambiando el propio icono un instante, no el texto.
-window.anadirProductoAPedido_ = async function (producto, cantidad, modoCompra, botonOrigen) {
+// ── Fase 4: "añadir/editar un producto del pedido" — modal compartida
+// por la tarjeta del grid y la vista de detalle (rediseño 27/11/2026 a
+// petición de Eloy: antes era un control siempre desplegado en la
+// tarjeta —"llamaba demasiado la atención"—, ahora un icono discreto
+// que abre esta modal). Vive FUERA del IIFE de carga de datos (como
+// abrirDetalleProducto_) para que lo puedan llamar tanto los botones
+// de las tarjetas (dentro del IIFE) como el de la vista de detalle
+// (fuera) sin problemas de scope.
+window.lineasEnPedido_ = {};
+
+window.abrirModalAnadirPedido_ = function (p, precioFinalParaPedido) {
     if (window.enSimulacionAreaClientes_) return;
-    const icono = botonOrigen ? botonOrigen.querySelector('i') : null;
-    if (botonOrigen) { botonOrigen.disabled = true; }
-    try {
+    const overlay = document.getElementById('modalAnadirPedidoOverlay');
+    const avisoError = document.getElementById('modalAnadirPedidoError');
+    avisoError.classList.remove('activo');
+
+    const tieneEnvase = !!(p.envase_cantidad && Number(p.envase_cantidad) > 0 && p.envase_unidad && p.envase_tipo);
+    let etiquetaEnvase = 'Cajas';
+    if (tieneEnvase) {
+        const tipo = p.envase_tipo.trim();
+        const tipoCap = tipo.charAt(0).toUpperCase() + tipo.slice(1);
+        etiquetaEnvase = tipoCap.endsWith('s') ? tipoCap : tipoCap + 's';
+    }
+    document.getElementById('modalAnadirPedidoTitulo').textContent = p.nombre;
+    document.querySelector('#modalAnadirPedidoModo [data-modo="envase"]').textContent = etiquetaEnvase;
+
+    // Si el producto ya estaba en el pedido, la modal se abre
+    // precargada con lo que ya había (editar en el sitio) en vez de
+    // partir de cero — así "verde = ya añadido, clic para revisar".
+    const lineaExistente = window.lineasEnPedido_[p.ref] || null;
+    const modoInicial = lineaExistente ? lineaExistente.modo_compra : 'unidad';
+    const cantidadInicial = lineaExistente ? (modoInicial === 'envase' ? (lineaExistente.cantidad_envases || 1) : lineaExistente.cantidad) : 1;
+    let modoActual = modoInicial;
+
+    const botonesModo = document.querySelectorAll('#modalAnadirPedidoModo .anadir-pedido__modo-btn');
+    const inputCantidad = document.getElementById('modalAnadirPedidoCantidad');
+    const equivalencia = document.getElementById('modalAnadirPedidoEquivalencia');
+    const botonMenos = document.querySelector('#modalAnadirPedidoStepperGrupo [data-delta="-1"]');
+    const notasTextarea = document.getElementById('modalAnadirPedidoNotas');
+    const botonQuitar = document.getElementById('modalAnadirPedidoQuitar');
+    const botonConfirmar = document.getElementById('modalAnadirPedidoConfirmar');
+
+    botonesModo.forEach(function (b) { b.classList.toggle('activo', b.dataset.modo === modoActual); });
+    inputCantidad.value = String(cantidadInicial);
+    notasTextarea.value = (lineaExistente && lineaExistente.notas) || '';
+    botonQuitar.style.display = lineaExistente ? 'block' : 'none';
+    botonConfirmar.textContent = lineaExistente ? 'Guardar' : 'Añadir al carrito';
+
+    function actualizarEquivalencia_() {
+        if (modoActual === 'envase' && tieneEnvase) {
+            const n = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
+            equivalencia.textContent = '= ' + (n * Number(p.envase_cantidad)) + ' ' + p.envase_unidad.trim();
+            equivalencia.style.display = '';
+        } else {
+            equivalencia.style.display = 'none';
+        }
+    }
+    function actualizarBotonMenos_() { botonMenos.disabled = (parseInt(inputCantidad.value, 10) || 1) <= 1; }
+
+    botonesModo.forEach(function (btn) {
+        btn.onclick = function () {
+            // Si se vuelve al modo con el que ya estaba guardado, se
+            // restaura su cantidad — si se cambia a otro modo distinto,
+            // se reinicia a 1 (sueltas y cajas no se traducen entre sí).
+            const esModoYaGuardado = lineaExistente && btn.dataset.modo === modoInicial;
+            modoActual = btn.dataset.modo;
+            botonesModo.forEach(function (b) { b.classList.toggle('activo', b === btn); });
+            inputCantidad.value = esModoYaGuardado ? String(cantidadInicial) : '1';
+            actualizarBotonMenos_();
+            actualizarEquivalencia_();
+        };
+    });
+
+    document.querySelectorAll('#modalAnadirPedidoStepperGrupo .anadir-pedido__stepper').forEach(function (btn) {
+        btn.onclick = function () {
+            const delta = parseInt(btn.dataset.delta, 10);
+            const actual = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
+            inputCantidad.value = String(Math.max(1, actual + delta));
+            actualizarBotonMenos_();
+            actualizarEquivalencia_();
+        };
+    });
+    inputCantidad.oninput = function () {
+        if (!inputCantidad.value || parseInt(inputCantidad.value, 10) < 1) inputCantidad.value = '1';
+        actualizarBotonMenos_();
+        actualizarEquivalencia_();
+    };
+
+    botonConfirmar.onclick = async function () {
         if (!window.propuestaBorradorId_) {
             const { data: borrador, error } = await window.obtenerOCrearBorradorPropuesta_();
             if (error || !borrador) {
-                if (icono) icono.className = 'fa-solid fa-triangle-exclamation';
-                if (botonOrigen) botonOrigen.disabled = false;
+                avisoError.textContent = 'No se ha podido crear tu pedido: ' + (error || 'error desconocido');
+                avisoError.classList.add('activo');
                 return;
             }
             window.propuestaBorradorId_ = borrador.id;
         }
-        const { error: errorLinea } = await window.incrementarCantidadLinea_(window.propuestaBorradorId_, producto, cantidad, modoCompra);
-        if (icono) {
-            icono.className = errorLinea ? 'fa-solid fa-triangle-exclamation' : 'fa-solid fa-check';
+        const cantidadIngresada = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
+        const cantidadPorEnvase = (p.envase_cantidad && Number(p.envase_cantidad) > 0) ? Number(p.envase_cantidad) : 1;
+        const cantidadEnvases = modoActual === 'envase' ? cantidadIngresada : null;
+        const cantidadTotal = modoActual === 'envase' ? cantidadIngresada * cantidadPorEnvase : cantidadIngresada;
+
+        botonConfirmar.disabled = true;
+        const { error: errorLinea } = await window.establecerCantidadLinea_(
+            window.propuestaBorradorId_,
+            { ref: p.ref, nombre: p.nombre, precio_unitario: precioFinalParaPedido, envase_cantidad: p.envase_cantidad || null, envase_unidad: p.envase_unidad || null, envase_tipo: p.envase_tipo || null },
+            cantidadTotal, modoActual, cantidadEnvases, notasTextarea.value.trim()
+        );
+        botonConfirmar.disabled = false;
+        if (errorLinea) {
+            avisoError.textContent = 'No se ha podido guardar: ' + errorLinea;
+            avisoError.classList.add('activo');
+            return;
         }
-        if (botonOrigen) {
-            botonOrigen.classList.toggle('anadir-pedido__boton--ok', !errorLinea);
-            setTimeout(function () {
-                botonOrigen.disabled = false;
-                botonOrigen.classList.remove('anadir-pedido__boton--ok');
-                if (icono) icono.className = 'fa-solid fa-cart-shopping';
-            }, 1200);
+        overlay.classList.remove('activo');
+        await window.refrescarLineasEnPedido_();
+    };
+
+    botonQuitar.onclick = async function () {
+        if (!lineaExistente) return;
+        botonQuitar.disabled = true;
+        const { error } = await window.eliminarLineaPorId_(lineaExistente.id);
+        botonQuitar.disabled = false;
+        if (error) {
+            avisoError.textContent = 'No se ha podido quitar: ' + error;
+            avisoError.classList.add('activo');
+            return;
         }
-        if (!errorLinea) await window.actualizarContadorPedido_();
-    } catch (e) {
-        if (icono) icono.className = 'fa-solid fa-triangle-exclamation';
-        if (botonOrigen) botonOrigen.disabled = false;
-    }
+        overlay.classList.remove('activo');
+        await window.refrescarLineasEnPedido_();
+    };
+
+    actualizarBotonMenos_();
+    actualizarEquivalencia_();
+    overlay.classList.add('activo');
 };
+
+document.getElementById('modalAnadirPedidoCancelar').addEventListener('click', function () {
+    document.getElementById('modalAnadirPedidoOverlay').classList.remove('activo');
+});
+document.getElementById('modalAnadirPedidoCerrar').addEventListener('click', function () {
+    document.getElementById('modalAnadirPedidoOverlay').classList.remove('activo');
+});
+document.getElementById('modalAnadirPedidoOverlay').addEventListener('click', function (ev) {
+    if (ev.target === this) this.classList.remove('activo');
+});
 
 window.actualizarContadorPedido_ = async function () {
     if (window.enSimulacionAreaClientes_ || !window.propuestaBorradorId_) return;
@@ -870,6 +1096,229 @@ window.actualizarContadorPedido_ = async function () {
         contador.style.display = 'none';
     }
 };
+
+// Vuelve a pedir las líneas del pedido en curso (ref -> línea) y
+// refresca tanto el contador flotante como el estado verde/gris de
+// TODOS los botones de carrito visibles ahora mismo (tarjetas + el de
+// la vista de detalle, si está abierta) — llamarlo tras cualquier
+// cambio (añadir, editar, quitar, vaciar, enviar).
+window.refrescarLineasEnPedido_ = async function () {
+    if (window.enSimulacionAreaClientes_) { return; }
+    if (window.propuestaBorradorId_) {
+        const { data } = await window.obtenerMapaLineasPorRef_(window.propuestaBorradorId_);
+        window.lineasEnPedido_ = data || {};
+    } else {
+        window.lineasEnPedido_ = {};
+    }
+    document.querySelectorAll('.boton-carrito-anadir[data-ref]').forEach(function (btn) {
+        btn.classList.toggle('boton-carrito-anadir--en-pedido', !!window.lineasEnPedido_[btn.dataset.ref]);
+    });
+    await window.actualizarContadorPedido_();
+};
+
+// ── Modal "Mi pedido" (detalle del pedido en curso) — sustituye la
+// navegación a propuesta.html desde el catálogo (petición de Eloy,
+// 27/11/2026). propuesta.html se mantiene igual para quien llegue
+// desde "Mis pedidos". ──────────────────────────────────────────────
+function formatearEurosPedido_(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
+
+window.abrirModalPedido_ = async function () {
+    if (window.enSimulacionAreaClientes_) return;
+    if (!window.propuestaBorradorId_) {
+        const { data: borrador, error } = await window.obtenerOCrearBorradorPropuesta_();
+        if (error || !borrador) return;
+        window.propuestaBorradorId_ = borrador.id;
+    }
+    const { data: borradorActual } = await window.obtenerOCrearBorradorPropuesta_();
+    document.getElementById('modalPedidoNotasGenerales').value = (borradorActual && borradorActual.notas) || '';
+    document.getElementById('modalPedidoOverlay').classList.add('activo');
+    await window.repintarModalPedido_();
+};
+
+window.repintarModalPedido_ = async function () {
+    const ayuda = document.getElementById('modalPedidoAyuda');
+    const avisoError = document.getElementById('modalPedidoAvisoError');
+    avisoError.classList.remove('activo');
+
+    const { data: lineas, error } = await window.obtenerLineasPropuesta_(window.propuestaBorradorId_);
+    if (error) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se han podido cargar los productos: ' + error;
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    ayuda.textContent = lineas.length ? lineas.length + ' producto(s) en tu pedido.' : '';
+    document.getElementById('modalPedidoBloqueLineas').style.display = lineas.length ? 'block' : 'none';
+    document.getElementById('modalPedidoVacio').style.display = lineas.length ? 'none' : 'block';
+    if (!lineas.length) return;
+
+    const lista = document.getElementById('modalPedidoLista');
+    lista.innerHTML = '';
+    let total = 0;
+    lineas.forEach(function (l) {
+        const precioConocido = l.precio_unitario !== null && l.precio_unitario !== undefined;
+        const subtotal = precioConocido ? Number(l.precio_unitario) * Number(l.cantidad) : null;
+        if (subtotal !== null) total += subtotal;
+        const enModoEnvase = l.modo_compra === 'envase';
+        const valorInput = enModoEnvase ? (l.cantidad_envases || 1) : l.cantidad;
+
+        const fila = document.createElement('div');
+        fila.className = 'linea-pedido';
+        fila.dataset.id = l.id;
+        fila.dataset.ref = l.ref;
+        fila.innerHTML =
+            '<div class="linea-pedido__info">' +
+                '<div class="linea-pedido__nombre">' + l.nombre + '</div>' +
+                '<div class="linea-pedido__ref">Ref. ' + l.ref + '</div>' +
+                '<div class="linea-pedido__precio-unitario">' + (precioConocido ? formatearEurosPedido_(Number(l.precio_unitario)) + ' / ud.' : 'Precio a confirmar') + '</div>' +
+                '<div class="linea-pedido__formato">' + window.textoCantidadLinea_(l) + '</div>' +
+            '</div>' +
+            '<input type="number" class="linea-pedido__cantidad" min="1" step="1" value="' + valorInput + '" aria-label="' + (enModoEnvase ? 'Número de cajas' : 'Cantidad') + '">' +
+            '<div class="linea-pedido__subtotal">' + (subtotal !== null ? formatearEurosPedido_(subtotal) : '—') + '</div>' +
+            '<button type="button" class="linea-pedido__quitar" title="Quitar del pedido" aria-label="Quitar del pedido">✕</button>' +
+            '<textarea class="linea-pedido__notas" placeholder="Información adicional para el comercial sobre este producto (opcional)">' + (l.notas || '') + '</textarea>';
+        lista.appendChild(fila);
+
+        const inputCantidad = fila.querySelector('.linea-pedido__cantidad');
+        let temporizador = null;
+        inputCantidad.addEventListener('change', function () {
+            clearTimeout(temporizador);
+            const nuevoValor = Math.max(0, parseInt(inputCantidad.value, 10) || 0);
+            temporizador = setTimeout(async function () {
+                inputCantidad.disabled = true;
+                const porEnvase = (l.envase_cantidad && Number(l.envase_cantidad) > 0) ? Number(l.envase_cantidad) : 1;
+                const nuevaCantidadTotal = enModoEnvase ? nuevoValor * porEnvase : nuevoValor;
+                const { error: errorCantidad } = await window.establecerCantidadLinea_(
+                    window.propuestaBorradorId_,
+                    { ref: l.ref, nombre: l.nombre, precio_unitario: l.precio_unitario, envase_cantidad: l.envase_cantidad, envase_unidad: l.envase_unidad, envase_tipo: l.envase_tipo },
+                    nuevaCantidadTotal, l.modo_compra, enModoEnvase ? nuevoValor : null
+                );
+                inputCantidad.disabled = false;
+                if (errorCantidad) {
+                    avisoError.textContent = 'No se ha podido actualizar la cantidad: ' + errorCantidad;
+                    avisoError.classList.add('activo');
+                    return;
+                }
+                await window.repintarModalPedido_();
+                await window.refrescarLineasEnPedido_();
+            }, 50);
+        });
+
+        fila.querySelector('.linea-pedido__notas').addEventListener('change', async function () {
+            const textarea = this;
+            textarea.disabled = true;
+            const { error: errorNotas } = await window.actualizarNotasLinea_(l.id, textarea.value.trim());
+            textarea.disabled = false;
+            if (errorNotas) {
+                avisoError.textContent = 'No se ha podido guardar la nota: ' + errorNotas;
+                avisoError.classList.add('activo');
+            }
+        });
+
+        fila.querySelector('.linea-pedido__quitar').addEventListener('click', async function () {
+            const boton = this;
+            boton.disabled = true;
+            const { error: errorQuitar } = await window.eliminarLineaPorId_(l.id);
+            if (errorQuitar) {
+                boton.disabled = false;
+                avisoError.textContent = 'No se ha podido quitar el producto: ' + errorQuitar;
+                avisoError.classList.add('activo');
+                return;
+            }
+            await window.repintarModalPedido_();
+            await window.refrescarLineasEnPedido_();
+        });
+    });
+
+    document.getElementById('modalPedidoTotal').textContent = formatearEurosPedido_(total);
+};
+
+document.getElementById('btnMiPedido').addEventListener('click', function () { window.abrirModalPedido_(); });
+document.getElementById('modalPedidoCerrar').addEventListener('click', function () {
+    document.getElementById('modalPedidoOverlay').classList.remove('activo');
+});
+document.getElementById('modalPedidoOverlay').addEventListener('click', function (ev) {
+    if (ev.target === this) this.classList.remove('activo');
+});
+
+document.getElementById('modalPedidoNotasGenerales').addEventListener('change', async function () {
+    if (!window.propuestaBorradorId_) return;
+    const textarea = this;
+    textarea.disabled = true;
+    const { error } = await window.actualizarNotasPedido_(window.propuestaBorradorId_, textarea.value.trim());
+    textarea.disabled = false;
+    if (error) {
+        const avisoError = document.getElementById('modalPedidoAvisoError');
+        avisoError.textContent = 'No se han podido guardar las instrucciones: ' + error;
+        avisoError.classList.add('activo');
+    }
+});
+
+document.getElementById('modalPedidoVaciar').addEventListener('click', async function () {
+    const confirmado = await window.confirmarModal_(
+        'Vaciar pedido',
+        'Se quitarán todos los productos de tu pedido actual. Esta acción no se puede deshacer.',
+        'Vaciar pedido',
+        true
+    );
+    if (!confirmado) return;
+    const avisoError = document.getElementById('modalPedidoAvisoError');
+    avisoError.classList.remove('activo');
+    const { error } = await window.vaciarPropuesta_(window.propuestaBorradorId_);
+    if (error) {
+        avisoError.textContent = 'No se ha podido vaciar el pedido: ' + error;
+        avisoError.classList.add('activo');
+        return;
+    }
+    await window.repintarModalPedido_();
+    await window.refrescarLineasEnPedido_();
+});
+
+document.getElementById('modalPedidoEnviar').addEventListener('click', async function () {
+    const confirmado = await window.confirmarModal_(
+        'Enviar pedido',
+        'Tu comercial recibirá este pedido tal y como está ahora mismo. Una vez enviado, ya no podrás modificarlo desde aquí.',
+        'Enviar pedido',
+        false
+    );
+    if (!confirmado) return;
+
+    const avisoError = document.getElementById('modalPedidoAvisoError');
+    const avisoOk = document.getElementById('modalPedidoAvisoOk');
+    avisoError.classList.remove('activo');
+    const boton = this;
+    boton.disabled = true;
+    boton.textContent = 'Enviando…';
+    const propuestaEnviadaId = window.propuestaBorradorId_;
+    const { error } = await window.enviarPropuesta_(propuestaEnviadaId);
+    boton.disabled = false;
+    boton.textContent = 'Enviar pedido';
+
+    if (error) {
+        avisoError.textContent = 'No se ha podido enviar el pedido: ' + error;
+        avisoError.classList.add('activo');
+        return;
+    }
+    avisoOk.textContent = '¡Pedido enviado! Puedes verlo en "Mis pedidos".';
+    avisoOk.classList.add('activo');
+    window.notificarPedidoPorCorreo_(propuestaEnviadaId).then(function (resultado) {
+        if (resultado.error) console.warn('Aviso por correo del pedido no enviado:', resultado.error);
+    });
+
+    // El borrador que acaba de enviarse ya no es "el borrador activo"
+    // (pasó a recibida) — se limpia para que el próximo producto
+    // añadido cree uno nuevo, y se refleja ya mismo en el contador y
+    // en los botones de carrito (todos vuelven a gris).
+    window.propuestaBorradorId_ = null;
+    window.lineasEnPedido_ = {};
+    document.querySelectorAll('.boton-carrito-anadir').forEach(function (b) { b.classList.remove('boton-carrito-anadir--en-pedido'); });
+    document.getElementById('btnMiPedido__contador').style.display = 'none';
+    setTimeout(function () {
+        document.getElementById('modalPedidoOverlay').classList.remove('activo');
+        avisoOk.classList.remove('activo');
+    }, 1500);
+});
 
 // Botón flotante "subir arriba" — mismo umbral y comportamiento que la
 // web pública (ver #btn-subir-arriba en index.html): aparece a partir
@@ -968,7 +1417,7 @@ window.actualizarContadorPedido_ = async function () {
         const { data: borrador } = await window.obtenerOCrearBorradorPropuesta_();
         if (borrador) {
             window.propuestaBorradorId_ = borrador.id;
-            await window.actualizarContadorPedido_();
+            await window.refrescarLineasEnPedido_();
         }
     }
 
@@ -1252,108 +1701,28 @@ window.actualizarContadorPedido_ = async function () {
     // .mas-buscados__lista reutiliza el mismo .producto-card del grid
     // principal, solo que en una fila con scroll horizontal en vez de
     // una rejilla.
-    // Control "añadir al pedido" (Fase 4), compartido por la tarjeta del
-    // grid y el modal de detalle — mismo criterio que la "lista de la
-    // compra" de la web pública: selector de modo (sueltas/caja)
-    // SIEMPRE visible, tenga o no el producto formato de envase
-    // informado (con la etiqueta genérica "Cajas" si no lo tiene, y sin
-    // mostrar ninguna equivalencia en unidades inventada). Devuelve
-    // null en modo simulación (no se puede actuar en nombre del
-    // cliente — ver comentario en crearTarjetaProducto_).
-    function crearControlAnadirPedido_(p, precioFinalParaPedido) {
+    // Botón "añadir al pedido" de la tarjeta (Fase 4) — icono discreto
+    // en la esquina de la imagen, en verde si el producto ya está en
+    // el pedido. Abre la modal compartida (window.abrirModalAnadirPedido_,
+    // definida fuera de este IIFE junto a abrirDetalleProducto_) para
+    // elegir formato/cantidad/nota. Devuelve null en modo simulación
+    // (no se puede actuar en nombre del cliente).
+    function crearBotonCarritoAnadir_(p, precioFinalParaPedido) {
         if (window.enSimulacionAreaClientes_) return null;
-
-        const tieneEnvase = !!(p.envase_cantidad && Number(p.envase_cantidad) > 0 && p.envase_unidad && p.envase_tipo);
-        let etiquetaEnvase = 'Cajas';
-        if (tieneEnvase) {
-            const tipo = p.envase_tipo.trim();
-            const tipoCap = tipo.charAt(0).toUpperCase() + tipo.slice(1);
-            etiquetaEnvase = tipoCap.endsWith('s') ? tipoCap : tipoCap + 's';
-        }
-
-        const contenedor = document.createElement('div');
-        contenedor.className = 'anadir-pedido';
-        contenedor.innerHTML =
-            '<div class="anadir-pedido__modo">' +
-                '<button type="button" class="anadir-pedido__modo-btn activo" data-modo="unidad">Sueltas</button>' +
-                '<button type="button" class="anadir-pedido__modo-btn" data-modo="envase">' + etiquetaEnvase + '</button>' +
-            '</div>' +
-            '<p class="anadir-pedido__equivalencia" style="display:none;"></p>' +
-            '<div class="anadir-pedido__fila">' +
-                '<div class="anadir-pedido__stepper-grupo">' +
-                    '<button type="button" class="anadir-pedido__stepper" data-delta="-1" aria-label="Quitar uno">−</button>' +
-                    '<input type="number" class="anadir-pedido__cantidad" min="1" step="1" value="1" aria-label="Cantidad">' +
-                    '<button type="button" class="anadir-pedido__stepper" data-delta="1" aria-label="Añadir uno">+</button>' +
-                '</div>' +
-                '<button type="button" class="anadir-pedido__boton" title="Añadir al pedido" aria-label="Añadir al pedido"><i class="fa-solid fa-cart-shopping"></i></button>' +
-            '</div>';
-        contenedor.addEventListener('click', function (ev) { ev.stopPropagation(); }); // no abrir el detalle
-
-        let modoActual = 'unidad';
-        const botonesModo = contenedor.querySelectorAll('.anadir-pedido__modo-btn');
-        const inputCantidad = contenedor.querySelector('.anadir-pedido__cantidad');
-        const equivalencia = contenedor.querySelector('.anadir-pedido__equivalencia');
-        const botonMenos = contenedor.querySelector('[data-delta="-1"]');
-
-        function actualizarEquivalencia_() {
-            if (modoActual === 'envase' && tieneEnvase) {
-                const n = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
-                equivalencia.textContent = '= ' + (n * Number(p.envase_cantidad)) + ' ' + p.envase_unidad.trim();
-                equivalencia.style.display = '';
-            } else {
-                equivalencia.style.display = 'none';
-            }
-        }
-        function actualizarBotonMenos_() { botonMenos.disabled = (parseInt(inputCantidad.value, 10) || 1) <= 1; }
-
-        botonesModo.forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                modoActual = btn.dataset.modo;
-                botonesModo.forEach(function (b) { b.classList.toggle('activo', b === btn); });
-                // Al cambiar de modo, la cantidad se reinicia a 1 DEL
-                // NUEVO modo — igual que la web pública: mezclar
-                // sueltas y cajas no da un número exacto.
-                inputCantidad.value = '1';
-                actualizarBotonMenos_();
-                actualizarEquivalencia_();
-            });
+        const boton = document.createElement('button');
+        boton.type = 'button';
+        boton.className = 'boton-carrito-anadir';
+        boton.dataset.ref = p.ref;
+        boton.title = 'Añadir al pedido';
+        boton.setAttribute('aria-label', 'Añadir al pedido');
+        boton.innerHTML = '<i class="fa-solid fa-cart-shopping"></i><span class="boton-carrito-anadir__mas">+</span>';
+        if (window.lineasEnPedido_[p.ref]) boton.classList.add('boton-carrito-anadir--en-pedido');
+        boton.addEventListener('click', function (ev) {
+            ev.stopPropagation(); // no abrir el detalle
+            window.abrirModalAnadirPedido_(p, precioFinalParaPedido);
         });
-
-        contenedor.querySelectorAll('.anadir-pedido__stepper').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                const delta = parseInt(btn.dataset.delta, 10);
-                const actual = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
-                inputCantidad.value = String(Math.max(1, actual + delta));
-                actualizarBotonMenos_();
-                actualizarEquivalencia_();
-            });
-        });
-        inputCantidad.addEventListener('input', function () {
-            if (!inputCantidad.value || parseInt(inputCantidad.value, 10) < 1) inputCantidad.value = '1';
-            actualizarBotonMenos_();
-            actualizarEquivalencia_();
-        });
-
-        const botonAnadir = contenedor.querySelector('.anadir-pedido__boton');
-        botonAnadir.addEventListener('click', function () {
-            const cantidad = Math.max(1, parseInt(inputCantidad.value, 10) || 1);
-            window.anadirProductoAPedido_(
-                {
-                    ref: p.ref, nombre: p.nombre, precio_unitario: precioFinalParaPedido,
-                    envase_cantidad: p.envase_cantidad || null, envase_unidad: p.envase_unidad || null, envase_tipo: p.envase_tipo || null,
-                },
-                cantidad, modoActual, botonAnadir
-            );
-        });
-
-        actualizarBotonMenos_();
-        return contenedor;
+        return boton;
     }
-    // window.abrirDetalleProducto_ vive FUERA de este IIFE — sin este
-    // enganche no vería crearControlAnadirPedido_ (mismo motivo por el
-    // que registrarProductoVisto_/repintarUltimosVistos_ se cuelgan de
-    // window más abajo).
-    window.crearControlAnadirPedido_ = crearControlAnadirPedido_;
 
     function crearTarjetaProducto_(p) {
         // El catálogo de clientes siempre parte del precio de mayor (a
@@ -1460,8 +1829,8 @@ window.actualizarContadorPedido_ = async function () {
         // en nombre del cliente") — el comercial/admin viendo la
         // simulación comparte el mismo auth.uid() que el cliente real,
         // así que tocar el pedido aquí tocaría de verdad SU pedido.
-        const controlAnadir = crearControlAnadirPedido_(p, precioFinalParaPedido);
-        if (controlAnadir) tarjeta.querySelector('.producto-tarjeta__cuerpo').appendChild(controlAnadir);
+        const botonCarrito = crearBotonCarritoAnadir_(p, precioFinalParaPedido);
+        if (botonCarrito) tarjeta.querySelector('.producto-tarjeta__img-envoltorio').appendChild(botonCarrito);
         return tarjeta;
     }
 

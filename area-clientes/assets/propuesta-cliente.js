@@ -43,11 +43,23 @@ window.obtenerLineasPropuesta_ = async function (propuestaId) {
     const cliente = window.obtenerClienteSupabase_();
     const { data, error } = await cliente
         .from('propuesta_pedido_lineas')
-        .select('id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, creado_en')
+        .select('id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, creado_en')
         .eq('propuesta_id', propuestaId)
         .order('creado_en', { ascending: true });
     if (error) return { error: error.message };
     return { data: data || [] };
+};
+
+// Las líneas del borrador, indexadas por referencia — para saber de un
+// vistazo qué productos del grid ya están en el pedido (icono en verde)
+// y, si se reabre el modal de "añadir al pedido" sobre uno que ya
+// estaba, precargar su cantidad/modo/notas en vez de partir de cero.
+window.obtenerMapaLineasPorRef_ = async function (propuestaId) {
+    const { data, error } = await window.obtenerLineasPropuesta_(propuestaId);
+    if (error) return { error: error };
+    const mapa = {};
+    (data || []).forEach(function (l) { mapa[l.ref] = l; });
+    return { data: mapa };
 };
 
 // Número de líneas del borrador actual — para el contador del botón
@@ -83,7 +95,11 @@ function unidadesDesdeEnvases_(producto, cantidadEnvases) {
 // para el precio) — modoCompra/cantidadEnvases son solo para poder
 // MOSTRAR y volver a editar cómo se pidió (igual que la "lista de la
 // compra" de la web pública: unidades sueltas o por caja/envase).
-window.establecerCantidadLinea_ = async function (propuestaId, producto, cantidadTotalUnidades, modoCompra, cantidadEnvases) {
+// "notas" es opcional a propósito — si no se pasa (undefined), no
+// viaja en el payload (JSON.stringify quita las claves "undefined") y
+// el upsert de PostgREST, al no incluir esa columna, no la toca: así
+// un simple cambio de cantidad no borra la nota que ya hubiera.
+window.establecerCantidadLinea_ = async function (propuestaId, producto, cantidadTotalUnidades, modoCompra, cantidadEnvases, notas) {
     const cliente = window.obtenerClienteSupabase_();
     if (cantidadTotalUnidades <= 0) {
         const { error } = await cliente
@@ -93,20 +109,37 @@ window.establecerCantidadLinea_ = async function (propuestaId, producto, cantida
             .eq('ref', producto.ref);
         return { error: error ? error.message : null };
     }
+    const payload = {
+        propuesta_id: propuestaId,
+        ref: producto.ref,
+        nombre: producto.nombre,
+        precio_unitario: producto.precio_unitario,
+        cantidad: cantidadTotalUnidades,
+        modo_compra: modoCompra || 'unidad',
+        cantidad_envases: (modoCompra === 'envase') ? cantidadEnvases : null,
+        envase_cantidad: producto.envase_cantidad || null,
+        envase_unidad: producto.envase_unidad || null,
+        envase_tipo: producto.envase_tipo || null,
+    };
+    if (notas !== undefined) payload.notas = notas || null;
     const { error } = await cliente
         .from('propuesta_pedido_lineas')
-        .upsert({
-            propuesta_id: propuestaId,
-            ref: producto.ref,
-            nombre: producto.nombre,
-            precio_unitario: producto.precio_unitario,
-            cantidad: cantidadTotalUnidades,
-            modo_compra: modoCompra || 'unidad',
-            cantidad_envases: (modoCompra === 'envase') ? cantidadEnvases : null,
-            envase_cantidad: producto.envase_cantidad || null,
-            envase_unidad: producto.envase_unidad || null,
-            envase_tipo: producto.envase_tipo || null,
-        }, { onConflict: 'propuesta_id,ref' });
+        .upsert(payload, { onConflict: 'propuesta_id,ref' });
+    return { error: error ? error.message : null };
+};
+
+window.actualizarNotasLinea_ = async function (lineaId, notas) {
+    const cliente = window.obtenerClienteSupabase_();
+    const { error } = await cliente.from('propuesta_pedido_lineas').update({ notas: notas || null }).eq('id', lineaId);
+    return { error: error ? error.message : null };
+};
+
+// Notas generales del pedido (instrucciones al comercial) — solo
+// editables mientras la propuesta sigue en "borrador" (lo impone la
+// RLS de propuestas_pedido, no hace falta comprobarlo aquí).
+window.actualizarNotasPedido_ = async function (propuestaId, notas) {
+    const cliente = window.obtenerClienteSupabase_();
+    const { error } = await cliente.from('propuestas_pedido').update({ notas: notas || null }).eq('id', propuestaId);
     return { error: error ? error.message : null };
 };
 
@@ -201,7 +234,7 @@ window.listarPropuestasCliente_ = async function () {
     const cliente = window.obtenerClienteSupabase_();
     const { data, error } = await cliente
         .from('propuestas_pedido')
-        .select('id, estado, notas, creado_en, actualizado_en, enviado_en, propuesta_pedido_lineas(ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo)')
+        .select('id, estado, notas, creado_en, actualizado_en, enviado_en, propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas)')
         .order('creado_en', { ascending: false });
     if (error) return { error: error.message };
     return {
@@ -242,13 +275,26 @@ window.duplicarPropuestaComoBorrador_ = async function (propuestaIdOrigen) {
     const { data: origenLineas, error: errorOrigen } = await window.obtenerLineasPropuesta_(propuestaIdOrigen);
     if (errorOrigen) return { error: errorOrigen };
 
+    const cliente = window.obtenerClienteSupabase_();
+    const { data: origenPropuesta } = await cliente
+        .from('propuestas_pedido')
+        .select('notas')
+        .eq('id', propuestaIdOrigen)
+        .maybeSingle();
+
     const { data: borrador, error: errorBorrador } = await window.obtenerOCrearBorradorPropuesta_();
     if (errorBorrador) return { error: errorBorrador };
 
     const vaciado = await window.vaciarPropuesta_(borrador.id);
     if (vaciado.error) return { error: vaciado.error };
 
-    const cliente = window.obtenerClienteSupabase_();
+    // Las notas generales del pedido de origen se copian solo si el
+    // borrador actual todavía no tenía ninguna propia — nunca se pisa
+    // algo que el cliente ya hubiera escrito en su borrador en curso.
+    if (origenPropuesta && origenPropuesta.notas && !borrador.notas) {
+        await window.actualizarNotasPedido_(borrador.id, origenPropuesta.notas);
+    }
+
     if (origenLineas.length) {
         const { error: errorInsert } = await cliente
             .from('propuesta_pedido_lineas')
@@ -257,6 +303,7 @@ window.duplicarPropuestaComoBorrador_ = async function (propuestaIdOrigen) {
                     propuesta_id: borrador.id, ref: l.ref, nombre: l.nombre, cantidad: l.cantidad, precio_unitario: l.precio_unitario,
                     modo_compra: l.modo_compra, cantidad_envases: l.cantidad_envases,
                     envase_cantidad: l.envase_cantidad, envase_unidad: l.envase_unidad, envase_tipo: l.envase_tipo,
+                    notas: l.notas || null,
                 };
             }));
         if (errorInsert) return { error: errorInsert.message };

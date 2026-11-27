@@ -36,6 +36,11 @@
         padding: 6px 0; border-bottom: 1px dashed var(--border);
     }
     .tarjeta-pedido__linea:last-child { border-bottom: none; }
+    .tarjeta-pedido__linea-notas { font-size: 0.78rem; color: var(--blue); margin: -4px 0 6px 10px; }
+    .tarjeta-pedido__notas-generales {
+        font-size: 0.85rem; color: var(--dark); background: var(--light);
+        border-radius: 8px; padding: 8px 10px; margin-bottom: 10px;
+    }
     .tarjeta-pedido__acciones { margin-top: 12px; display: flex; justify-content: flex-end; }
     .tarjeta-pedido__acciones button { width: auto; }
     .vacio-pedidos { text-align: center; padding: 50px 20px; color: var(--muted); }
@@ -136,13 +141,15 @@
         cabecera.addEventListener('click', function () {
             if (!pintado) {
                 detalle.innerHTML =
+                    (p.notas ? '<div class="tarjeta-pedido__notas-generales"><strong>Instrucciones generales:</strong> ' + p.notas.replace(/</g, '&lt;') + '</div>' : '') +
                     p.lineas.map(function (l) {
                         const precioConocido = l.precio_unitario !== null && l.precio_unitario !== undefined;
                         const subtotal = precioConocido ? Number(l.precio_unitario) * Number(l.cantidad) : null;
                         return '<div class="tarjeta-pedido__linea">' +
                             '<span>' + window.textoCantidadLinea_(l) + ' × ' + l.nombre + ' <span style="color:var(--muted);">(Ref. ' + l.ref + ')</span></span>' +
                             '<span>' + (subtotal !== null ? formatearEuros_(subtotal) : '—') + '</span>' +
-                        '</div>';
+                        '</div>' +
+                        (l.notas ? '<div class="tarjeta-pedido__linea-notas">↳ ' + l.notas.replace(/</g, '&lt;') + '</div>' : '');
                     }).join('') +
                     (esBorrador
                         ? '<div class="tarjeta-pedido__acciones"><a class="boton-principal" style="text-decoration:none; display:inline-block; width:auto; padding:9px 16px;" href="propuesta.html">Ir a este pedido</a></div>'
