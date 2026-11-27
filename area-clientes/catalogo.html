@@ -576,6 +576,15 @@ window.copiarReferencia_ = function (ref, boton) {
     let familiasActivas = new Set();
     let subfamiliasActivas = new Set();
 
+    function debounce_(fn, ms) {
+        let temporizador;
+        return function () {
+            const args = arguments;
+            clearTimeout(temporizador);
+            temporizador = setTimeout(function () { fn.apply(null, args); }, ms);
+        };
+    }
+
     function precioOrdenable_(p) {
         const base = numeroDesdePrecio_(p.precio_mayor_con);
         return base === null ? Infinity : base; // sin precio de mayor, al final al ordenar por precio
@@ -853,7 +862,14 @@ window.copiarReferencia_ = function (ref, boton) {
         areasPresentes = Array.from(new Set(productos.map(function (p) { return p.area; }).filter(Boolean)));
 
         if (!huboPintadoInicial) {
-            document.getElementById('buscador').addEventListener('input', aplicarFiltros_);
+            // Bug real reportado (27/11/2026): llamaba a aplicarFiltros_
+            // (que repinta toda la rejilla, cientos/miles de tarjetas)
+            // en CADA pulsación, sin ningún retraso — a diferencia del
+            // buscador público (index.html), que sí usa un debounce.
+            // Con catálogos grandes esto se notaba como lag real al
+            // escribir y, sobre todo, al borrar varios caracteres
+            // seguidos (cada borrado repintaba la rejilla entera).
+            document.getElementById('buscador').addEventListener('input', debounce_(aplicarFiltros_, 200));
             document.getElementById('orden').addEventListener('change', aplicarFiltros_);
             document.getElementById('botonLimpiarFiltros').addEventListener('click', limpiarFiltros_);
 
