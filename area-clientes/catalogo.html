@@ -1405,15 +1405,10 @@ document.getElementById('modalPedidoEnviar').addEventListener('click', async fun
 
     const { data: perfil } = await cliente.from('profiles').select('nombre, apellidos, rol').eq('id', sesion.user.id).single();
     if (!enSimulacion && perfil && perfil.rol !== 'cliente') {
-        // Comercial/oficina/almacén/administrador viendo esta URL
-        // directamente (no es su pantalla) — cada uno a su parte del
-        // panel de gestión (almacén no tiene acceso a clientes.html;
-        // administrador ya no gestiona clientes/pedidos, solo
-        // Usuarios).
-        let destino = 'gestion/clientes.html';
-        if (perfil.rol === 'almacen') destino = 'gestion/pedidos.html';
-        else if (perfil.rol === 'administrador') destino = 'gestion/usuarios.html';
-        window.location.href = destino;
+        // Comercial/oficina/administrador viendo esta URL directamente
+        // (no es su pantalla) van al listado de clientes; almacén (que
+        // no tiene acceso a clientes.html) a sus pedidos.
+        window.location.href = perfil.rol === 'almacen' ? 'gestion/pedidos.html' : 'gestion/clientes.html';
         return;
     }
     if (perfil && perfil.nombre) {

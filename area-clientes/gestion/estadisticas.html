@@ -44,6 +44,7 @@
         <a href="importar-clientes.html" id="enlaceImportar">Importar (CSV/XLSX)</a>
         <a href="pedidos.html">Pedidos</a>
         <a href="estadisticas.html" class="activo">Estadísticas</a>
+        <a href="usuarios.html" id="enlaceUsuarios" style="display:none;">Usuarios</a>
     </aside>
     <main class="panel-contenido">
         <div class="panel-tarjeta">
@@ -51,6 +52,11 @@
             <p class="ayuda" id="ayuda">Cargando…</p>
 
             <div id="bloqueContenido" style="display:none;">
+                <div class="selector-usuario-bloque" id="bloqueSelectorUsuario" style="display:none;">
+                    <label for="selectorUsuario" style="margin:0;">Ver estadísticas de:</label>
+                    <select id="selectorUsuario"></select>
+                </div>
+
                 <div class="tarjetas-resumen" id="tarjetasResumen"></div>
 
                 <h2 style="margin-top:28px;">Por mes (últimos 12 meses)</h2>
@@ -95,7 +101,7 @@
 <script>
 (async function () {
     const resultado = await window.exigirRolAreaClientes_(
-        ['comercial', 'almacen', 'oficina'], '../index.html', '../app.html'
+        ['comercial', 'almacen', 'oficina', 'administrador'], '../index.html', '../app.html'
     );
     if (!resultado) return;
     const rol = resultado.perfil.rol;
@@ -107,6 +113,7 @@
             document.getElementById(id).remove();
         });
     }
+    if (rol === 'administrador') document.getElementById('enlaceUsuarios').style.display = 'block';
 
     const cliente = window.obtenerClienteSupabase_();
     const ayuda = document.getElementById('ayuda');
@@ -118,12 +125,8 @@
     });
 
     // ── Carga de pedidos (cada rol ve, por RLS, exactamente lo que le
-    // corresponde: comercial sus propios clientes, almacén/oficina
-    // todo lo que no sea borrador) — cada uno ve aquí SOLO sus propias
-    // estadísticas, nunca las de otro usuario (a petición de Eloy,
-    // 28/11/2026: esa visión de conjunto queda fuera de esta página;
-    // administrador ya no gestiona pedidos/clientes/estadísticas, solo
-    // la sección Usuarios). ───────────────────────────────────────────
+    // corresponde: comercial sus propios clientes, almacén/oficina/
+    // administrador todo lo que no sea borrador) ──────────────────────
     const { data: propuestasBrutas, error } = await cliente
         .from('propuestas_pedido')
         .select('confirmado_por, confirmado_en, preparado_por, preparado_en, cerrado_por, cerrado_en, entregado_por, entregado_en, estado')
@@ -134,6 +137,30 @@
         avisoError.textContent = 'No se han podido cargar las estadísticas: ' + error.message;
         avisoError.classList.add('activo');
         return;
+    }
+
+    // ── Selector de usuario — solo administrador ve a todos (sin
+    // limitaciones); el resto de roles solo se ve a sí mismo (sin
+    // selector) ────────────────────────────────────────────────────
+    let usuarios_ = [{ id: miId, etiqueta: 'Yo (' + rol + ')' }];
+    if (rol === 'administrador') {
+        const { data: todosUsuarios } = await cliente
+            .from('profiles')
+            .select('id, nombre, apellidos, rol')
+            .in('rol', ['comercial', 'almacen', 'oficina', 'administrador'])
+            .order('nombre');
+        if (todosUsuarios) {
+            const ETIQUETAS_ROL_ = { comercial: 'Comercial', almacen: 'Almacén', oficina: 'Oficina', administrador: 'Administrador' };
+            usuarios_ = todosUsuarios.map(function (u) {
+                const nombre = [u.nombre, u.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
+                return { id: u.id, etiqueta: nombre + ' — ' + ETIQUETAS_ROL_[u.rol] + (u.id === miId ? ' (yo)' : '') };
+            });
+        }
+        document.getElementById('bloqueSelectorUsuario').style.display = 'flex';
+        const selector = document.getElementById('selectorUsuario');
+        selector.innerHTML = usuarios_.map(function (u) { return '<option value="' + u.id + '">' + u.etiqueta + '</option>'; }).join('');
+        selector.value = miId;
+        selector.addEventListener('change', function () { pintarEstadisticas_(selector.value); });
     }
 
     function formatearMes_(clave) {

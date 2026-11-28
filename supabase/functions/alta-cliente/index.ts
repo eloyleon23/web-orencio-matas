@@ -54,8 +54,8 @@ Deno.serve(async (req) => {
     .single();
 
   if (errorPerfil || !perfilLlamante) return responder({ error: 'No se ha encontrado el perfil del usuario' }, 403);
-  if (!['comercial', 'oficina'].includes(perfilLlamante.rol)) {
-    return responder({ error: 'Solo comerciales u oficina pueden dar de alta clientes' }, 403);
+  if (!['comercial', 'oficina', 'administrador'].includes(perfilLlamante.rol)) {
+    return responder({ error: 'Solo comerciales, oficina o administradores pueden dar de alta clientes' }, 403);
   }
 
   let cuerpo: Record<string, unknown>;
@@ -80,9 +80,9 @@ Deno.serve(async (req) => {
   }
 
   // Un comercial solo puede darse de alta clientes a sí mismo asignados;
-  // oficina puede asignar el cliente a cualquier comercial.
+  // oficina/administrador pueden asignar el cliente a cualquier comercial.
   let comercialId = llamanteId;
-  if (perfilLlamante.rol === 'oficina' && cuerpo.comercial_id) {
+  if (['oficina', 'administrador'].includes(perfilLlamante.rol) && cuerpo.comercial_id) {
     comercialId = String(cuerpo.comercial_id);
   }
 

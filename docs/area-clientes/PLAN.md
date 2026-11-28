@@ -115,39 +115,46 @@ commit propio a esta rama para poder seguir el avance en el historial.
 ### Sección de Estadísticas (Fase 5, añadida después)
 - `area-clientes/gestion/estadisticas.html`: cuántos pedidos
   confirmó/preparó/cerró/entregó cada uno, por mes (últimos 12) y por
-  año. Cada usuario ve solo las suyas (acotado por RLS, sin selector
-  de "ver las de otro" — ver más abajo, Fase 6b, por qué ya no hay
-  ningún rol con esa vista de conjunto).
+  año. Cada usuario ve solo las suyas, salvo administrador, que tiene
+  un selector para ver las de cualquier usuario (ver Fase 6).
 
-### Fase 6b — Nuevo rol "oficina" y recorte de administrador
+### Fase 6b — Nuevo rol "oficina" (aditivo, administrador sin límites)
 
-A petición explícita de Eloy (28/11/2026): separar la identidad/acceso
-(administrador) de la operativa de pedidos y clientes (nuevo rol
-"oficina"), para no mezclar "quien da de alta usuarios internos" con
-"quien gestiona el día a día de pedidos".
+A petición explícita de Eloy (28/11/2026): separar "quien hace el
+albarán/factura y cierra el pedido" (nuevo rol "oficina") de
+"quien da de alta usuarios internos" (administrador). Importante:
+administrador es y sigue siendo un super-rol sin ninguna limitación —
+oficina se AÑADE como rol nuevo, no le quita nada a administrador.
+(Hubo un primer intento, corregido en el acto por Eloy, que recortaba
+a administrador a solo la sección Usuarios — ver Fase 6c.)
 
 - **oficina** (nuevo): ve todos los pedidos y todos los clientes, da de
   alta clientes, hace el albarán/factura y cierra el pedido
-  (Lista para enviar → En reparto → Entregada). En la práctica, hereda
-  todo lo que antes hacía administrador en clientes.html/pedidos.html,
-  salvo la rectificación por falta de stock (eso sigue siendo solo de
-  almacén). Ve sus propias estadísticas, igual que el resto.
-- **administrador**: recortado a SOLO la sección "Usuarios" — dar de
-  alta/editar/bloquear cualquier usuario interno (de cualquier rol,
-  oficina incluido). Ya no ve clientes, pedidos ni estadísticas.
+  (Lista para enviar → En reparto → Entregada), salvo la rectificación
+  por falta de stock (eso sigue siendo solo de almacén). Ve únicamente
+  sus propias estadísticas, igual que comercial/almacén.
+- **administrador**: sin ninguna limitación — todo lo que hace
+  comercial + almacén + oficina juntos (clientes, pedidos, cualquier
+  transición de estado, estadísticas de todos los usuarios con
+  selector), y además es el ÚNICO rol que gestiona la sección
+  "Usuarios" (dar de alta/editar/bloquear cualquier usuario interno,
+  de cualquier rol).
 - **comercial** y **almacén**: sin cambios.
 
-SQL en dos pasos obligatorios, en ESE orden (Postgres no deja usar un
+SQL en tres pasos obligatorios, en ESE orden (Postgres no deja usar un
 valor nuevo de un enum en la misma transacción en la que se crea):
 1. `area_clientes_schema_fase6b_rol_oficina_1_enum.sql` — añade el
    valor 'oficina' al enum. Solo, él solito.
-2. `area_clientes_schema_fase6b_rol_oficina_2_permisos.sql` — todas
-   las políticas RLS y la máquina de estados actualizadas.
+2. `area_clientes_schema_fase6b_rol_oficina_2_permisos.sql` — políticas
+   RLS y máquina de estados para oficina.
+3. `area_clientes_schema_fase6c_admin_sin_limitaciones.sql` — corrige
+   el paso 2 para que administrador conserve el 100% de su acceso
+   previo (el paso 2, por error, le había quitado permisos).
 
 También tocadas: Edge Functions `alta-cliente`, `importar-clientes`,
-`simular-acceso` (ahora exigen `comercial`/`oficina`, no ya
-`administrador`) y `alta-usuario-interno` (ahora puede crear el rol
-`oficina`).
+`simular-acceso` (exigen `comercial`/`oficina`/`administrador`) y
+`alta-usuario-interno` (puede crear el rol `oficina`, solo accesible
+para administrador).
 
 ### Fase 7 — Endurecimiento y validación final
 - Revisión de seguridad (RLS, aislamiento de datos entre clientes,

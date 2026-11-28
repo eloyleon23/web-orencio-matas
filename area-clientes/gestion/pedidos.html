@@ -136,6 +136,7 @@
         <a href="importar-clientes.html" id="enlaceImportar">Importar (CSV/XLSX)</a>
         <a href="pedidos.html" class="activo">Pedidos</a>
         <a href="estadisticas.html">Estadísticas</a>
+        <a href="usuarios.html" id="enlaceUsuarios" style="display:none;">Usuarios</a>
     </aside>
     <main class="panel-contenido">
         <div class="panel-tarjeta">
@@ -194,7 +195,7 @@
 <script>
 (async function () {
     const resultado = await window.exigirRolAreaClientes_(
-        ['comercial', 'almacen', 'oficina'], '../index.html', '../app.html'
+        ['comercial', 'almacen', 'oficina', 'administrador'], '../index.html', '../app.html'
     );
     if (!resultado) return;
     const rol = resultado.perfil.rol;
@@ -206,6 +207,7 @@
             document.getElementById(id).remove();
         });
     }
+    if (rol === 'administrador') document.getElementById('enlaceUsuarios').style.display = 'block';
 
     const cliente = window.obtenerClienteSupabase_();
     const ayuda = document.getElementById('ayuda');
@@ -231,6 +233,7 @@
         comercial: { recibida: 'en_preparacion' },
         almacen: { en_preparacion: 'lista_para_enviar' },
         oficina: { lista_para_enviar: 'en_reparto', en_reparto: 'entregada' },
+        administrador: { recibida: 'en_preparacion', en_preparacion: 'lista_para_enviar', lista_para_enviar: 'en_reparto', en_reparto: 'entregada' },
     };
 
     function formatearEuros_(n) { return n.toFixed(2).replace('.', ',') + ' €'; }
@@ -497,10 +500,10 @@
     const ESTADOS_EDITABLES_LINEAS_ = ['recibida', 'en_preparacion'];
 
     function pintarModal_(p) {
-        const puedeRectificar = rol === 'almacen' && p.estado === 'en_preparacion';
+        const puedeRectificar = (rol === 'almacen' || rol === 'administrador') && p.estado === 'en_preparacion';
         const siguienteEstado = (TRANSICION_POR_ROL_[rol] || {})[p.estado];
         const mostrarSeguimiento = ESTADOS_CON_SEGUIMIENTO_.includes(p.estado);
-        const puedeEditarSeguimiento = mostrarSeguimiento && rol === 'oficina';
+        const puedeEditarSeguimiento = mostrarSeguimiento && (rol === 'oficina' || rol === 'administrador');
         // Comercial/almacén/oficina pueden sustituir, quitar o
         // añadir productos mientras el pedido todavía se pueda tocar
         // (recibida o en preparación) — por si lo que pidió el cliente
@@ -545,7 +548,7 @@
             '</div>'
         );
 
-        const puedeRectificarRol = rol === 'almacen';
+        const puedeRectificarRol = (rol === 'almacen' || rol === 'administrador');
         const avisoAyudaHtml = (!puedeRectificar && puedeRectificarRol && p.estado === 'recibida')
             ? '<div class="modal-pedido-gestion__aviso-ayuda">Para poder rectificar cantidades por falta de stock, primero hay que pasar el pedido a «En preparación».</div>'
             : '';

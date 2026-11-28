@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
     .single();
 
   if (errorPerfil || !perfilLlamante) return responder({ error: 'No se ha encontrado el perfil del usuario' }, 403);
-  if (!['comercial', 'oficina'].includes(perfilLlamante.rol)) {
-    return responder({ error: 'Solo comerciales u oficina pueden simular el acceso de un cliente' }, 403);
+  if (!['comercial', 'oficina', 'administrador'].includes(perfilLlamante.rol)) {
+    return responder({ error: 'Solo comerciales, oficina o administradores pueden simular el acceso de un cliente' }, 403);
   }
 
   let cuerpo: Record<string, unknown>;

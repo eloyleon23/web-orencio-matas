@@ -52,20 +52,16 @@
     } else {
         // Ninguno de los roles de gestión tiene nada que hacer en esta
         // pantalla (pensada para el cliente) — cada uno va directo a
-        // su parte del panel. Comercial/oficina gestionan clientes;
-        // almacén solo pedidos; administrador YA NO gestiona clientes
-        // ni pedidos, solo la sección Usuarios (alta/edición de
-        // usuarios internos) — a petición de Eloy, 28/11/2026.
-        if (['comercial', 'oficina'].includes(perfil.rol)) {
+        // su parte del panel. Comercial/oficina/administrador gestionan
+        // clientes (administrador sin ninguna limitación — además es
+        // el único que gestiona la sección Usuarios, accesible desde
+        // el menú); almacén solo pedidos.
+        if (['comercial', 'oficina', 'administrador'].includes(perfil.rol)) {
             window.location.href = 'gestion/clientes.html';
             return;
         }
         if (perfil.rol === 'almacen') {
             window.location.href = 'gestion/pedidos.html';
-            return;
-        }
-        if (perfil.rol === 'administrador') {
-            window.location.href = 'gestion/usuarios.html';
             return;
         }
         // Rol "cliente" — directos a su catálogo, esta pantalla no
