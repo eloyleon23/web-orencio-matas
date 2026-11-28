@@ -1,0 +1,56 @@
+name: Desplegar Edge Functions de Supabase (Área de Clientes)
+
+# Despliega automáticamente TODAS las funciones de supabase/functions/
+# cada vez que cambien en esta rama — así no hace falta ejecutar
+# "supabase functions deploy" a mano desde un equipo con la CLI.
+#
+# Necesita UN secreto configurado una sola vez en este repositorio
+# (Settings → Secrets and variables → Actions → New repository
+# secret):
+#   SUPABASE_ACCESS_TOKEN — un token de acceso personal de Supabase,
+#   se genera en https://supabase.com/dashboard/account/tokens
+#   (nunca es la "anon key" ni la "service role key" del proyecto,
+#   es un token de tu CUENTA para poder desplegar desde fuera).
+#
+# El propio código de las funciones sigue leyendo SUPABASE_URL y
+# SUPABASE_SERVICE_ROLE_KEY en tiempo de ejecución — esos los inyecta
+# Supabase solo, no hace falta ponerlos aquí. Los secretos propios de
+# cada función (BREVO_API_KEY, PEDIDOS_EMAIL_DESTINO…) siguen
+# poniéndose a mano en el panel de Supabase (Edge Functions → Secrets)
+# como hasta ahora — desplegar el código no los toca.
+
+on:
+  push:
+    branches: [feature/area-clientes]
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Vincular con el proyecto
+        run: supabase link --project-ref ptuwaqfrphmsmaadedta
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Desplegar cada función
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -e
+          for dir in supabase/functions/*/; do
+            nombre="$(basename "$dir")"
+            echo "::group::Desplegando $nombre"
+            supabase functions deploy "$nombre"
+            echo "::endgroup::"
+          done
