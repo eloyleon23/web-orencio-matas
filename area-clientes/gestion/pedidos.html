@@ -938,10 +938,11 @@
                 pintarModal_(p);
 
                 // Aviso por correo (Fase 6) — al cliente en en_reparto/
-                // entregada, a oficina/administrador en lista_para_enviar.
-                // Nunca bloquea ni deshace el cambio de estado si falla,
-                // solo se registra para depurar.
-                if (nuevoEstado === 'en_reparto' || nuevoEstado === 'entregada' || nuevoEstado === 'lista_para_enviar') {
+                // entregada, a almacén/administrador en en_preparacion, a
+                // oficina/administrador en lista_para_enviar. Nunca
+                // bloquea ni deshace el cambio de estado si falla, solo
+                // se registra para depurar.
+                if (['en_preparacion', 'lista_para_enviar', 'en_reparto', 'entregada'].includes(nuevoEstado)) {
                     fetch(window.SUPABASE_URL + '/functions/v1/notificar-cambio-estado', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + resultado.sesion.access_token },

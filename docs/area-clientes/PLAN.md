@@ -85,10 +85,19 @@ commit propio a esta rama para poder seguir el avance en el historial.
 
 ### Fase 6 — Notificaciones y puente con el CRM
 - Matriz de notificaciones por correo (cliente, comercial, correo
-  general, administración). — Parcial: cubiertos "pedido recibido"
-  (Fase 4/5), "en camino" y "entregado" al cliente (ver abajo). Falta
-  decidir si comercial/almacén también quieren avisos propios por
-  correo (de momento lo ven todo en el panel, no por email).
+  general, administración). ✅ Cubierto en cada transición:
+  - Cliente envía pedido (→ recibida): al cliente y al correo general
+    (`notificar-pedido`), **y además** al comercial asignado a ese
+    cliente en persona (su propio email, no solo el buzón genérico).
+  - Comercial confirma (→ en_preparación): avisa a almacén +
+    administrador (hay un pedido nuevo que preparar).
+  - Almacén prepara (→ lista_para_enviar): avisa a oficina +
+    administrador (ya se puede hacer albarán/factura).
+  - Oficina cierra (→ en_reparto / entregada): avisa al cliente.
+  Todo vía `notificar-cambio-estado` (tipos `en_preparacion` /
+  `lista_para_enviar` / `en_reparto` / `entregada`), salvo el primer
+  paso que sigue en `notificar-pedido`. Un fallo de envío nunca
+  bloquea el cambio de estado, solo se registra para depurar.
 - Doble confirmación de almacén → aviso a administración para
   albarán/factura. ✅ En cuanto almacén/administrador pasa un pedido a
   "lista para enviar", `notificar-cambio-estado` (tipo

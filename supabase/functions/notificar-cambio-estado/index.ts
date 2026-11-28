@@ -10,7 +10,10 @@
 //   AREA_CLIENTES_URL — ver supabase/functions/notificar-pedido/
 //   CONFIGURACION.md, el mismo documento aplica aquí.
 //
-// Cuatro "tipo" de aviso, body: { propuesta_id, tipo }:
+// Cinco "tipo" de aviso, body: { propuesta_id, tipo }:
+//   'en_preparacion'    — lo llama comercial/administrador al confirmar
+//                         el pedido — avisa a almacén y administrador
+//                         de que ya hay un pedido para preparar.
 //   'lista_para_enviar' — lo llama almacén/administrador al terminar de
 //                         preparar el pedido — avisa a oficina y
 //                         administrador de que ya puede hacer el
@@ -102,14 +105,23 @@ function construirEmailProfesional_(contenidoHtml: string, boton: { texto: strin
   );
 }
 
-const TIPOS_VALIDOS = ['lista_para_enviar', 'en_reparto', 'entregada', 'solicitud_factura'];
+const TIPOS_VALIDOS = ['en_preparacion', 'lista_para_enviar', 'en_reparto', 'entregada', 'solicitud_factura'];
 // A qué estado tiene que estar la propuesta para que tenga sentido
 // cada aviso — evita notificar un cambio que no ha pasado de verdad.
 const ESTADO_ESPERADO: Record<string, string> = {
+  en_preparacion: 'en_preparacion',
   lista_para_enviar: 'lista_para_enviar',
   en_reparto: 'en_reparto',
   entregada: 'entregada',
   solicitud_factura: 'entregada',
+};
+// Quién puede avisar de cada tipo (además de administrador, que puede
+// con todos — es el rol sin limitaciones).
+const QUIEN_AVISA: Record<string, string[]> = {
+  en_preparacion: ['comercial', 'administrador'],
+  lista_para_enviar: ['almacen', 'administrador'],
+  en_reparto: ['oficina', 'administrador'],
+  entregada: ['oficina', 'administrador'],
 };
 
 Deno.serve(async (req) => {
@@ -156,8 +168,8 @@ Deno.serve(async (req) => {
     if (!perfilLlamante || perfilLlamante.rol !== 'cliente') {
       return responder({ error: 'Solo un cliente puede solicitar la copia de su factura' }, 403);
     }
-  } else if (!perfilLlamante || !['almacen', 'oficina', 'administrador'].includes(perfilLlamante.rol)) {
-    return responder({ error: 'Solo almacén, oficina o administrador pueden avisar de este cambio' }, 403);
+  } else if (!perfilLlamante || !QUIEN_AVISA[tipo]?.includes(perfilLlamante.rol)) {
+    return responder({ error: 'Tu rol no puede avisar de este cambio (' + tipo + ')' }, 403);
   }
 
   // Para el cliente, además de la propuesta, se exige que sea SUYA
@@ -202,27 +214,34 @@ Deno.serve(async (req) => {
     return responder({ success: true, resultado });
   }
 
-  if (tipo === 'lista_para_enviar') {
-    const { data: destinatariosOficina } = await admin
+  // 'en_preparacion' / 'lista_para_enviar' — aviso interno a quien
+  // sigue con el pedido en la fase siguiente (no al cliente).
+  if (tipo === 'en_preparacion' || tipo === 'lista_para_enviar') {
+    const rolesDestino = tipo === 'en_preparacion' ? ['almacen', 'administrador'] : ['oficina', 'administrador'];
+    const { data: destinatariosInternos } = await admin
       .from('profiles')
       .select('email, nombre')
-      .in('rol', ['oficina', 'administrador'])
+      .in('rol', rolesDestino)
       .eq('activo', true)
       .not('email', 'is', null);
-    const destinatarios = (destinatariosOficina || [])
+    const destinatarios = (destinatariosInternos || [])
       .map((u) => ({ email: (u.email || '').trim(), name: u.nombre || undefined }))
       .filter((d) => d.email);
     if (!destinatarios.length) {
-      return responder({ success: true, resultado: { ok: false, detalle: 'No hay ningún usuario oficina/administrador con email para avisar' } });
+      return responder({ success: true, resultado: { ok: false, detalle: 'No hay ningún usuario ' + rolesDestino.join('/') + ' con email para avisar' } });
     }
-    const html = construirEmailProfesional_(
-      '<h2 style="margin:0 0 8px; font-size:19px;">Pedido listo para albarán/factura</h2>' +
-      '<p style="margin:0 0 4px; color:#475569;"><strong>Cliente:</strong> ' + escapeHtml_(nombreCliente) +
-      (empresaAnidada ? ' — ' + escapeHtml_(empresaAnidada) : '') + '</p>' +
-      '<p style="margin:10px 0 0;">Almacén ha terminado de preparar este pedido. Ya se puede hacer el albarán/factura y pasarlo a "En reparto".</p>',
-      botonInterno
-    );
-    const resultado = await enviarCorreoBrevo_(BREVO_API_KEY, remitente, destinatarios, 'Pedido listo para albarán/factura — ' + nombreCliente, html);
+    const contenido = tipo === 'en_preparacion'
+      ? '<h2 style="margin:0 0 8px; font-size:19px;">Pedido confirmado, listo para preparar</h2>' +
+        '<p style="margin:0 0 4px; color:#475569;"><strong>Cliente:</strong> ' + escapeHtml_(nombreCliente) +
+        (empresaAnidada ? ' — ' + escapeHtml_(empresaAnidada) : '') + '</p>' +
+        '<p style="margin:10px 0 0;">El comercial ha confirmado este pedido. Ya se puede preparar en almacén.</p>'
+      : '<h2 style="margin:0 0 8px; font-size:19px;">Pedido listo para albarán/factura</h2>' +
+        '<p style="margin:0 0 4px; color:#475569;"><strong>Cliente:</strong> ' + escapeHtml_(nombreCliente) +
+        (empresaAnidada ? ' — ' + escapeHtml_(empresaAnidada) : '') + '</p>' +
+        '<p style="margin:10px 0 0;">Almacén ha terminado de preparar este pedido. Ya se puede hacer el albarán/factura y pasarlo a "En reparto".</p>';
+    const asunto = (tipo === 'en_preparacion' ? 'Pedido listo para preparar — ' : 'Pedido listo para albarán/factura — ') + nombreCliente;
+    const html = construirEmailProfesional_(contenido, botonInterno);
+    const resultado = await enviarCorreoBrevo_(BREVO_API_KEY, remitente, destinatarios, asunto, html);
     return responder({ success: true, resultado });
   }
 

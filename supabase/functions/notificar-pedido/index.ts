@@ -256,7 +256,7 @@ Deno.serve(async (req) => {
   // borrador ajeno ni uno que todavía no se ha enviado de verdad.
   const { data: propuesta, error: errorPropuesta } = await admin
     .from('propuestas_pedido')
-    .select('id, cliente_id, estado, notas, clientes(empresa, profiles!clientes_id_fkey(nombre, apellidos, email))')
+    .select('id, cliente_id, estado, notas, clientes(empresa, comercial_id, profiles!clientes_id_fkey(nombre, apellidos, email))')
     .eq('id', propuestaId)
     .eq('cliente_id', clienteId)
     .eq('estado', 'recibida')
@@ -282,6 +282,7 @@ Deno.serve(async (req) => {
   const clienteAnidado = Array.isArray((propuesta as any).clientes) ? (propuesta as any).clientes[0] : (propuesta as any).clientes;
   const profileAnidado = clienteAnidado && Array.isArray(clienteAnidado.profiles) ? clienteAnidado.profiles[0] : clienteAnidado?.profiles;
   const empresaAnidada = clienteAnidado?.empresa;
+  const comercialId = clienteAnidado?.comercial_id || null;
 
   const nombreCliente = [profileAnidado?.nombre, profileAnidado?.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
   const emailCliente = profileAnidado?.email || '';
@@ -300,15 +301,33 @@ Deno.serve(async (req) => {
   const botonInterno = AREA_CLIENTES_URL ? { texto: 'Ver cliente', url: AREA_CLIENTES_URL + '/gestion/clientes.html' } : null;
   const botonCliente = AREA_CLIENTES_URL ? { texto: 'Ir a mi pedido', url: AREA_CLIENTES_URL + '/mis-pedidos.html' } : null;
 
+  const asuntoInterno = 'Nuevo pedido — ' + nombreCliente + (empresaAnidada ? ' (' + empresaAnidada + ')' : '');
+  const htmlInterno = construirEmailProfesional_(
+    construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, notasGenerales, lineas || [], total, false),
+    botonInterno
+  );
+
   if (EMAIL_DESTINO) {
-    const asuntoInterno = 'Nuevo pedido — ' + nombreCliente + (empresaAnidada ? ' (' + empresaAnidada + ')' : '');
-    const htmlInterno = construirEmailProfesional_(
-      construirHtmlPedido_(nombreCliente, emailCliente, empresaAnidada || null, notasGenerales, lineas || [], total, false),
-      botonInterno
-    );
     resultados.interno = await enviarCorreoBrevo_(BREVO_API_KEY, remitente, listaDestinatarios_(EMAIL_DESTINO), asuntoInterno, htmlInterno);
   } else {
     resultados.interno = { ok: false, detalle: 'PEDIDOS_EMAIL_DESTINO no configurado' };
+  }
+
+  // Además del aviso genérico de arriba, el comercial asignado a este
+  // cliente recibe su propia copia — es quien de verdad tiene que
+  // confirmarlo, no solo el buzón general.
+  if (comercialId) {
+    const { data: perfilComercial } = await admin.from('profiles').select('email, nombre, activo').eq('id', comercialId).maybeSingle();
+    const emailComercial = (perfilComercial?.activo && perfilComercial?.email) ? perfilComercial.email.trim() : '';
+    if (emailComercial) {
+      resultados.comercial = await enviarCorreoBrevo_(
+        BREVO_API_KEY, remitente, [{ email: emailComercial, name: perfilComercial?.nombre || undefined }], asuntoInterno, htmlInterno
+      );
+    } else {
+      resultados.comercial = { ok: false, detalle: 'El comercial asignado no tiene email activo' };
+    }
+  } else {
+    resultados.comercial = { ok: false, detalle: 'El cliente no tiene comercial asignado' };
   }
 
   // La copia "para el cliente" SIEMPRE se envía (no es opcional) — lo
