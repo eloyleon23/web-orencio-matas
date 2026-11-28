@@ -118,6 +118,15 @@ Deno.serve(async (req) => {
         continue;
       }
 
+      // Un comercial solo puede tocar clientes de su propia cartera —
+      // oficina/administrador sí pueden completar cualquiera. Sin esto,
+      // un comercial podía rellenar huecos en la ficha de un cliente
+      // que es de OTRO comercial con solo coincidir por email.
+      if (perfilLlamante.rol === 'comercial' && clienteActual.comercial_id !== llamanteId) {
+        resultados.push({ fila: numeroFila, email, estado: 'error', detalle: 'Ese cliente no está en tu cartera — no se ha tocado' });
+        continue;
+      }
+
       const { error: errorUpdate } = await admin
         .from('clientes')
         .update({

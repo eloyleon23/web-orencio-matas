@@ -68,11 +68,20 @@ Deno.serve(async (req) => {
     // Igual que en gestion/clientes.html: "clientes" tiene dos
     // referencias a "profiles" (id y comercial_id), hay que indicar
     // cuál seguir.
-    .select('id, comercial_id, profiles!clientes_id_fkey(email, nombre, apellidos)')
+    .select('id, comercial_id, profiles!clientes_id_fkey(email, nombre, apellidos, rol)')
     .eq('id', clienteId)
     .single();
 
   if (errorCliente || !cliente) return responder({ error: 'Cliente no encontrado' }, 404);
+
+  // Defensa en profundidad (ver también la Fase 7 de seguridad en RLS,
+  // que ya exige esto al insertar en "clientes"): sin esto, una fila
+  // "clientes" fantasma con el id de otro perfil (p. ej. un
+  // administrador) generaría aquí un magic-link para esa cuenta sin
+  // que su dueño sea de verdad un cliente.
+  if ((cliente as any).profiles.rol !== 'cliente') {
+    return responder({ error: 'Ese id no corresponde a un cliente' }, 403);
+  }
 
   // Un comercial solo puede simular a SUS clientes asignados; oficina
   // puede simular cualquiera.

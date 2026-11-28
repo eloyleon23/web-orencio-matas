@@ -178,7 +178,43 @@ para administrador).
 
 ### Fase 7 — Endurecimiento y validación final
 - Revisión de seguridad (RLS, aislamiento de datos entre clientes,
-  separación legal CRM/web).
+  separación legal CRM/web). ✅ Auditoría completa hecha el
+  28/11/2026, reconstruyendo el estado final de las 20 migraciones
+  aplicadas hasta la fecha. Hallazgos corregidos en
+  `area_clientes_schema_fase7_seguridad_rls.sql` + las Edge Functions
+  `simular-acceso`/`importar-clientes`:
+  - **Crítico**: cualquier cuenta autenticada podía auto-ascenderse a
+    administrador (o reactivarse tras un bloqueo) actualizando
+    directamente su propio `profiles.rol`/`activo` contra la API —
+    "actualizar el propio perfil" solo comprobaba el id, nunca qué
+    columnas se tocaban. Corregido con un trigger que bloquea esas dos
+    columnas salvo que quien actualiza sea ya administrador.
+  - **Crítico**: cadena de suplantación — un comercial podía insertar
+    una fila "clientes" fantasma con el id de OTRO perfil ya existente
+    (p. ej. un administrador) y luego pedir un magic-link de login
+    real con `simular-acceso`. Corregido por los dos lados: la
+    política de `clientes` exige que el id sea de verdad un perfil
+    "cliente", y `simular-acceso` vuelve a comprobarlo él mismo.
+  - **Importante**: almacén podía actualizar cualquier pedido
+    (incluidos borradores de cualquier cliente) y reasignarlo a otro
+    cliente cambiando `cliente_id`. Corregido (política de UPDATE
+    acotada a `estado <> 'borrador'`, más un trigger que bloquea
+    reasignar `cliente_id` salvo administrador).
+  - **Importante**: oficina podía ver/actualizar pedidos en
+    "borrador" de cualquier cliente — mismo problema, misma
+    corrección.
+  - **Importante**: `importar-clientes` permitía a un comercial
+    completar huecos en la ficha de un cliente de la cartera de OTRO
+    comercial con solo coincidir por email — corregido.
+  - Menores (anotados, no bloqueantes): CORS `*` en las Edge
+    Functions (ajustar a los orígenes reales antes de producción);
+    `alta-cliente`/`importar-clientes` no validan que el
+    `comercial_id` indicado por oficina/administrador sea de verdad un
+    perfil "comercial" (error de integridad, no de seguridad).
+  - Sin hallazgos: ninguna función `security definer` sin
+    `set search_path`; ninguna tabla del área de clientes sin RLS
+    activado; sin recursión RLS nueva; las 6 Edge Functions validan
+    el rol del llamante antes de usar `service_role`.
 - Pruebas con el volumen real esperado (~100 clientes).
 - Validación funcional completa por Eloy sobre la previsualización.
 - **Secretos por entorno (demo/producción) — pendiente, anotado
