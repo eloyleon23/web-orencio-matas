@@ -90,10 +90,11 @@ commit propio a esta rama para poder seguir el avance en el historial.
   decidir si comercial/almacén también quieren avisos propios por
   correo (de momento lo ven todo en el panel, no por email).
 - Doble confirmación de almacén → aviso a administración para
-  albarán/factura. — No implementado todavía: hoy almacén prepara
-  (pasa a "lista para enviar") sin que eso dispare un aviso a
-  administración; administrador se entera consultando el panel de
-  pedidos, no por correo. Pendiente si se quiere ese aviso explícito.
+  albarán/factura. ✅ En cuanto almacén/administrador pasa un pedido a
+  "lista para enviar", `notificar-cambio-estado` (tipo
+  `lista_para_enviar`) avisa por correo a todos los usuarios activos
+  con rol oficina o administrador (son quienes hacen el
+  albarán/factura y cierran el pedido).
 - Cierre del pedido por administrador (números de albarán/factura →
   habilita "En reparto"). ✅ Ya desde Fase 5 (nº de albarán/factura
   desde el detalle del pedido en cuanto está "lista para enviar", con

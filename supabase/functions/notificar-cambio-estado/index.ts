@@ -10,12 +10,16 @@
 //   AREA_CLIENTES_URL — ver supabase/functions/notificar-pedido/
 //   CONFIGURACION.md, el mismo documento aplica aquí.
 //
-// Tres "tipo" de aviso, body: { propuesta_id, tipo }:
-//   'en_reparto'        — lo llama almacén/administrador al cerrar el
+// Cuatro "tipo" de aviso, body: { propuesta_id, tipo }:
+//   'lista_para_enviar' — lo llama almacén/administrador al terminar de
+//                         preparar el pedido — avisa a oficina y
+//                         administrador de que ya puede hacer el
+//                         albarán/factura y cerrarlo.
+//   'en_reparto'        — lo llama oficina/administrador al cerrar el
 //                         pedido (nº de albarán/factura ya puestos) —
 //                         avisa al cliente de que está en camino.
-//   'entregada'         — lo llama administrador al marcar la entrega
-//                         — avisa al cliente de que ya lo tiene.
+//   'entregada'         — lo llama oficina/administrador al marcar la
+//                         entrega — avisa al cliente de que ya lo tiene.
 //   'solicitud_factura' — lo llama EL CLIENTE desde "Mis pedidos" en
 //                         un pedido ya entregado — avisa a gestión
 //                         (PEDIDOS_EMAIL_DESTINO) de que pide copia.
@@ -98,10 +102,11 @@ function construirEmailProfesional_(contenidoHtml: string, boton: { texto: strin
   );
 }
 
-const TIPOS_VALIDOS = ['en_reparto', 'entregada', 'solicitud_factura'];
+const TIPOS_VALIDOS = ['lista_para_enviar', 'en_reparto', 'entregada', 'solicitud_factura'];
 // A qué estado tiene que estar la propuesta para que tenga sentido
 // cada aviso — evita notificar un cambio que no ha pasado de verdad.
 const ESTADO_ESPERADO: Record<string, string> = {
+  lista_para_enviar: 'lista_para_enviar',
   en_reparto: 'en_reparto',
   entregada: 'entregada',
   solicitud_factura: 'entregada',
@@ -151,8 +156,8 @@ Deno.serve(async (req) => {
     if (!perfilLlamante || perfilLlamante.rol !== 'cliente') {
       return responder({ error: 'Solo un cliente puede solicitar la copia de su factura' }, 403);
     }
-  } else if (!perfilLlamante || !['almacen', 'administrador'].includes(perfilLlamante.rol)) {
-    return responder({ error: 'Solo almacén o administrador pueden avisar de este cambio' }, 403);
+  } else if (!perfilLlamante || !['almacen', 'oficina', 'administrador'].includes(perfilLlamante.rol)) {
+    return responder({ error: 'Solo almacén, oficina o administrador pueden avisar de este cambio' }, 403);
   }
 
   // Para el cliente, además de la propuesta, se exige que sea SUYA
@@ -194,6 +199,30 @@ Deno.serve(async (req) => {
       botonInterno
     );
     const resultado = await enviarCorreoBrevo_(BREVO_API_KEY, remitente, listaDestinatarios_(EMAIL_DESTINO), 'Solicitud de copia de factura — ' + nombreCliente, html);
+    return responder({ success: true, resultado });
+  }
+
+  if (tipo === 'lista_para_enviar') {
+    const { data: destinatariosOficina } = await admin
+      .from('profiles')
+      .select('email, nombre')
+      .in('rol', ['oficina', 'administrador'])
+      .eq('activo', true)
+      .not('email', 'is', null);
+    const destinatarios = (destinatariosOficina || [])
+      .map((u) => ({ email: (u.email || '').trim(), name: u.nombre || undefined }))
+      .filter((d) => d.email);
+    if (!destinatarios.length) {
+      return responder({ success: true, resultado: { ok: false, detalle: 'No hay ningún usuario oficina/administrador con email para avisar' } });
+    }
+    const html = construirEmailProfesional_(
+      '<h2 style="margin:0 0 8px; font-size:19px;">Pedido listo para albarán/factura</h2>' +
+      '<p style="margin:0 0 4px; color:#475569;"><strong>Cliente:</strong> ' + escapeHtml_(nombreCliente) +
+      (empresaAnidada ? ' — ' + escapeHtml_(empresaAnidada) : '') + '</p>' +
+      '<p style="margin:10px 0 0;">Almacén ha terminado de preparar este pedido. Ya se puede hacer el albarán/factura y pasarlo a "En reparto".</p>',
+      botonInterno
+    );
+    const resultado = await enviarCorreoBrevo_(BREVO_API_KEY, remitente, destinatarios, 'Pedido listo para albarán/factura — ' + nombreCliente, html);
     return responder({ success: true, resultado });
   }
 
