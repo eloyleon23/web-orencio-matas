@@ -124,10 +124,13 @@ commit propio a esta rama para poder seguir el avance en el historial.
   envía un correo a `PEDIDOS_EMAIL_DESTINO` con el nº de factura si ya
   está puesto.
 - Entregable revisable: flujo de notificaciones end-to-end con buzones
-  de prueba. — Pendiente de probar en el preview (necesita desplegar
-  la función `notificar-cambio-estado` — el workflow de GitHub Actions
-  lo hace solo con el próximo push a supabase/functions/**, o a mano
-  desde la pestaña Actions).
+  de prueba. ✅ Validado en el preview (28/11/2026) de principio a fin
+  con cuentas de prueba reales: pedido enviado → confirmado → preparado
+  → cerrado (con albarán/factura) → entregado → solicitud de copia de
+  factura, las 6 llamadas a `notificar-pedido`/`notificar-cambio-estado`
+  devolvieron éxito y Eloy confirmó la recepción de los correos.
+  Estadísticas revisada también: el selector de administrador refleja
+  correctamente cada fase.
 
 ### Sección de Estadísticas (Fase 5, añadida después)
 - `area-clientes/gestion/estadisticas.html`: cuántos pedidos
