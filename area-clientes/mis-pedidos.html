@@ -173,8 +173,43 @@
                         : '') +
                     (esBorrador
                         ? '<div class="tarjeta-pedido__acciones"><a class="boton-principal" style="text-decoration:none; display:inline-block; width:auto; padding:9px 16px;" href="propuesta.html">Ir a este pedido</a></div>'
-                        : '<div class="tarjeta-pedido__acciones"><button type="button" class="boton-secundario" data-id="' + p.id + '">Reutilizar este pedido</button></div>');
+                        : '<div class="tarjeta-pedido__acciones">' +
+                            (p.estado === 'entregada' ? '<button type="button" class="boton-secundario" data-solicitar-factura="' + p.id + '">Solicitar copia de factura</button>' : '') +
+                            '<button type="button" class="boton-secundario" data-id="' + p.id + '">Reutilizar este pedido</button>' +
+                          '</div>');
                 pintado = true;
+
+                const botonFactura = detalle.querySelector('button[data-solicitar-factura]');
+                if (botonFactura) {
+                    botonFactura.addEventListener('click', async function (ev) {
+                        ev.stopPropagation();
+                        const boton = this;
+                        boton.disabled = true;
+                        boton.textContent = 'Enviando…';
+                        const { data: sesionActual } = await cliente.auth.getSession();
+                        try {
+                            const resp = await fetch(window.SUPABASE_URL + '/functions/v1/notificar-cambio-estado', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sesionActual.session.access_token },
+                                body: JSON.stringify({ propuesta_id: p.id, tipo: 'solicitud_factura' }),
+                            });
+                            const json = await resp.json();
+                            boton.disabled = false;
+                            if (!resp.ok || !json.success) {
+                                boton.textContent = 'Solicitar copia de factura';
+                                avisoError.textContent = 'No se ha podido enviar la solicitud: ' + (json.error || 'error desconocido');
+                                avisoError.classList.add('activo');
+                                return;
+                            }
+                            boton.textContent = 'Solicitud enviada ✓';
+                        } catch (e) {
+                            boton.disabled = false;
+                            boton.textContent = 'Solicitar copia de factura';
+                            avisoError.textContent = 'Error de red al enviar la solicitud.';
+                            avisoError.classList.add('activo');
+                        }
+                    });
+                }
 
                 if (!esBorrador) {
                     detalle.querySelector('button[data-id]').addEventListener('click', async function (ev) {

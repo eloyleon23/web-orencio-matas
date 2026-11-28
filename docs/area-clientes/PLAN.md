@@ -85,19 +85,39 @@ commit propio a esta rama para poder seguir el avance en el historial.
 
 ### Fase 6 — Notificaciones y puente con el CRM
 - Matriz de notificaciones por correo (cliente, comercial, correo
-  general, administración).
+  general, administración). — Parcial: cubiertos "pedido recibido"
+  (Fase 4/5), "en camino" y "entregado" al cliente (ver abajo). Falta
+  decidir si comercial/almacén también quieren avisos propios por
+  correo (de momento lo ven todo en el panel, no por email).
 - Doble confirmación de almacén → aviso a administración para
-  albarán/factura.
+  albarán/factura. — No implementado todavía: hoy almacén prepara
+  (pasa a "lista para enviar") sin que eso dispare un aviso a
+  administración; administrador se entera consultando el panel de
+  pedidos, no por correo. Pendiente si se quiere ese aviso explícito.
 - Cierre del pedido por administrador (números de albarán/factura →
-  habilita "En reparto"). — Adelantado parcialmente en Fase 5: ya se
-  puede añadir el nº de albarán/factura desde el detalle del pedido en
-  cuanto está "lista para enviar", y queda registrado quién confirmó
-  (comercial), quién preparó (almacén) y quién cerró (administrador)
-  cada pedido. Falta la parte de notificaciones por correo de este
-  cierre.
-- Solicitud de copia de factura por el cliente.
+  habilita "En reparto"). ✅ Ya desde Fase 5 (nº de albarán/factura
+  desde el detalle del pedido en cuanto está "lista para enviar", con
+  quién confirmó/preparó/cerró/entregó cada pedido). Nueva Edge
+  Function `notificar-cambio-estado` (misma familia de secretos que
+  `notificar-pedido` — ver su CONFIGURACION.md): avisa por correo al
+  cliente al pasar a "en_reparto" (transportista/seguimiento) y a
+  "entregada".
+- Solicitud de copia de factura por el cliente. ✅ Botón "Solicitar
+  copia de factura" en "Mis pedidos" (solo en pedidos "entregada") —
+  envía un correo a `PEDIDOS_EMAIL_DESTINO` con el nº de factura si ya
+  está puesto.
 - Entregable revisable: flujo de notificaciones end-to-end con buzones
-  de prueba.
+  de prueba. — Pendiente de probar en el preview (necesita desplegar
+  la función `notificar-cambio-estado` — el workflow de GitHub Actions
+  lo hace solo con el próximo push a supabase/functions/**, o a mano
+  desde la pestaña Actions).
+
+### Sección de Estadísticas (Fase 5, añadida después)
+- `area-clientes/gestion/estadisticas.html`, para los tres roles de
+  gestión: cuántos pedidos confirmó/preparó/cerró/entregó cada uno,
+  por mes (últimos 12) y por año. Administrador puede ver las de
+  cualquier usuario interno; comercial/almacén solo las suyas (ya
+  acotado por RLS, sin selector).
 
 ### Fase 7 — Endurecimiento y validación final
 - Revisión de seguridad (RLS, aislamiento de datos entre clientes,

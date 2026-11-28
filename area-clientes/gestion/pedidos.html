@@ -935,6 +935,19 @@
                 marcarEditadoPorMi_(p);
                 repintar_();
                 pintarModal_(p);
+
+                // Aviso por correo al cliente (Fase 6) — nunca bloquea
+                // ni deshace el cambio de estado si falla, solo se
+                // registra para depurar.
+                if (nuevoEstado === 'en_reparto' || nuevoEstado === 'entregada') {
+                    fetch(window.SUPABASE_URL + '/functions/v1/notificar-cambio-estado', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + resultado.sesion.access_token },
+                        body: JSON.stringify({ propuesta_id: p.id, tipo: nuevoEstado }),
+                    }).then(function (r) { return r.json(); }).then(function (json) {
+                        if (!json.success) console.warn('Aviso de "' + nuevoEstado + '" no enviado:', json.error || json);
+                    }).catch(function (e) { console.warn('Error de red al avisar de "' + nuevoEstado + '":', e); });
+                }
             });
         }
     }
