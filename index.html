@@ -26637,6 +26637,12 @@ if (window.OM_PREPRODUCCION) {
         actualizarBotonesEtiqueta_();
         actualizarVistaPreviaEtiqueta_();
         $('modal-etiqueta-overlay').classList.add('activo');
+        // La primera vista previa sale sin código de barras ni QR (las
+        // librerías todavía no están cargadas, ver cargarEtiquetaLibsSiFalta_)
+        // — en cuanto terminen de cargar, se repinta ya con ambos.
+        cargarEtiquetaLibsSiFalta_().then(() => {
+            if (productoEtiquetaActual_ === p) actualizarVistaPreviaEtiqueta_();
+        });
     }
 
     function cerrarModalEtiquetaPrecio_() {
@@ -26690,6 +26696,12 @@ if (window.OM_PREPRODUCCION) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
         try {
+            // Mismo fallo que ya se cuidaba en descargarEtiquetasPdf_: sin
+            // esto, JsBarcode/qrcode-generator pueden seguir sin cargar en
+            // este punto (nunca se piden al abrir la modal, solo al
+            // generar) y la etiqueta sale sin código de barras ni QR —
+            // bug detectado en preproducción, 28/11/2026.
+            await cargarEtiquetaLibsSiFalta_();
             const datos = datosEtiquetaParaProducto_(p);
             const imagenConfig = etiquetaImagenConfigActual_();
             const opts0 = etiquetaOptsComunesActual_();
@@ -27033,6 +27045,11 @@ if (window.OM_PREPRODUCCION) {
         etiquetasListaCargarPagina_(0);
         etiquetasListaActualizarBotones_();
         $('modal-etiquetas-lista-overlay').classList.add('activo');
+        // Ver el mismo comentario en abrirModalEtiquetaPrecio_ — repinta
+        // en cuanto JsBarcode/qrcode terminen de cargar.
+        cargarEtiquetaLibsSiFalta_().then(() => {
+            if ($('modal-etiquetas-lista-overlay').classList.contains('activo')) actualizarVistaPreviaEtiquetasLista_();
+        });
     }
 
     function cerrarModalEtiquetasLista_() {
@@ -27110,6 +27127,9 @@ if (window.OM_PREPRODUCCION) {
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generando...';
         try {
+            // Ver el mismo comentario en descargarEtiquetaPng_: sin esto,
+            // la etiqueta puede salir sin código de barras ni QR.
+            await cargarEtiquetaLibsSiFalta_();
             const { datos, opts } = await etiquetasListaDatosYOpts_(0);
             const { w, h } = etiquetasListaTamanoActual_();
             const PXMM = 12;
