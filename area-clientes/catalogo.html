@@ -793,6 +793,17 @@ function numeroDesdePrecio_(texto) {
 }
 
 function productoVisibleParaCliente_(p, personalizacion) {
+    // Campo "visible_usuario_profesional" (recién añadido para poder
+    // excluir del todo algún producto puntual de mayoristas/
+    // profesional) — en 'no' explícito, nunca aparece en el área de
+    // clientes, a petición de Eloy (28/11/2026). Son muy pocos
+    // productos (el resto queda en 'si' por defecto). El JSON estático
+    // de reserva (Fase 1 de carga) no trae este campo, así que de
+    // momento solo se aplica contra la respuesta en vivo, que es la
+    // que de verdad importa — si un producto excluido llega a
+    // mostrarse un instante en la Fase 1, la Fase 2 lo quita enseguida.
+    if (p.visible_usuario_profesional === 'no') return false;
+
     const { familias, areas, productos, modoProductos } = personalizacion;
     // Área y familia se acotan entre sí (intersección): si rellenas
     // las dos, el producto tiene que cumplir ambas a la vez (bug
