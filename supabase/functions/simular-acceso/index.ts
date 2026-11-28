@@ -49,8 +49,8 @@ Deno.serve(async (req) => {
     .single();
 
   if (errorPerfil || !perfilLlamante) return responder({ error: 'No se ha encontrado el perfil del usuario' }, 403);
-  if (!['comercial', 'administrador'].includes(perfilLlamante.rol)) {
-    return responder({ error: 'Solo comerciales o administradores pueden simular el acceso de un cliente' }, 403);
+  if (!['comercial', 'oficina'].includes(perfilLlamante.rol)) {
+    return responder({ error: 'Solo comerciales u oficina pueden simular el acceso de un cliente' }, 403);
   }
 
   let cuerpo: Record<string, unknown>;
@@ -74,8 +74,8 @@ Deno.serve(async (req) => {
 
   if (errorCliente || !cliente) return responder({ error: 'Cliente no encontrado' }, 404);
 
-  // Un comercial solo puede simular a SUS clientes asignados; el
-  // administrador puede simular cualquiera.
+  // Un comercial solo puede simular a SUS clientes asignados; oficina
+  // puede simular cualquiera.
   if (perfilLlamante.rol === 'comercial' && cliente.comercial_id !== llamanteId) {
     return responder({ error: 'Ese cliente no está asignado a tu cartera' }, 403);
   }

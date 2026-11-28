@@ -50,12 +50,7 @@
 <div class="layout-panel">
     <aside class="panel-lateral">
         <div class="panel-lateral__titulo">Gestión</div>
-        <a href="clientes.html">Clientes</a>
-        <a href="alta-cliente.html">Dar de alta</a>
-        <a href="importar-clientes.html">Importar (CSV/XLSX)</a>
-        <a href="pedidos.html">Pedidos</a>
         <a href="usuarios.html" class="activo">Usuarios</a>
-        <a href="estadisticas.html">Estadísticas</a>
     </aside>
     <main class="panel-contenido">
         <div class="panel-tarjeta">
@@ -70,6 +65,7 @@
                         <option value="cliente">Cliente</option>
                         <option value="comercial">Comercial</option>
                         <option value="almacen">Almacén</option>
+                        <option value="oficina">Oficina</option>
                         <option value="administrador">Administrador</option>
                     </select>
                     <button type="button" class="boton-principal" id="botonNuevoUsuario" style="width:auto;">+ Nuevo usuario interno</button>
@@ -120,7 +116,7 @@
         window.location.href = '../index.html';
     });
 
-    const ETIQUETAS_ROL_ = { cliente: 'Cliente', comercial: 'Comercial', almacen: 'Almacén', administrador: 'Administrador' };
+    const ETIQUETAS_ROL_ = { cliente: 'Cliente', comercial: 'Comercial', almacen: 'Almacén', oficina: 'Oficina', administrador: 'Administrador' };
     function escapar_(s) { return String(s || '').replace(/</g, '&lt;'); }
     function formatearFecha_(valor) {
         if (!valor) return '—';
@@ -225,6 +221,7 @@
                 '<select id="nuevoRol" required>' +
                     '<option value="comercial">Comercial</option>' +
                     '<option value="almacen">Almacén</option>' +
+                    '<option value="oficina">Oficina</option>' +
                     '<option value="administrador">Administrador</option>' +
                 '</select>' +
                 '<div class="aviso aviso--error" id="modalUsuarioAvisoError"></div>' +

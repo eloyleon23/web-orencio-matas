@@ -27,7 +27,6 @@
         <a href="alta-cliente.html" class="activo">Dar de alta</a>
         <a href="importar-clientes.html">Importar (CSV/XLSX)</a>
         <a href="pedidos.html">Pedidos</a>
-        <a href="usuarios.html" id="enlaceUsuarios" style="display:none;">Usuarios</a>
         <a href="estadisticas.html">Estadísticas</a>
     </aside>
     <main class="panel-contenido">
@@ -81,11 +80,10 @@
 <script>
 (async function () {
     const resultado = await window.exigirRolAreaClientes_(
-        ['comercial', 'administrador'], '../index.html', '../app.html'
+        ['comercial', 'oficina'], '../index.html', '../app.html'
     );
     if (!resultado) return;
     document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
-    if (resultado.perfil.rol === 'administrador') document.getElementById('enlaceUsuarios').style.display = 'block';
 
     document.getElementById('botonSalir').addEventListener('click', async function () {
         await window.obtenerClienteSupabase_().auth.signOut();

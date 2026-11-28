@@ -26,7 +26,7 @@ function responder(cuerpo: unknown, status = 200) {
   });
 }
 
-const ROLES_INTERNOS = ['comercial', 'almacen', 'administrador'];
+const ROLES_INTERNOS = ['comercial', 'almacen', 'oficina', 'administrador'];
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CABECERAS_CORS });

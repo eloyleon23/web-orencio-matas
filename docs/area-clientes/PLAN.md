@@ -113,11 +113,41 @@ commit propio a esta rama para poder seguir el avance en el historial.
   desde la pestaña Actions).
 
 ### Sección de Estadísticas (Fase 5, añadida después)
-- `area-clientes/gestion/estadisticas.html`, para los tres roles de
-  gestión: cuántos pedidos confirmó/preparó/cerró/entregó cada uno,
-  por mes (últimos 12) y por año. Administrador puede ver las de
-  cualquier usuario interno; comercial/almacén solo las suyas (ya
-  acotado por RLS, sin selector).
+- `area-clientes/gestion/estadisticas.html`: cuántos pedidos
+  confirmó/preparó/cerró/entregó cada uno, por mes (últimos 12) y por
+  año. Cada usuario ve solo las suyas (acotado por RLS, sin selector
+  de "ver las de otro" — ver más abajo, Fase 6b, por qué ya no hay
+  ningún rol con esa vista de conjunto).
+
+### Fase 6b — Nuevo rol "oficina" y recorte de administrador
+
+A petición explícita de Eloy (28/11/2026): separar la identidad/acceso
+(administrador) de la operativa de pedidos y clientes (nuevo rol
+"oficina"), para no mezclar "quien da de alta usuarios internos" con
+"quien gestiona el día a día de pedidos".
+
+- **oficina** (nuevo): ve todos los pedidos y todos los clientes, da de
+  alta clientes, hace el albarán/factura y cierra el pedido
+  (Lista para enviar → En reparto → Entregada). En la práctica, hereda
+  todo lo que antes hacía administrador en clientes.html/pedidos.html,
+  salvo la rectificación por falta de stock (eso sigue siendo solo de
+  almacén). Ve sus propias estadísticas, igual que el resto.
+- **administrador**: recortado a SOLO la sección "Usuarios" — dar de
+  alta/editar/bloquear cualquier usuario interno (de cualquier rol,
+  oficina incluido). Ya no ve clientes, pedidos ni estadísticas.
+- **comercial** y **almacén**: sin cambios.
+
+SQL en dos pasos obligatorios, en ESE orden (Postgres no deja usar un
+valor nuevo de un enum en la misma transacción en la que se crea):
+1. `area_clientes_schema_fase6b_rol_oficina_1_enum.sql` — añade el
+   valor 'oficina' al enum. Solo, él solito.
+2. `area_clientes_schema_fase6b_rol_oficina_2_permisos.sql` — todas
+   las políticas RLS y la máquina de estados actualizadas.
+
+También tocadas: Edge Functions `alta-cliente`, `importar-clientes`,
+`simular-acceso` (ahora exigen `comercial`/`oficina`, no ya
+`administrador`) y `alta-usuario-interno` (ahora puede crear el rol
+`oficina`).
 
 ### Fase 7 — Endurecimiento y validación final
 - Revisión de seguridad (RLS, aislamiento de datos entre clientes,

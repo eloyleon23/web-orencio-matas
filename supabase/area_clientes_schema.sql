@@ -21,7 +21,14 @@ create extension if not exists pgcrypto;
 --                    (alta individual o masiva) o por una invitación.
 -- 'comercial'     — ve y gestiona solo sus clientes asignados.
 -- 'almacen'       — gestiona la preparación de propuestas de pedido.
--- 'administrador' — ve y gestiona todo.
+-- 'oficina'       — (añadido Fase 6b) ve todos los clientes y pedidos,
+--                    da de alta clientes, hace el albarán/factura y
+--                    cierra el pedido (lista_para_enviar → en_reparto
+--                    → entregada). Ver
+--                    area_clientes_schema_fase6b_rol_oficina_1_enum.sql.
+-- 'administrador' — (recortado Fase 6b) YA NO gestiona clientes ni
+--                    pedidos — solo la sección Usuarios (alta/edición/
+--                    bloqueo de cualquier usuario interno).
 do $$ begin
   create type public.rol_area_clientes as enum ('cliente', 'comercial', 'almacen', 'administrador');
 exception

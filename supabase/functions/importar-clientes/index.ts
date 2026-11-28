@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
     .single();
 
   if (errorPerfil || !perfilLlamante) return responder({ error: 'No se ha encontrado el perfil del usuario' }, 403);
-  if (!['comercial', 'administrador'].includes(perfilLlamante.rol)) {
-    return responder({ error: 'Solo comerciales o administradores pueden importar clientes' }, 403);
+  if (!['comercial', 'oficina'].includes(perfilLlamante.rol)) {
+    return responder({ error: 'Solo comerciales u oficina pueden importar clientes' }, 403);
   }
 
   let cuerpo: { filas?: FilaEntrada[]; redirect_to?: string };
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
     }
 
     // No existe todavía — alta completa, igual que el alta individual.
-    const comercialId = perfilLlamante.rol === 'administrador' && (fila as any).comercial_id
+    const comercialId = perfilLlamante.rol === 'oficina' && (fila as any).comercial_id
       ? String((fila as any).comercial_id)
       : llamanteId;
 
