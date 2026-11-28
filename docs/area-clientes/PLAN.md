@@ -98,6 +98,13 @@ commit propio a esta rama para poder seguir el avance en el historial.
   `lista_para_enviar` / `en_reparto` / `entregada`), salvo el primer
   paso que sigue en `notificar-pedido`. Un fallo de envío nunca
   bloquea el cambio de estado, solo se registra para depurar.
+- **Bug crítico encontrado validando esta fase (28/11/2026):** ningún
+  cliente ha podido enviar nunca un pedido desde que existe la máquina
+  de estados (Fase 5) — `transicion_pedido_permitida_` nunca tuvo un
+  caso para que el propio cliente pase su borrador a "recibida", así
+  que el trigger lo rechazaba siempre. Corregido en
+  `area_clientes_schema_fase6d_fix_cliente_enviar_pedido.sql` (tercer
+  SQL a ejecutar, después de la Fase 6c).
 - Doble confirmación de almacén → aviso a administración para
   albarán/factura. ✅ En cuanto almacén/administrador pasa un pedido a
   "lista para enviar", `notificar-cambio-estado` (tipo
