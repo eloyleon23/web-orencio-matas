@@ -51,6 +51,6 @@ jobs:
           for dir in supabase/functions/*/; do
             nombre="$(basename "$dir")"
             echo "::group::Desplegando $nombre"
-            supabase functions deploy "$nombre"
+            supabase functions deploy "$nombre" --yes
             echo "::endgroup::"
           done
