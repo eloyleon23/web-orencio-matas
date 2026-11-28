@@ -82,12 +82,22 @@
 
         // Baja lógica: si es una cuenta de cliente y está desactivada,
         // fuera inmediatamente — nunca se borra nada, solo se bloquea
-        // el acceso. No afecta a comercial/almacén/administrador (esas
-        // cuentas no tienen fila en "clientes").
+        // el acceso.
         const { data: fichaCliente } = await cliente.from('clientes').select('activo').eq('id', data.user.id).maybeSingle();
         if (fichaCliente && fichaCliente.activo === false) {
             await cliente.auth.signOut();
             mostrarError_('Tu acceso está desactivado. Contacta con tu comercial.');
+            boton.disabled = false;
+            boton.textContent = 'Entrar';
+            return;
+        }
+
+        // Mismo criterio para comercial/almacén/administrador —
+        // profiles.activo (panel de Usuarios, solo administrador).
+        const { data: perfilActivo } = await cliente.from('profiles').select('activo').eq('id', data.user.id).maybeSingle();
+        if (perfilActivo && perfilActivo.activo === false) {
+            await cliente.auth.signOut();
+            mostrarError_('Tu acceso está desactivado. Contacta con el administrador.');
             boton.disabled = false;
             boton.textContent = 'Entrar';
             return;

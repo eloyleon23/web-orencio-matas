@@ -27,6 +27,7 @@
         <a href="alta-cliente.html">Dar de alta</a>
         <a href="importar-clientes.html">Importar (CSV/XLSX)</a>
         <a href="pedidos.html">Pedidos</a>
+        <a href="usuarios.html" id="enlaceUsuarios" style="display:none;">Usuarios</a>
     </aside>
     <main class="panel-contenido">
         <div class="panel-tarjeta">
@@ -89,6 +90,7 @@
     );
     if (!resultado) return;
     document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
+    if (resultado.perfil.rol === 'administrador') document.getElementById('enlaceUsuarios').style.display = 'block';
 
     const cliente = window.obtenerClienteSupabase_();
     const ayuda = document.getElementById('ayuda');

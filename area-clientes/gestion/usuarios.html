@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usuarios — Panel de gestión · Orencio Matas</title>
+<link rel="icon" type="image/x-icon" href="../../assets/logos/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../../assets/logos/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../assets/logos/favicon-16x16.png">
+<link rel="stylesheet" href="../assets/estilos.css">
+<style>
+    .insignia-rol-usuario {
+        font-size: 0.72rem; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+        text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; display: inline-block;
+    }
+    .insignia-rol-usuario--cliente { color: var(--muted); background: var(--light); }
+    .insignia-rol-usuario--comercial { color: var(--blue); background: rgba(25, 118, 210, 0.12); }
+    .insignia-rol-usuario--almacen { color: #b7791f; background: rgba(183, 121, 31, 0.14); }
+    .insignia-rol-usuario--administrador { color: #6b46c1; background: rgba(107, 70, 193, 0.14); }
+
+    .modal-usuario-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.45);
+        align-items: center; justify-content: center; z-index: 200; padding: 16px;
+    }
+    .modal-usuario-overlay.activo { display: flex; }
+    .modal-usuario {
+        background: var(--white); border-radius: var(--radius); max-width: 460px; width: 100%;
+        padding: 24px 26px; box-shadow: var(--sombra); position: relative;
+    }
+    .modal-usuario__cerrar-x {
+        position: absolute; top: 14px; right: 14px; width: 32px; height: 32px; border-radius: 50%;
+        border: none; background: var(--light); color: var(--muted); font-size: 1.1rem; cursor: pointer;
+    }
+    .modal-usuario h2 { margin: 0 0 14px; padding-right: 30px; }
+    .modal-usuario__acciones { margin-top: 16px; display: flex; justify-content: flex-end; gap: 10px; }
+    .modal-usuario__acciones button { width: auto; margin: 0; }
+</style>
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="../assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Panel de gestión</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="layout-panel">
+    <aside class="panel-lateral">
+        <div class="panel-lateral__titulo">Gestión</div>
+        <a href="clientes.html">Clientes</a>
+        <a href="alta-cliente.html">Dar de alta</a>
+        <a href="importar-clientes.html">Importar (CSV/XLSX)</a>
+        <a href="pedidos.html">Pedidos</a>
+        <a href="usuarios.html" class="activo">Usuarios</a>
+    </aside>
+    <main class="panel-contenido">
+        <div class="panel-tarjeta">
+            <h1>Usuarios</h1>
+            <p class="ayuda" id="ayuda">Cargando…</p>
+
+            <div id="bloqueTabla" style="display:none;">
+                <div class="tabla-herramientas">
+                    <input type="search" id="filtroUsuarios" placeholder="Buscar por nombre o email…" autocomplete="off">
+                    <select id="filtroRol" style="width:auto;">
+                        <option value="">Todos los roles</option>
+                        <option value="cliente">Cliente</option>
+                        <option value="comercial">Comercial</option>
+                        <option value="almacen">Almacén</option>
+                        <option value="administrador">Administrador</option>
+                    </select>
+                    <button type="button" class="boton-principal" id="botonNuevoUsuario" style="width:auto;">+ Nuevo usuario interno</button>
+                </div>
+
+                <div id="tablaUsuarios" class="tabla-scroll tabla-adaptativa">
+                <table>
+                    <thead><tr>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Alta</th>
+                        <th></th>
+                    </tr></thead>
+                    <tbody id="cuerpoTabla"></tbody>
+                </table>
+                </div>
+            </div>
+
+            <div class="aviso aviso--error" id="avisoError"></div>
+            <div class="aviso aviso--ok" id="avisoOk"></div>
+        </div>
+    </main>
+</div>
+
+<div class="modal-usuario-overlay" id="modalUsuarioOverlay">
+    <div class="modal-usuario" id="modalUsuarioContenido"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const resultado = await window.exigirRolAreaClientes_(
+        ['administrador'], '../index.html', '../app.html'
+    );
+    if (!resultado) return;
+    document.getElementById('insigniaRol').textContent = resultado.perfil.rol;
+
+    const cliente = window.obtenerClienteSupabase_();
+    const ayuda = document.getElementById('ayuda');
+    const avisoError = document.getElementById('avisoError');
+    const avisoOk = document.getElementById('avisoOk');
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await cliente.auth.signOut();
+        window.location.href = '../index.html';
+    });
+
+    const ETIQUETAS_ROL_ = { cliente: 'Cliente', comercial: 'Comercial', almacen: 'Almacén', administrador: 'Administrador' };
+    function escapar_(s) { return String(s || '').replace(/</g, '&lt;'); }
+    function formatearFecha_(valor) {
+        if (!valor) return '—';
+        return new Date(valor).toLocaleDateString('es-ES');
+    }
+
+    const { data: usuariosBrutos, error } = await cliente
+        .from('profiles')
+        .select('id, nombre, apellidos, email, rol, activo, created_at')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se ha podido cargar el listado: ' + error.message;
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    const usuarios_ = (usuariosBrutos || []).map(function (u) {
+        return {
+            id: u.id, nombre: u.nombre || '', apellidos: u.apellidos || '', email: u.email || '',
+            rol: u.rol, activo: u.activo !== false, created_at: u.created_at,
+            nombreCompleto: [u.nombre, u.apellidos].filter(Boolean).join(' ') || '(sin nombre)',
+            textoBusqueda: [u.nombre, u.apellidos, u.email].join(' ').toLowerCase(),
+        };
+    });
+
+    let filtroTexto_ = '';
+    let filtroRol_ = '';
+    const cuerpo = document.getElementById('cuerpoTabla');
+    const filtroInput = document.getElementById('filtroUsuarios');
+    const rolSelect = document.getElementById('filtroRol');
+
+    function listaFiltrada_() {
+        return usuarios_.filter(function (u) {
+            if (filtroRol_ && u.rol !== filtroRol_) return false;
+            if (filtroTexto_ && !u.textoBusqueda.includes(filtroTexto_)) return false;
+            return true;
+        });
+    }
+
+    function pintarFila_(u) {
+        const fila = document.createElement('tr');
+        fila.innerHTML =
+            '<td>' + escapar_(u.nombreCompleto) + '</td>' +
+            '<td>' + escapar_(u.email) + '</td>' +
+            '<td><span class="insignia-rol-usuario insignia-rol-usuario--' + u.rol + '">' + ETIQUETAS_ROL_[u.rol] + '</span></td>' +
+            '<td><span class="insignia-estado" style="font-size:0.75rem; font-weight:700; padding:3px 9px; border-radius:999px; ' +
+                (u.activo ? 'color:var(--ok); background:var(--ok-soft);' : 'color:var(--danger); background:var(--danger-soft);') +
+                '">' + (u.activo ? 'Activo' : 'Bloqueado') + '</span></td>' +
+            '<td>' + formatearFecha_(u.created_at) + '</td>' +
+            '<td style="white-space:nowrap;">' +
+                '<button type="button" class="boton-fila" data-accion="editar" data-id="' + u.id + '" style="margin-right:6px;">Editar</button>' +
+                '<button type="button" class="boton-fila" data-accion="reset" data-id="' + u.id + '" data-email="' + escapar_(u.email) + '" style="margin-right:6px;">Restablecer contraseña</button>' +
+                '<button type="button" class="boton-fila boton-estado' + (u.activo ? ' boton-peligro' : '') + '" data-accion="bloquear" data-id="' + u.id + '" data-activo="' + u.activo + '">' + (u.activo ? 'Bloquear' : 'Reactivar') + '</button>' +
+            '</td>';
+        return fila;
+    }
+
+    function repintar_() {
+        const filtrada = listaFiltrada_();
+        cuerpo.innerHTML = '';
+        filtrada.forEach(function (u) { cuerpo.appendChild(pintarFila_(u)); });
+        ayuda.textContent = filtrada.length + ' usuario(s)' + (filtrada.length !== usuarios_.length ? ' (de ' + usuarios_.length + ' en total)' : '') + '.';
+    }
+
+    document.getElementById('bloqueTabla').style.display = 'block';
+    repintar_();
+
+    let temporizadorFiltro_ = null;
+    filtroInput.addEventListener('input', function () {
+        clearTimeout(temporizadorFiltro_);
+        temporizadorFiltro_ = setTimeout(function () {
+            filtroTexto_ = filtroInput.value.trim().toLowerCase();
+            repintar_();
+        }, 150);
+    });
+    rolSelect.addEventListener('change', function () {
+        filtroRol_ = rolSelect.value;
+        repintar_();
+    });
+
+    // ── Modal: nuevo usuario / editar usuario ────────────────────────
+    const overlay = document.getElementById('modalUsuarioOverlay');
+    const contenido = document.getElementById('modalUsuarioContenido');
+    overlay.addEventListener('click', function (ev) { if (ev.target === overlay) cerrarModalUsuario_(); });
+    function cerrarModalUsuario_() { overlay.classList.remove('activo'); }
+
+    function abrirModalNuevo_() {
+        contenido.innerHTML =
+            '<button type="button" class="modal-usuario__cerrar-x" id="cerrarNuevoUsuario" aria-label="Cerrar">✕</button>' +
+            '<h2>Nuevo usuario interno</h2>' +
+            '<p class="ayuda" style="margin-top:-8px;">Para comercial, almacén o administrador — los clientes se dan de alta desde "Dar de alta".</p>' +
+            '<form id="formNuevoUsuario">' +
+                '<label for="nuevoNombre">Nombre</label>' +
+                '<input id="nuevoNombre" type="text" required>' +
+                '<label for="nuevoApellidos">Apellidos</label>' +
+                '<input id="nuevoApellidos" type="text" required>' +
+                '<label for="nuevoEmail">Email</label>' +
+                '<input id="nuevoEmail" type="email" required>' +
+                '<label for="nuevoRol">Rol</label>' +
+                '<select id="nuevoRol" required>' +
+                    '<option value="comercial">Comercial</option>' +
+                    '<option value="almacen">Almacén</option>' +
+                    '<option value="administrador">Administrador</option>' +
+                '</select>' +
+                '<div class="aviso aviso--error" id="modalUsuarioAvisoError"></div>' +
+                '<div class="modal-usuario__acciones">' +
+                    '<button type="button" class="boton-secundario" id="cancelarNuevoUsuario">Cancelar</button>' +
+                    '<button type="submit" class="boton-principal" id="botonCrearUsuario">Crear y enviar invitación</button>' +
+                '</div>' +
+            '</form>';
+        overlay.classList.add('activo');
+
+        document.getElementById('cerrarNuevoUsuario').addEventListener('click', cerrarModalUsuario_);
+        document.getElementById('cancelarNuevoUsuario').addEventListener('click', cerrarModalUsuario_);
+
+        document.getElementById('formNuevoUsuario').addEventListener('submit', async function (ev) {
+            ev.preventDefault();
+            const avisoModalError = document.getElementById('modalUsuarioAvisoError');
+            avisoModalError.classList.remove('activo');
+            const boton = document.getElementById('botonCrearUsuario');
+            boton.disabled = true;
+            boton.textContent = 'Creando…';
+
+            const cuerpo = {
+                nombre: document.getElementById('nuevoNombre').value.trim(),
+                apellidos: document.getElementById('nuevoApellidos').value.trim(),
+                email: document.getElementById('nuevoEmail').value.trim(),
+                rol: document.getElementById('nuevoRol').value,
+                redirect_to: new URL('../establecer-contrasena.html', window.location.href).href,
+            };
+
+            try {
+                const resp = await fetch(window.SUPABASE_URL + '/functions/v1/alta-usuario-interno', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + resultado.sesion.access_token },
+                    body: JSON.stringify(cuerpo),
+                });
+                const json = await resp.json();
+                boton.disabled = false;
+                boton.textContent = 'Crear y enviar invitación';
+
+                if (!resp.ok) {
+                    avisoModalError.textContent = json.error || 'No se ha podido crear el usuario.';
+                    avisoModalError.classList.add('activo');
+                    return;
+                }
+
+                cerrarModalUsuario_();
+                avisoOk.textContent = 'Usuario creado. Se le ha enviado un correo para fijar su contraseña.';
+                avisoOk.classList.add('activo');
+                usuarios_.unshift({
+                    id: json.id, nombre: cuerpo.nombre, apellidos: cuerpo.apellidos, email: cuerpo.email.toLowerCase(),
+                    rol: cuerpo.rol, activo: true, created_at: new Date().toISOString(),
+                    nombreCompleto: [cuerpo.nombre, cuerpo.apellidos].filter(Boolean).join(' '),
+                    textoBusqueda: [cuerpo.nombre, cuerpo.apellidos, cuerpo.email].join(' ').toLowerCase(),
+                });
+                repintar_();
+            } catch (e) {
+                boton.disabled = false;
+                boton.textContent = 'Crear y enviar invitación';
+                avisoModalError.textContent = 'Error de red al crear el usuario.';
+                avisoModalError.classList.add('activo');
+            }
+        });
+    }
+
+    function abrirModalEditar_(u) {
+        contenido.innerHTML =
+            '<button type="button" class="modal-usuario__cerrar-x" id="cerrarEditarUsuario" aria-label="Cerrar">✕</button>' +
+            '<h2>Editar usuario</h2>' +
+            '<form id="formEditarUsuario">' +
+                '<label for="editarNombre">Nombre</label>' +
+                '<input id="editarNombre" type="text" value="' + escapar_(u.nombre) + '" required>' +
+                '<label for="editarApellidos">Apellidos</label>' +
+                '<input id="editarApellidos" type="text" value="' + escapar_(u.apellidos) + '" required>' +
+                '<label>Email</label>' +
+                '<input type="email" value="' + escapar_(u.email) + '" disabled>' +
+                '<label for="editarRol">Rol</label>' +
+                '<select id="editarRol" required>' +
+                    Object.keys(ETIQUETAS_ROL_).map(function (r) {
+                        return '<option value="' + r + '"' + (r === u.rol ? ' selected' : '') + '>' + ETIQUETAS_ROL_[r] + '</option>';
+                    }).join('') +
+                '</select>' +
+                '<div class="aviso aviso--error" id="modalUsuarioAvisoError"></div>' +
+                '<div class="modal-usuario__acciones">' +
+                    '<button type="button" class="boton-secundario" id="cancelarEditarUsuario">Cancelar</button>' +
+                    '<button type="submit" class="boton-principal">Guardar cambios</button>' +
+                '</div>' +
+            '</form>';
+        overlay.classList.add('activo');
+
+        document.getElementById('cerrarEditarUsuario').addEventListener('click', cerrarModalUsuario_);
+        document.getElementById('cancelarEditarUsuario').addEventListener('click', cerrarModalUsuario_);
+
+        document.getElementById('formEditarUsuario').addEventListener('submit', async function (ev) {
+            ev.preventDefault();
+            const avisoModalError = document.getElementById('modalUsuarioAvisoError');
+            avisoModalError.classList.remove('activo');
+            const nuevoNombre = document.getElementById('editarNombre').value.trim();
+            const nuevoApellidos = document.getElementById('editarApellidos').value.trim();
+            const nuevoRol = document.getElementById('editarRol').value;
+
+            // Un administrador no puede quitarse a sí mismo el rol de
+            // administrador desde aquí — evita quedarse sin ningún
+            // administrador por error (se puede hacer desde otra cuenta
+            // de administrador si hiciera falta de verdad).
+            if (u.id === resultado.sesion.user.id && nuevoRol !== 'administrador') {
+                avisoModalError.textContent = 'No puedes quitarte a ti mismo el rol de administrador.';
+                avisoModalError.classList.add('activo');
+                return;
+            }
+
+            const { error: errorUpd } = await cliente
+                .from('profiles')
+                .update({ nombre: nuevoNombre, apellidos: nuevoApellidos, rol: nuevoRol })
+                .eq('id', u.id);
+
+            if (errorUpd) {
+                avisoModalError.textContent = 'No se ha podido guardar: ' + errorUpd.message;
+                avisoModalError.classList.add('activo');
+                return;
+            }
+
+            u.nombre = nuevoNombre; u.apellidos = nuevoApellidos; u.rol = nuevoRol;
+            u.nombreCompleto = [nuevoNombre, nuevoApellidos].filter(Boolean).join(' ');
+            u.textoBusqueda = [nuevoNombre, nuevoApellidos, u.email].join(' ').toLowerCase();
+            cerrarModalUsuario_();
+            avisoOk.textContent = 'Usuario actualizado.';
+            avisoOk.classList.add('activo');
+            repintar_();
+        });
+    }
+
+    document.getElementById('botonNuevoUsuario').addEventListener('click', abrirModalNuevo_);
+
+    cuerpo.addEventListener('click', async function (ev) {
+        const boton = ev.target.closest('button[data-accion]');
+        if (!boton) return;
+        const accion = boton.dataset.accion;
+        const idUsuario = boton.dataset.id;
+
+        if (accion === 'editar') {
+            const u = usuarios_.find(function (x) { return x.id === idUsuario; });
+            if (u) abrirModalEditar_(u);
+            return;
+        }
+
+        if (accion === 'reset') {
+            const email = boton.dataset.email;
+            const confirmado = await window.confirmarModal_(
+                'Restablecer contraseña',
+                'Se enviará un correo a ' + email + ' con un enlace para que elija una contraseña nueva.',
+                'Enviar correo',
+                false
+            );
+            if (!confirmado) return;
+            boton.disabled = true;
+            const textoOriginal = boton.textContent;
+            boton.textContent = 'Enviando…';
+            const { error: errorReset } = await cliente.auth.resetPasswordForEmail(email, {
+                redirectTo: new URL('../establecer-contrasena.html', window.location.href).href,
+            });
+            boton.disabled = false;
+            if (errorReset) {
+                boton.textContent = textoOriginal;
+                avisoError.textContent = 'No se ha podido enviar el correo: ' + errorReset.message;
+                avisoError.classList.add('activo');
+                return;
+            }
+            boton.textContent = 'Correo enviado ✓';
+            setTimeout(function () { boton.textContent = textoOriginal; }, 2500);
+            return;
+        }
+
+        if (accion === 'bloquear') {
+            const activoActual = boton.dataset.activo === 'true';
+            if (idUsuario === resultado.sesion.user.id && activoActual) {
+                avisoError.textContent = 'No puedes bloquearte a ti mismo.';
+                avisoError.classList.add('activo');
+                return;
+            }
+            if (activoActual) {
+                const confirmado = await window.confirmarModal_(
+                    'Bloquear acceso',
+                    'Este usuario dejará de poder entrar de inmediato. Podrás reactivarlo cuando quieras.',
+                    'Bloquear acceso',
+                    true
+                );
+                if (!confirmado) return;
+            }
+            boton.disabled = true;
+            const { error: errorEstado } = await cliente.from('profiles').update({ activo: !activoActual }).eq('id', idUsuario);
+            boton.disabled = false;
+            if (errorEstado) {
+                avisoError.textContent = 'No se ha podido cambiar el estado: ' + errorEstado.message;
+                avisoError.classList.add('activo');
+                return;
+            }
+            const u = usuarios_.find(function (x) { return x.id === idUsuario; });
+            if (u) u.activo = !activoActual;
+            repintar_();
+        }
+    });
+})();
+</script>
+</body>
+</html>

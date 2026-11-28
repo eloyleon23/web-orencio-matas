@@ -72,6 +72,16 @@ commit propio a esta rama para poder seguir el avance en el historial.
   tres roles de gestión. — Pendiente de validación por Eloy sobre la
   previsualización (hace falta una cuenta de prueba con rol "almacen":
   ver la nota al final de area_clientes_schema_fase5.sql).
+- Panel de "Usuarios" (solo administrador) ✅ —
+  `area-clientes/gestion/usuarios.html`: listado de todos los
+  perfiles, dar de alta comercial/almacén/administrador (Edge Function
+  `alta-usuario-interno`), editar nombre/apellidos/rol, restablecer
+  contraseña y bloquear/reactivar (`profiles.activo`, ahora también
+  comprobado en el login para cualquier rol, no solo cliente).
+- Comercial/almacén/administrador pueden sustituir, quitar o añadir
+  productos del pedido (no solo rectificar cantidad) mientras siga en
+  "recibida" o "en preparación", con buscador de catálogo y doble
+  confirmación. ✅
 
 ### Fase 6 — Notificaciones y puente con el CRM
 - Matriz de notificaciones por correo (cliente, comercial, correo
@@ -79,7 +89,12 @@ commit propio a esta rama para poder seguir el avance en el historial.
 - Doble confirmación de almacén → aviso a administración para
   albarán/factura.
 - Cierre del pedido por administrador (números de albarán/factura →
-  habilita "En reparto").
+  habilita "En reparto"). — Adelantado parcialmente en Fase 5: ya se
+  puede añadir el nº de albarán/factura desde el detalle del pedido en
+  cuanto está "lista para enviar", y queda registrado quién confirmó
+  (comercial), quién preparó (almacén) y quién cerró (administrador)
+  cada pedido. Falta la parte de notificaciones por correo de este
+  cierre.
 - Solicitud de copia de factura por el cliente.
 - Entregable revisable: flujo de notificaciones end-to-end con buzones
   de prueba.

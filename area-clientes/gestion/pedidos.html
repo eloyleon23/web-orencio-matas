@@ -135,6 +135,7 @@
         <a href="alta-cliente.html" id="enlaceAlta">Dar de alta</a>
         <a href="importar-clientes.html" id="enlaceImportar">Importar (CSV/XLSX)</a>
         <a href="pedidos.html" class="activo">Pedidos</a>
+        <a href="usuarios.html" id="enlaceUsuarios" style="display:none;">Usuarios</a>
     </aside>
     <main class="panel-contenido">
         <div class="panel-tarjeta">
@@ -166,6 +167,9 @@
                         <th>Productos</th>
                         <th>Total</th>
                         <th>Estado</th>
+                        <th>Albarán</th>
+                        <th>Factura</th>
+                        <th>Equipo (por fase)</th>
                         <th>Última edición</th>
                         <th></th>
                     </tr></thead>
@@ -202,6 +206,7 @@
             document.getElementById(id).remove();
         });
     }
+    if (rol === 'administrador') document.getElementById('enlaceUsuarios').style.display = 'block';
 
     const cliente = window.obtenerClienteSupabase_();
     const ayuda = document.getElementById('ayuda');
@@ -301,9 +306,12 @@
     const { data: pedidosBrutos, error } = await cliente
         .from('propuestas_pedido')
         .select(
-            'id, cliente_id, estado, notas, creado_en, enviado_en, entregado_en, transportista, numero_seguimiento, ' +
+            'id, cliente_id, estado, notas, creado_en, enviado_en, entregado_en, transportista, numero_seguimiento, albaran, factura, ' +
             'clientes(empresa, crm_id, profiles!clientes_id_fkey(nombre, apellidos, email), comercial:profiles!clientes_comercial_id_fkey(nombre, apellidos)), ' +
             'editor:profiles!propuestas_pedido_actualizado_por_fkey(nombre, apellidos), ' +
+            'confirmador:profiles!propuestas_pedido_confirmado_por_fkey(nombre, apellidos), ' +
+            'preparador:profiles!propuestas_pedido_preparado_por_fkey(nombre, apellidos), ' +
+            'cerrador:profiles!propuestas_pedido_cerrado_por_fkey(nombre, apellidos), ' +
             'propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion)'
         )
         .neq('estado', 'borrador')
@@ -346,6 +354,9 @@
         const perfilCliente = desenvolver_(clienteInfo.profiles) || {};
         const perfilComercial = desenvolver_(clienteInfo.comercial) || {};
         const perfilEditor = desenvolver_(p.editor) || {};
+        const perfilConfirmador = desenvolver_(p.confirmador) || {};
+        const perfilPreparador = desenvolver_(p.preparador) || {};
+        const perfilCerrador = desenvolver_(p.cerrador) || {};
         const lineas = p.propuesta_pedido_lineas || [];
         const totalImporte = lineas.reduce(function (acc, l) {
             return acc + (l.precio_unitario !== null ? Number(l.cantidad) * Number(l.precio_unitario) : 0);
@@ -355,6 +366,7 @@
             id: p.id, clienteId: p.cliente_id, estado: p.estado, notas: p.notas, creado_en: p.creado_en,
             enviado_en: p.enviado_en, entregado_en: p.entregado_en,
             transportista: p.transportista || 'Reparto propio', numero_seguimiento: p.numero_seguimiento || '',
+            albaran: p.albaran || '', factura: p.factura || '',
             lineas: lineas, totalImporte: totalImporte,
             clienteNombre: [perfilCliente.nombre, perfilCliente.apellidos].filter(Boolean).join(' ') || '(sin nombre)',
             clienteEmail: perfilCliente.email || '',
@@ -362,6 +374,9 @@
             clienteCrm: clienteInfo.crm_id || '',
             comercialNombre: [perfilComercial.nombre, perfilComercial.apellidos].filter(Boolean).join(' ') || '—',
             editorNombre: [perfilEditor.nombre, perfilEditor.apellidos].filter(Boolean).join(' ') || '—',
+            confirmadoPorNombre: [perfilConfirmador.nombre, perfilConfirmador.apellidos].filter(Boolean).join(' ') || '—',
+            preparadoPorNombre: [perfilPreparador.nombre, perfilPreparador.apellidos].filter(Boolean).join(' ') || '—',
+            cerradoPorNombre: [perfilCerrador.nombre, perfilCerrador.apellidos].filter(Boolean).join(' ') || '—',
             dias: diasEntre_(fechaInicio, p.entregado_en || new Date()),
             textoBusqueda: [perfilCliente.nombre, perfilCliente.apellidos, perfilCliente.email, clienteInfo.empresa, perfilComercial.nombre, perfilComercial.apellidos]
                 .concat(lineas.map(function (l) { return l.ref + ' ' + l.nombre; }))
@@ -418,6 +433,13 @@
             '<td>' + p.lineas.length + '</td>' +
             '<td>' + formatearEuros_(p.totalImporte) + '</td>' +
             '<td><span class="insignia-estado-pedido insignia-estado-pedido--' + p.estado + '">' + ESTADOS_LABEL_[p.estado] + '</span></td>' +
+            '<td>' + (p.albaran ? escapar_(p.albaran) : '—') + '</td>' +
+            '<td>' + (p.factura ? escapar_(p.factura) : '—') + '</td>' +
+            '<td style="font-size:0.78rem; line-height:1.5;">' +
+                'Confirmado: ' + escapar_(p.confirmadoPorNombre) + '<br>' +
+                'Preparado: ' + escapar_(p.preparadoPorNombre) + '<br>' +
+                'Cerrado: ' + escapar_(p.cerradoPorNombre) +
+            '</td>' +
             '<td>' + escapar_(p.editorNombre) + '</td>' +
             '<td><button type="button" class="boton-fila" data-id="' + p.id + '">Ver detalle</button></td>';
         fila.querySelector('button').addEventListener('click', function () { abrirModal_(p.id); });
@@ -553,9 +575,21 @@
                             '<label for="inputSeguimiento">Nº de seguimiento (si aplica)</label>' +
                             '<input type="text" id="inputSeguimiento" value="' + escapar_(p.numero_seguimiento) + '" placeholder="Opcional — solo con transporte externo">' +
                         '</div>' +
+                      '</div>' +
+                      '<div class="bloque-seguimiento__fila">' +
+                        '<div class="bloque-seguimiento__campo">' +
+                            '<label for="inputAlbaran">Nº de albarán</label>' +
+                            '<input type="text" id="inputAlbaran" value="' + escapar_(p.albaran) + '" placeholder="Opcional">' +
+                        '</div>' +
+                        '<div class="bloque-seguimiento__campo">' +
+                            '<label for="inputFactura">Nº de factura</label>' +
+                            '<input type="text" id="inputFactura" value="' + escapar_(p.factura) + '" placeholder="Opcional">' +
+                        '</div>' +
                       '</div>'
                     : '<div class="bloque-seguimiento__solo-lectura"><strong>' + escapar_(p.transportista) + '</strong>' +
                         (p.numero_seguimiento ? ' — nº seguimiento: ' + escapar_(p.numero_seguimiento) : '') +
+                        (p.albaran ? '<br>Albarán: ' + escapar_(p.albaran) : '') +
+                        (p.factura ? '<br>Factura: ' + escapar_(p.factura) : '') +
                       '</div>')
             + '</div>'
         );
@@ -842,9 +876,11 @@
                 modalAvisoError.classList.remove('activo');
                 const nuevoTransportista = (document.getElementById('inputTransportista').value || '').trim() || 'Reparto propio';
                 const nuevoSeguimiento = (document.getElementById('inputSeguimiento').value || '').trim() || null;
+                const nuevoAlbaran = (document.getElementById('inputAlbaran').value || '').trim() || null;
+                const nuevaFactura = (document.getElementById('inputFactura').value || '').trim() || null;
                 const { error: errorSeguimiento } = await cliente
                     .from('propuestas_pedido')
-                    .update({ transportista: nuevoTransportista, numero_seguimiento: nuevoSeguimiento })
+                    .update({ transportista: nuevoTransportista, numero_seguimiento: nuevoSeguimiento, albaran: nuevoAlbaran, factura: nuevaFactura })
                     .eq('id', p.id);
                 boton.disabled = false;
                 if (errorSeguimiento) {
@@ -854,8 +890,12 @@
                 }
                 p.transportista = nuevoTransportista;
                 p.numero_seguimiento = nuevoSeguimiento || '';
+                p.albaran = nuevoAlbaran || '';
+                p.factura = nuevaFactura || '';
+                marcarEditadoPorMi_(p);
                 modalAvisoOk.textContent = 'Seguimiento guardado.';
                 modalAvisoOk.classList.add('activo');
+                repintar_();
                 pintarModal_(p);
             });
         }
@@ -873,9 +913,19 @@
                     modalAvisoError.classList.add('activo');
                     return;
                 }
+                const estadoAnterior = p.estado;
                 p.estado = nuevoEstado;
                 if (nuevoEstado === 'entregada') p.entregado_en = new Date().toISOString();
                 p.dias = diasEntre_(p.enviado_en || p.creado_en, p.entregado_en || new Date());
+                // Refleja también, igual que hace el trigger en la BBDD,
+                // quién hizo ESTA transición concreta (no solo "última
+                // edición").
+                const miNombre_ = resultado.perfil.nombre ? [resultado.perfil.nombre, resultado.perfil.apellidos].filter(Boolean).join(' ') : null;
+                if (miNombre_) {
+                    if (estadoAnterior === 'recibida' && nuevoEstado === 'en_preparacion') p.confirmadoPorNombre = miNombre_;
+                    else if (estadoAnterior === 'en_preparacion' && nuevoEstado === 'lista_para_enviar') p.preparadoPorNombre = miNombre_;
+                    else if (estadoAnterior === 'lista_para_enviar' && nuevoEstado === 'en_reparto') p.cerradoPorNombre = miNombre_;
+                }
                 marcarEditadoPorMi_(p);
                 repintar_();
                 pintarModal_(p);
