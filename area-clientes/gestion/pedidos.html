@@ -136,6 +136,7 @@
         <a href="importar-clientes.html" id="enlaceImportar">Importar (CSV/XLSX)</a>
         <a href="pedidos.html" class="activo">Pedidos</a>
         <a href="usuarios.html" id="enlaceUsuarios" style="display:none;">Usuarios</a>
+        <a href="estadisticas.html">Estadísticas</a>
     </aside>
     <main class="panel-contenido">
         <div class="panel-tarjeta">
@@ -312,6 +313,7 @@
             'confirmador:profiles!propuestas_pedido_confirmado_por_fkey(nombre, apellidos), ' +
             'preparador:profiles!propuestas_pedido_preparado_por_fkey(nombre, apellidos), ' +
             'cerrador:profiles!propuestas_pedido_cerrado_por_fkey(nombre, apellidos), ' +
+            'entregador:profiles!propuestas_pedido_entregado_por_fkey(nombre, apellidos), ' +
             'propuesta_pedido_lineas(id, ref, nombre, cantidad, precio_unitario, modo_compra, cantidad_envases, envase_cantidad, envase_unidad, envase_tipo, notas, cantidad_confirmada, motivo_rectificacion)'
         )
         .neq('estado', 'borrador')
@@ -357,6 +359,7 @@
         const perfilConfirmador = desenvolver_(p.confirmador) || {};
         const perfilPreparador = desenvolver_(p.preparador) || {};
         const perfilCerrador = desenvolver_(p.cerrador) || {};
+        const perfilEntregador = desenvolver_(p.entregador) || {};
         const lineas = p.propuesta_pedido_lineas || [];
         const totalImporte = lineas.reduce(function (acc, l) {
             return acc + (l.precio_unitario !== null ? Number(l.cantidad) * Number(l.precio_unitario) : 0);
@@ -377,6 +380,7 @@
             confirmadoPorNombre: [perfilConfirmador.nombre, perfilConfirmador.apellidos].filter(Boolean).join(' ') || '—',
             preparadoPorNombre: [perfilPreparador.nombre, perfilPreparador.apellidos].filter(Boolean).join(' ') || '—',
             cerradoPorNombre: [perfilCerrador.nombre, perfilCerrador.apellidos].filter(Boolean).join(' ') || '—',
+            entregadoPorNombre: [perfilEntregador.nombre, perfilEntregador.apellidos].filter(Boolean).join(' ') || '—',
             dias: diasEntre_(fechaInicio, p.entregado_en || new Date()),
             textoBusqueda: [perfilCliente.nombre, perfilCliente.apellidos, perfilCliente.email, clienteInfo.empresa, perfilComercial.nombre, perfilComercial.apellidos]
                 .concat(lineas.map(function (l) { return l.ref + ' ' + l.nombre; }))
@@ -438,7 +442,8 @@
             '<td style="font-size:0.78rem; line-height:1.5;">' +
                 'Confirmado: ' + escapar_(p.confirmadoPorNombre) + '<br>' +
                 'Preparado: ' + escapar_(p.preparadoPorNombre) + '<br>' +
-                'Cerrado: ' + escapar_(p.cerradoPorNombre) +
+                'Cerrado: ' + escapar_(p.cerradoPorNombre) + '<br>' +
+                'Entregado: ' + escapar_(p.entregadoPorNombre) +
             '</td>' +
             '<td>' + escapar_(p.editorNombre) + '</td>' +
             '<td><button type="button" class="boton-fila" data-id="' + p.id + '">Ver detalle</button></td>';
@@ -925,6 +930,7 @@
                     if (estadoAnterior === 'recibida' && nuevoEstado === 'en_preparacion') p.confirmadoPorNombre = miNombre_;
                     else if (estadoAnterior === 'en_preparacion' && nuevoEstado === 'lista_para_enviar') p.preparadoPorNombre = miNombre_;
                     else if (estadoAnterior === 'lista_para_enviar' && nuevoEstado === 'en_reparto') p.cerradoPorNombre = miNombre_;
+                    else if (estadoAnterior === 'en_reparto' && nuevoEstado === 'entregada') p.entregadoPorNombre = miNombre_;
                 }
                 marcarEditadoPorMi_(p);
                 repintar_();

@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estadísticas — Panel de gestión · Orencio Matas</title>
+<link rel="icon" type="image/x-icon" href="../../assets/logos/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="../../assets/logos/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="../../assets/logos/favicon-16x16.png">
+<link rel="stylesheet" href="../assets/estilos.css">
+<style>
+    .tarjetas-resumen { display: flex; gap: 14px; flex-wrap: wrap; margin: 16px 0 22px; }
+    .tarjeta-resumen {
+        flex: 1 1 160px; background: var(--light); border-radius: 10px; padding: 14px 16px;
+    }
+    .tarjeta-resumen__numero { font-size: 1.6rem; font-weight: 800; color: var(--dark); }
+    .tarjeta-resumen__etiqueta { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+    .selector-usuario-bloque {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .selector-usuario-bloque select { width: auto; margin: 0; min-width: 220px; }
+    .barra-mes { display: flex; align-items: center; gap: 8px; }
+    .barra-mes__pista { flex: 1; background: var(--light); border-radius: 4px; height: 10px; overflow: hidden; min-width: 60px; }
+    .barra-mes__relleno { height: 100%; background: var(--blue); border-radius: 4px; }
+    .tabla-estadisticas th, .tabla-estadisticas td { white-space: nowrap; }
+</style>
+</head>
+<body>
+<nav class="navbar-om">
+    <div class="navbar-om__marca">
+        <img src="../assets/logo-orencio.png" alt="Orencio Matas" class="navbar-om__logo">
+        <span class="navbar-om__etiqueta">Panel de gestión</span>
+    </div>
+    <div class="navbar-om__usuario">
+        <span class="insignia-rol" id="insigniaRol">…</span>
+        <button class="boton-secundario" id="botonSalir" style="width:auto; margin:0; padding:8px 14px;">Cerrar sesión</button>
+    </div>
+</nav>
+<div class="layout-panel">
+    <aside class="panel-lateral" id="panelLateral">
+        <div class="panel-lateral__titulo">Gestión</div>
+        <a href="clientes.html" id="enlaceClientes">Clientes</a>
+        <a href="alta-cliente.html" id="enlaceAlta">Dar de alta</a>
+        <a href="importar-clientes.html" id="enlaceImportar">Importar (CSV/XLSX)</a>
+        <a href="pedidos.html">Pedidos</a>
+        <a href="usuarios.html" id="enlaceUsuarios" style="display:none;">Usuarios</a>
+        <a href="estadisticas.html" class="activo">Estadísticas</a>
+    </aside>
+    <main class="panel-contenido">
+        <div class="panel-tarjeta">
+            <h1>Estadísticas</h1>
+            <p class="ayuda" id="ayuda">Cargando…</p>
+
+            <div id="bloqueContenido" style="display:none;">
+                <div class="selector-usuario-bloque" id="bloqueSelectorUsuario" style="display:none;">
+                    <label for="selectorUsuario" style="margin:0;">Ver estadísticas de:</label>
+                    <select id="selectorUsuario"></select>
+                </div>
+
+                <div class="tarjetas-resumen" id="tarjetasResumen"></div>
+
+                <h2 style="margin-top:28px;">Por mes (últimos 12 meses)</h2>
+                <div class="tabla-scroll tabla-adaptativa">
+                    <table class="tabla-estadisticas">
+                        <thead><tr>
+                            <th>Mes</th>
+                            <th>Confirmados</th>
+                            <th>Preparados</th>
+                            <th>Cerrados</th>
+                            <th>Entregados</th>
+                            <th>Total</th>
+                            <th style="width:30%;"></th>
+                        </tr></thead>
+                        <tbody id="cuerpoTablaMeses"></tbody>
+                    </table>
+                </div>
+
+                <h2 style="margin-top:28px;">Por año</h2>
+                <div class="tabla-scroll tabla-adaptativa">
+                    <table class="tabla-estadisticas">
+                        <thead><tr>
+                            <th>Año</th>
+                            <th>Confirmados</th>
+                            <th>Preparados</th>
+                            <th>Cerrados</th>
+                            <th>Entregados</th>
+                            <th>Total</th>
+                        </tr></thead>
+                        <tbody id="cuerpoTablaAnios"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="aviso aviso--error" id="avisoError"></div>
+        </div>
+    </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="../assets/supabase-client.js"></script>
+<script>
+(async function () {
+    const resultado = await window.exigirRolAreaClientes_(
+        ['comercial', 'almacen', 'administrador'], '../index.html', '../app.html'
+    );
+    if (!resultado) return;
+    const rol = resultado.perfil.rol;
+    const miId = resultado.sesion.user.id;
+    document.getElementById('insigniaRol').textContent = rol;
+
+    if (rol === 'almacen') {
+        ['enlaceClientes', 'enlaceAlta', 'enlaceImportar'].forEach(function (id) {
+            document.getElementById(id).remove();
+        });
+    }
+    if (rol === 'administrador') document.getElementById('enlaceUsuarios').style.display = 'block';
+
+    const cliente = window.obtenerClienteSupabase_();
+    const ayuda = document.getElementById('ayuda');
+    const avisoError = document.getElementById('avisoError');
+
+    document.getElementById('botonSalir').addEventListener('click', async function () {
+        await cliente.auth.signOut();
+        window.location.href = '../index.html';
+    });
+
+    // ── Carga de pedidos (cada rol ve, por RLS, exactamente lo que le
+    // corresponde: comercial sus propios clientes, almacén/administrador
+    // todo lo que no sea borrador) ───────────────────────────────────
+    const { data: propuestasBrutas, error } = await cliente
+        .from('propuestas_pedido')
+        .select('confirmado_por, confirmado_en, preparado_por, preparado_en, cerrado_por, cerrado_en, entregado_por, entregado_en, estado')
+        .neq('estado', 'borrador');
+
+    if (error) {
+        ayuda.textContent = '';
+        avisoError.textContent = 'No se han podido cargar las estadísticas: ' + error.message;
+        avisoError.classList.add('activo');
+        return;
+    }
+
+    // ── Selector de usuario — solo administrador ve a todos; el resto
+    // de roles solo se ve a sí mismo (sin selector) ───────────────────
+    let usuarios_ = [{ id: miId, etiqueta: 'Yo (' + rol + ')' }];
+    if (rol === 'administrador') {
+        const { data: todosUsuarios } = await cliente
+            .from('profiles')
+            .select('id, nombre, apellidos, rol')
+            .in('rol', ['comercial', 'almacen', 'administrador'])
+            .order('nombre');
+        if (todosUsuarios) {
+            const ETIQUETAS_ROL_ = { comercial: 'Comercial', almacen: 'Almacén', administrador: 'Administrador' };
+            usuarios_ = todosUsuarios.map(function (u) {
+                const nombre = [u.nombre, u.apellidos].filter(Boolean).join(' ') || '(sin nombre)';
+                return { id: u.id, etiqueta: nombre + ' — ' + ETIQUETAS_ROL_[u.rol] + (u.id === miId ? ' (yo)' : '') };
+            });
+        }
+        document.getElementById('bloqueSelectorUsuario').style.display = 'flex';
+        const selector = document.getElementById('selectorUsuario');
+        selector.innerHTML = usuarios_.map(function (u) { return '<option value="' + u.id + '">' + u.etiqueta + '</option>'; }).join('');
+        selector.value = miId;
+        selector.addEventListener('change', function () { pintarEstadisticas_(selector.value); });
+    }
+
+    function formatearMes_(clave) {
+        const [anio, mes] = clave.split('-');
+        const nombres = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+        return nombres[Number(mes) - 1] + ' ' + anio;
+    }
+
+    function calcularEstadisticas_(userId) {
+        const porMes = {};
+        const porAnio = {};
+        function sumar(bucket, clave, campo) {
+            if (!bucket[clave]) bucket[clave] = { confirmados: 0, preparados: 0, cerrados: 0, entregados: 0 };
+            bucket[clave][campo]++;
+        }
+        const FASES = [
+            ['confirmado_por', 'confirmado_en', 'confirmados'],
+            ['preparado_por', 'preparado_en', 'preparados'],
+            ['cerrado_por', 'cerrado_en', 'cerrados'],
+            ['entregado_por', 'entregado_en', 'entregados'],
+        ];
+        propuestasBrutas.forEach(function (p) {
+            FASES.forEach(function (fase) {
+                const campoPor = fase[0], campoEn = fase[1], campoContador = fase[2];
+                if (p[campoPor] === userId && p[campoEn]) {
+                    const fecha = p[campoEn];
+                    const mes = fecha.slice(0, 7);
+                    const anio = fecha.slice(0, 4);
+                    sumar(porMes, mes, campoContador);
+                    sumar(porAnio, anio, campoContador);
+                }
+            });
+        });
+        return { porMes: porMes, porAnio: porAnio };
+    }
+
+    function totalFila_(fila) { return fila.confirmados + fila.preparados + fila.cerrados + fila.entregados; }
+
+    function pintarEstadisticas_(userId) {
+        const { porMes, porAnio } = calcularEstadisticas_(userId);
+
+        const ahora = new Date();
+        const claveMesActual = ahora.toISOString().slice(0, 7);
+        const claveAnioActual = String(ahora.getFullYear());
+        const filaMesActual = porMes[claveMesActual] || { confirmados: 0, preparados: 0, cerrados: 0, entregados: 0 };
+        const filaAnioActual = porAnio[claveAnioActual] || { confirmados: 0, preparados: 0, cerrados: 0, entregados: 0 };
+        const totalHistorico = Object.values(porAnio).reduce(function (acc, f) { return acc + totalFila_(f); }, 0);
+
+        document.getElementById('tarjetasResumen').innerHTML =
+            '<div class="tarjeta-resumen"><div class="tarjeta-resumen__numero">' + totalFila_(filaMesActual) + '</div><div class="tarjeta-resumen__etiqueta">Este mes</div></div>' +
+            '<div class="tarjeta-resumen"><div class="tarjeta-resumen__numero">' + totalFila_(filaAnioActual) + '</div><div class="tarjeta-resumen__etiqueta">Este año</div></div>' +
+            '<div class="tarjeta-resumen"><div class="tarjeta-resumen__numero">' + totalHistorico + '</div><div class="tarjeta-resumen__etiqueta">Total histórico</div></div>';
+
+        // Últimos 12 meses, de más reciente a más antiguo — siempre se
+        // muestran todos aunque estén a 0, para ver la evolución real.
+        const clavesMeses = [];
+        for (let i = 0; i < 12; i++) {
+            const f = new Date(ahora.getFullYear(), ahora.getMonth() - i, 1);
+            clavesMeses.push(f.toISOString().slice(0, 7));
+        }
+        const maxMes = Math.max(1, ...clavesMeses.map(function (c) { return totalFila_(porMes[c] || { confirmados: 0, preparados: 0, cerrados: 0, entregados: 0 }); }));
+
+        document.getElementById('cuerpoTablaMeses').innerHTML = clavesMeses.map(function (clave) {
+            const f = porMes[clave] || { confirmados: 0, preparados: 0, cerrados: 0, entregados: 0 };
+            const total = totalFila_(f);
+            const pct = Math.round((total / maxMes) * 100);
+            return '<tr>' +
+                '<td>' + formatearMes_(clave) + '</td>' +
+                '<td>' + f.confirmados + '</td>' +
+                '<td>' + f.preparados + '</td>' +
+                '<td>' + f.cerrados + '</td>' +
+                '<td>' + f.entregados + '</td>' +
+                '<td><strong>' + total + '</strong></td>' +
+                '<td><div class="barra-mes"><div class="barra-mes__pista"><div class="barra-mes__relleno" style="width:' + pct + '%;"></div></div></div></td>' +
+                '</tr>';
+        }).join('');
+
+        const aniosOrdenados = Object.keys(porAnio).sort().reverse();
+        document.getElementById('cuerpoTablaAnios').innerHTML = (aniosOrdenados.length ? aniosOrdenados : [claveAnioActual]).map(function (anio) {
+            const f = porAnio[anio] || { confirmados: 0, preparados: 0, cerrados: 0, entregados: 0 };
+            return '<tr>' +
+                '<td>' + anio + '</td>' +
+                '<td>' + f.confirmados + '</td>' +
+                '<td>' + f.preparados + '</td>' +
+                '<td>' + f.cerrados + '</td>' +
+                '<td>' + f.entregados + '</td>' +
+                '<td><strong>' + totalFila_(f) + '</strong></td>' +
+                '</tr>';
+        }).join('');
+    }
+
+    ayuda.textContent = '';
+    document.getElementById('bloqueContenido').style.display = 'block';
+    pintarEstadisticas_(miId);
+})();
+</script>
+</body>
+</html>
